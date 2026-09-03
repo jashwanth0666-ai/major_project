@@ -1,0 +1,11 @@
+P:\major_project\Frontend\src\main\java\com\aiwatchdog\controller\MainController.java
+P:\major_project\Frontend\src\main\java\com\aiwatchdog\MainApp.java
+P:\major_project\Frontend\src\main\java\com\aiwatchdog\model\AccessDecision.java
+P:\major_project\Frontend\src\main\java\com\aiwatchdog\model\AnalysisResult.java
+P:\major_project\Frontend\src\main\java\com\aiwatchdog\model\ThreatLevel.java
+P:\major_project\Frontend\src\main\java\com\aiwatchdog\service\AccessControllerService.java
+P:\major_project\Frontend\src\main\java\com\aiwatchdog\service\BrowserMonitorService.java
+P:\major_project\Frontend\src\main\java\com\aiwatchdog\service\DemoModeService.java
+P:\major_project\Frontend\src\main\java\com\aiwatchdog\service\DemoPhishingDetectionEngine.java
+P:\major_project\Frontend\src\main\java\com\aiwatchdog\service\PhishingDetectionEngine.java
+P:\major_project\Frontend\src\main\java\com\aiwatchdog\service\URLFeatureExtractor.java
