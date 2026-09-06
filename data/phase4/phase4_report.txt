@@ -1,0 +1,37 @@
+AI WatchDog - PHASE 4 REPORT
+============================================================
+Model: XGBoost + isotonic probability calibration
+Calibration rows: 74,043
+Threshold-selection rows: 74,043
+Selected threshold: 0.15
+Selection rule: max F1 subject to recall >= 0.90
+
+TEST
+F1=0.7698
+Precision=0.6681
+Recall=0.9081
+FPR=0.0540
+FNR=0.0919
+ROC-AUC=0.9812
+PR-AUC=0.9165
+Brier=0.0246
+
+UNSEEN-DOMAIN TEST
+F1=0.7385
+Precision=0.6489
+Recall=0.8569
+FPR=0.0421
+FNR=0.1431
+ROC-AUC=0.9766
+PR-AUC=0.8696
+Brier=0.0251
+
+RISK ENGINE
+risk_score = round(calibrated_phishing_probability * 100)
+0-25   SAFE
+26-50  LOW RISK
+51-75  SUSPICIOUS
+76-100 HIGH RISK
+
+The threshold was selected without using test or unseen-domain data.
+Total runtime: 473.4s
