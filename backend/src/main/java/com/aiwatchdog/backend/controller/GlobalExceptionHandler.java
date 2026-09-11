@@ -43,6 +43,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({
             InvalidRequestException.class,
+            IllegalArgumentException.class,
             MethodArgumentNotValidException.class,
             ConstraintViolationException.class,
             HttpMessageNotReadableException.class
