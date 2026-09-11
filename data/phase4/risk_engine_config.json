@@ -1,0 +1,39 @@
+{
+  "model": "XGBoost + isotonic calibration",
+  "selected_threshold": 0.15,
+  "threshold_selection_rule": "max F1 subject to recall >= 0.90",
+  "risk_score_formula": "round(calibrated_phishing_probability * 100)",
+  "risk_bands": {
+    "0-25": "SAFE",
+    "26-50": "LOW RISK",
+    "51-75": "SUSPICIOUS",
+    "76-100": "HIGH RISK"
+  },
+  "features": [
+    "url_length",
+    "domain_length",
+    "subdomain_count",
+    "path_length",
+    "query_length",
+    "has_ip",
+    "has_https",
+    "has_at",
+    "has_dash",
+    "has_multiple_subdomains",
+    "special_char_count",
+    "digit_count",
+    "entropy",
+    "has_shortener",
+    "suspicious_keyword_count",
+    "dot_count",
+    "slash_count",
+    "hyphen_count",
+    "percent_encoded_count",
+    "query_parameter_count",
+    "uppercase_count",
+    "domain_digit_count",
+    "domain_entropy",
+    "path_segment_count",
+    "digit_ratio"
+  ]
+}
