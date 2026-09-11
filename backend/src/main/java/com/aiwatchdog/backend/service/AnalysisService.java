@@ -2,6 +2,9 @@ package com.aiwatchdog.backend.service;
 
 import com.aiwatchdog.backend.dto.AnalyzeResponse;
 import com.aiwatchdog.backend.dto.MlPredictionResponse;
+import com.aiwatchdog.backend.policy.Decision;
+import com.aiwatchdog.backend.policy.PolicyEngine;
+import com.aiwatchdog.backend.policy.PolicyRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -15,9 +18,11 @@ public class AnalysisService {
     private static final Logger logger = LoggerFactory.getLogger(AnalysisService.class);
 
     private final MlServiceClient mlServiceClient;
+    private final PolicyEngine policyEngine;
 
-    public AnalysisService(MlServiceClient mlServiceClient) {
+    public AnalysisService(MlServiceClient mlServiceClient, PolicyEngine policyEngine) {
         this.mlServiceClient = mlServiceClient;
+        this.policyEngine = policyEngine;
     }
 
     public AnalyzeResponse analyze(String url) {
@@ -29,13 +34,21 @@ public class AnalysisService {
 
         logger.info("ML analysis completed");
 
+        PolicyRequest policyRequest = new PolicyRequest(
+                mlResult.url(),
+                mlResult.phishing_probability(),
+                mlResult.risk_score(),
+                mlResult.risk_level(),
+                mlResult.prediction());
+        Decision finalDecision = policyEngine.evaluate(policyRequest);
+
         return new AnalyzeResponse(
                 mlResult.url(),
                 mlResult.phishing_probability(),
                 mlResult.risk_score(),
                 mlResult.risk_level(),
                 mlResult.prediction(),
-                mlResult.decision(),
+                finalDecision.name(),
                 mlResult.threshold(),
                 mlResult.reasons());
     }
