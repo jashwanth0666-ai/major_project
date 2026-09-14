@@ -13,9 +13,6 @@ from .config import (
 )
 from .integrity import ModelIntegrityError, verify_model
 
-# Import the existing ML inference implementation.
-# Adjust this import only if your existing detector module has a
-# different location/name.
 from phase5_inference import WatchDogDetector
 
 
@@ -43,7 +40,7 @@ async def lifespan(app: FastAPI):
             EXPECTED_MODEL_SHA256,
         )
 
-        detector = WatchDogDetector(str(MODEL_PATH))
+        detector = WatchDogDetector(MODEL_PATH)
 
     except (ModelIntegrityError, FileNotFoundError, OSError, RuntimeError) as exc:
         # Fail closed: the API process may remain reachable for health

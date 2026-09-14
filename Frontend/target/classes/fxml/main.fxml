@@ -1,18 +1,247 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.geometry.Insets?>
 <StackPane fx:id="root" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.aiwatchdog.controller.MainController" styleClass="app-root">
-  <VBox fx:id="welcomePage" alignment="CENTER" spacing="18" styleClass="welcome-page"><Label text="◈" styleClass="welcome-mark"/><Label text="AI WatchDog" styleClass="welcome-title"/><Label text="AI-Driven Phishing Detection &amp; Secure Access" styleClass="welcome-subtitle"/><Label text="PROTOTYPE SIMULATION  /  SECURITY INTELLIGENCE" styleClass="eyebrow"/><Label text="Intelligent protection for every website you visit." styleClass="welcome-copy"/><HBox spacing="8" styleClass="status-pill"><Label text="●"/><Label text="Protection engine ready"/></HBox><Button text="Start Protection  →" onAction="#startProtection" styleClass="primary-button"/><Label text="Academic demonstration prototype • no live browser interception" styleClass="muted"/></VBox>
-  <VBox fx:id="setupPage" alignment="CENTER" spacing="20" styleClass="setup-page" visible="false"><Label text="Let's secure your browsing" styleClass="page-title"/><Label text="Configure three in-memory protection policies for this demo session." styleClass="page-subtitle"/><VBox styleClass="setup-card" spacing="16"><HBox spacing="14"><Label text="01" styleClass="step-number"/><VBox><Label text="URL Protection" styleClass="section-title"/><Label text="Inspect simulated browser events for phishing indicators." styleClass="muted"/></VBox><Region HBox.hgrow="ALWAYS"/><CheckBox selected="true"/></HBox><HBox spacing="14"><Label text="02" styleClass="step-number"/><VBox><Label text="Secure Access" styleClass="section-title"/><Label text="Apply allow, warn, restrict, or block decisions." styleClass="muted"/></VBox><Region HBox.hgrow="ALWAYS"/><CheckBox selected="true"/></HBox><HBox spacing="14"><Label text="03" styleClass="step-number"/><VBox><Label text="Threat Notifications" styleClass="section-title"/><Label text="Keep your security activity timeline current." styleClass="muted"/></VBox><Region HBox.hgrow="ALWAYS"/><CheckBox selected="true"/></HBox></VBox><Button text="Protection Ready  →" onAction="#completeSetup" styleClass="primary-button"/></VBox>
-  <BorderPane fx:id="appShell" styleClass="shell" visible="false"><left><VBox styleClass="sidebar" spacing="8"><VBox styleClass="brand"><Label text="◈" styleClass="brand-mark"/><VBox><Label text="AI WatchDog" styleClass="brand-name"/></VBox></VBox><Label text="SECURITY WORKSPACE" styleClass="nav-label"/><Button text="Overview" onAction="#navigateDashboard" styleClass="nav-button"/><Button text="URL Scanner" onAction="#navigateScanner" styleClass="nav-button"/><Button text="Secure Access" onAction="#navigateDashboard" styleClass="nav-button"/><Button text="Threat Center" onAction="#navigateThreats" styleClass="nav-button"/><Button text="Activity" onAction="#navigateActivity" styleClass="nav-button"/><Button text="AI Insights" onAction="#navigateInsights" styleClass="nav-button"/><Button text="Settings" onAction="#navigateSettings" styleClass="nav-button"/><Region VBox.vgrow="ALWAYS"/><HBox spacing="7" styleClass="demo-badge"><Label text="●"/><Label text="DEMO MODE  •  ENGINE ACTIVE"/></HBox></VBox></left><center><VBox><HBox alignment="CENTER_LEFT" styleClass="topbar"><VBox><Label text="Security overview" styleClass="top-title"/><Label text="Your system at a glance" styleClass="muted"/></VBox><Region HBox.hgrow="ALWAYS"/><Label text="PROTECTED" styleClass="active-badge"/><Button text="Simulate Browser Event" onAction="#simulateRandom" styleClass="outline-button"/></HBox><StackPane fx:id="pageStack" styleClass="page-stack">
-    <VBox fx:id="dashboardPage" spacing="16" styleClass="page"><HBox spacing="14"><VBox HBox.hgrow="ALWAYS" styleClass="hero-card"><Label text="PROTECTION ACTIVE" styleClass="eyebrow"/><Label text="Your system is actively protected" styleClass="hero-title"/><Label text="AI WatchDog evaluates simulated browser events with a transparent, deterministic demo engine." styleClass="muted" wrapText="true"/><Label text="●  Automatic protection enabled" styleClass="small-status"/></VBox><VBox prefWidth="225" styleClass="score-card"><Label text="FLEET RISK INDEX" styleClass="eyebrow"/><Label fx:id="dashboardScore" text="12 / 100" styleClass="score-number"/><ProgressBar progress="0.12" maxWidth="1.7976931348623157E308"/><Label text="Threat probability is negligible" styleClass="muted"/></VBox></HBox><HBox spacing="12"><VBox styleClass="stat-card" HBox.hgrow="ALWAYS"><Label text="SCANNED URLS" styleClass="eyebrow"/><Label fx:id="scannedCount" text="1,284" styleClass="stat-number"/><Label text="This session" styleClass="muted"/></VBox><VBox styleClass="stat-card" HBox.hgrow="ALWAYS"><Label text="BLOCKED" styleClass="eyebrow"/><Label fx:id="blockedCount" text="37" styleClass="stat-number danger-text"/><Label text="Threats mitigated" styleClass="muted"/></VBox><VBox styleClass="stat-card" HBox.hgrow="ALWAYS"><Label text="ALLOWED" styleClass="eyebrow"/><Label text="1,221" styleClass="stat-number safe-text"/><Label text="Trusted destinations" styleClass="muted"/></VBox><VBox styleClass="stat-card" HBox.hgrow="ALWAYS"><Label text="SUSPICIOUS" styleClass="eyebrow"/><Label text="26" styleClass="stat-number warning-text"/><Label text="Needs attention" styleClass="muted"/></VBox></HBox><HBox spacing="14" VBox.vgrow="ALWAYS"><VBox styleClass="panel" HBox.hgrow="ALWAYS"><HBox><Label text="Live Browsing Protection" styleClass="section-title"/><Region HBox.hgrow="ALWAYS"/><Label fx:id="activityStatus" text="Realtime event bus connected" styleClass="muted"/></HBox><ListView fx:id="activityList" VBox.vgrow="ALWAYS"/></VBox><VBox prefWidth="260" styleClass="panel" spacing="10"><Label text="Quick Security Tools" styleClass="section-title"/><Label text="Run isolated demo assessments." styleClass="muted" wrapText="true"/><Button text="Simulate Safe URL" onAction="#simulateSafe" styleClass="safe-button"/><Button text="Simulate Suspicious URL" onAction="#simulateSuspicious" styleClass="warning-button"/><Button text="Simulate Phishing URL" onAction="#simulatePhishing" styleClass="danger-button"/></VBox></HBox></VBox>
-    <VBox fx:id="scannerPage" visible="false" spacing="16" styleClass="page"><Label text="URL Scanner" styleClass="page-title"/><Label text="A manual secondary tool using the same prototype detection pipeline." styleClass="page-subtitle"/><HBox spacing="10" styleClass="search-row"><TextField fx:id="urlInput" promptText="https://example.com/login" HBox.hgrow="ALWAYS"/><Button text="Analyze URL" onAction="#analyzeManual" styleClass="primary-button"/></HBox><VBox styleClass="panel" spacing="10"><Label text="Demo URLs" styleClass="section-title"/><HBox spacing="10"><Button text="Safe" onAction="#simulateSafe" styleClass="safe-button"/><Button text="Suspicious" onAction="#simulateSuspicious" styleClass="warning-button"/><Button text="Phishing" onAction="#simulatePhishing" styleClass="danger-button"/></HBox></VBox></VBox>
-    <VBox fx:id="analysisPage" visible="false" alignment="CENTER" spacing="18" styleClass="page"><Label text="AI MODEL CLASSIFICATION PIPELINE" styleClass="eyebrow"/><Label text="Analyzing detected URL" styleClass="page-title"/><Label fx:id="analysisUrl" styleClass="url-label"/><ProgressBar fx:id="analysisProgress" progress="0.2" prefWidth="460"/><Label fx:id="analysisStage" text="Extracting URL features..." styleClass="muted"/><VBox styleClass="analysis-stages"><Label text="✓  URL detected"/><Label text="✓  Features extracted"/><Label text="◌  Evaluating security indicators"/><Label text="○  Calculating risk and access decision"/></VBox></VBox>
-    <VBox fx:id="resultPage" visible="false" spacing="16" styleClass="page"><Label text="SECURITY RESULT" styleClass="eyebrow"/><Label fx:id="resultTitle" text="ACCESS BLOCKED" styleClass="result-title"/><Label fx:id="resultSubtitle" text="Phishing website detected" styleClass="page-subtitle"/><HBox spacing="14"><VBox prefWidth="240" styleClass="score-card"><Label text="AI RISK SCORE" styleClass="eyebrow"/><Label fx:id="resultScore" text="94 / 100" styleClass="score-number danger-text"/><Label fx:id="resultDecision" text="ACCESS BLOCKED" styleClass="decision-label"/></VBox><VBox styleClass="panel" HBox.hgrow="ALWAYS"><Label text="Why this decision was made" styleClass="section-title"/><Label fx:id="resultReason" wrapText="true" styleClass="reason-text"/><Label text="Extracted features" styleClass="section-title"/><ListView fx:id="featureList" prefHeight="120"/></VBox></HBox><HBox spacing="10"><Button text="Return to Safety" onAction="#backToDashboard" styleClass="primary-button"/><Button fx:id="proceedButton" text="Proceed Anyway" onAction="#proceedAnyway" styleClass="outline-button"/></HBox></VBox>
-    <VBox fx:id="threatsPage" visible="false" spacing="16" styleClass="page"><Label text="Threat Center" styleClass="page-title"/><Label text="Recent suspicious and blocked activity." styleClass="page-subtitle"/><VBox styleClass="panel" VBox.vgrow="ALWAYS"><HBox><Label text="Threat ledger" styleClass="section-title"/><Region HBox.hgrow="ALWAYS"/><Label text="37 blocked" styleClass="danger-text"/></HBox><ListView fx:id="threatList" VBox.vgrow="ALWAYS"/></VBox></VBox>
-    <VBox fx:id="activityPage" visible="false" spacing="16" styleClass="page"><Label text="Activity" styleClass="page-title"/><Label text="Chronological prototype security decisions." styleClass="page-subtitle"/><VBox styleClass="panel" VBox.vgrow="ALWAYS"><Label text="Event timeline" styleClass="section-title"/><Label text="The live dashboard stream is updated after every demo analysis." styleClass="muted"/><ListView VBox.vgrow="ALWAYS"/></VBox></VBox>
-    <VBox fx:id="insightsPage" visible="false" spacing="16" styleClass="page"><Label text="AI Insights &amp; Detection Model Forensics" styleClass="page-title"/><Label text="Research-reference metrics are shown for demonstration only." styleClass="page-subtitle"/><HBox spacing="14"><VBox styleClass="panel" HBox.hgrow="ALWAYS"><Label text="ACTIVE MODEL" styleClass="eyebrow"/><Label text="Random Forest" styleClass="insight-value"/><Label text="Supervised Machine Learning" styleClass="muted"/><Label text="Reference model performance — research result" styleClass="reference-label"/><Label text="Accuracy 97.8%   Precision 98.1%   Recall 96.9%   F1 97.5%   AUC 0.99" styleClass="muted" wrapText="true"/></VBox><VBox styleClass="panel" HBox.hgrow="ALWAYS"><Label text="FEATURE IMPORTANCE" styleClass="section-title"/><Label text="URL Structure       ████████████"/><Label text="IP Address          ██████████"/><Label text="HTTPS               █████████"/><Label text="Keywords            ███████"/><Label text="Subdomains         █████"/></VBox></HBox><VBox styleClass="panel"><Label text="Technical detection pipeline" styleClass="section-title"/><Label text="Simulated browser event  →  Feature extraction  →  Demo engine  →  Risk engine  →  Access decision" styleClass="muted" wrapText="true"/></VBox></VBox>
-    <VBox fx:id="settingsPage" visible="false" spacing="16" styleClass="page"><Label text="Settings" styleClass="page-title"/><Label text="Configure the in-memory prototype session." styleClass="page-subtitle"/><VBox styleClass="panel" spacing="14"><Label text="Protection" styleClass="section-title"/><HBox><Label text="URL Protection"/><Region HBox.hgrow="ALWAYS"/><CheckBox selected="true"/></HBox><HBox><Label text="Secure Access"/><Region HBox.hgrow="ALWAYS"/><CheckBox selected="true"/></HBox><HBox><Label text="Threat Notifications"/><Region HBox.hgrow="ALWAYS"/><CheckBox selected="true"/></HBox><HBox><Label text="Automatic Protection"/><Region HBox.hgrow="ALWAYS"/><CheckBox selected="true"/></HBox><Separator/><Label text="Detection sensitivity: Balanced" styleClass="section-title"/><Label text="Mode: Normal User + Technical details in AI Insights" styleClass="muted"/></VBox></VBox>
-  </StackPane></VBox></center></BorderPane>
-  <Label fx:id="toast" text="Protection is active" visible="false" styleClass="toast" StackPane.alignment="BOTTOM_CENTER"/>
+
+  <VBox fx:id="welcomePage" alignment="CENTER" styleClass="welcome-page-new">
+    <VBox alignment="CENTER" spacing="12" VBox.vgrow="ALWAYS">
+      <ImageView fx:id="logoImage" fitWidth="320" preserveRatio="true">
+        <image>
+          <Image url="@../images/logo.png"/>
+        </image>
+      </ImageView>
+      <Label text="AI WATCHDOG" styleClass="welcome-title-new"/>
+      <Label text="SECURITY IN EVERY CLICK" styleClass="welcome-subtitle-new"/>
+      <Region prefHeight="60"/>
+    </VBox>
+    <Button text="GET STARTED  -&gt;" onAction="#startProtection" styleClass="get-started-button"/>
+    <Region prefHeight="50"/>
+  </VBox>
+
+  <VBox fx:id="setupPage" alignment="CENTER" spacing="20" styleClass="setup-page" visible="false">
+    <VBox alignment="CENTER" spacing="12">
+        <Label text="Initialization" styleClass="eyebrow-accent"/>
+        <Label text="Secure Your Workspace" styleClass="page-title"/>
+        <Label text="Review and activate protective boundaries before starting." styleClass="page-subtitle"/>
+    </VBox>
+    <VBox styleClass="setup-card" spacing="16">
+      <HBox spacing="14" alignment="CENTER_LEFT" styleClass="setup-row">
+        <Label text="01" styleClass="step-number"/>
+        <VBox HBox.hgrow="ALWAYS">
+          <Label text="Real-time URL Protection" styleClass="section-title"/>
+          <Label text="Inspect network events for phishing indicators." styleClass="muted"/>
+        </VBox>
+        <CheckBox selected="true"/>
+      </HBox>
+      <HBox spacing="14" alignment="CENTER_LEFT" styleClass="setup-row">
+        <Label text="02" styleClass="step-number"/>
+        <VBox HBox.hgrow="ALWAYS">
+          <Label text="Telemetry &amp; Alerts" styleClass="section-title"/>
+          <Label text="Stream analytical indicators to the dashboard." styleClass="muted"/>
+        </VBox>
+        <CheckBox selected="true"/>
+      </HBox>
+    </VBox>
+    <Button text="Activate Protection System" onAction="#completeSetup" styleClass="primary-button, large-button"/>
+  </VBox>
+
+  <BorderPane fx:id="appShell" styleClass="shell" visible="false">
+    <left>
+      <VBox styleClass="sidebar" spacing="8">
+        <VBox styleClass="brand-container" alignment="CENTER_LEFT">
+          <HBox spacing="10" alignment="CENTER_LEFT">
+             <Label text="?" styleClass="brand-logo-icon"/>
+             <Label text="AI WatchDog" styleClass="brand-name"/>
+          </HBox>
+          <Label text="ENTERPRISE EDITION" styleClass="brand-subtitle"/>
+        </VBox>
+        <VBox spacing="4" VBox.vgrow="ALWAYS" styleClass="nav-menu">
+            <Label text="WORKSPACE" styleClass="nav-section-title"/>
+            <Button text="Security Overview" onAction="#navigateDashboard" styleClass="nav-button, nav-active"/>
+            <Button text="Threat Inspector" onAction="#navigateScanner" styleClass="nav-button"/>
+            <Button text="Event Telemetry" onAction="#navigateActivity" styleClass="nav-button"/>
+            <Button text="AI Risk Insights" onAction="#navigateInsights" styleClass="nav-button"/>
+            
+            <Region prefHeight="16"/>
+            <Label text="ADMINISTRATION" styleClass="nav-section-title"/>
+            <Button text="Policy Controls" onAction="#navigateSecurityControls" styleClass="nav-button"/>
+            <Button text="System Settings" onAction="#navigateSettings" styleClass="nav-button"/>
+        </VBox>
+        <HBox spacing="8" styleClass="status-footer" alignment="CENTER_LEFT">
+          <Region styleClass="pulse-indicator-active"/>
+          <Label text="ENGINE ONLINE" styleClass="status-footer-text"/>
+        </HBox>
+      </VBox>
+    </left>
+    <center>
+      <VBox>
+        <HBox alignment="CENTER_LEFT" styleClass="topbar">
+          <Label text="Security Overview" styleClass="topbar-title"/>
+          <Region HBox.hgrow="ALWAYS"/>
+          <HBox spacing="12" alignment="CENTER">
+             <Label text="WORKSPACE PROTECTED" styleClass="badge, badge-safe"/>
+             <Button text="Test Event Bus" onAction="#simulateRandom" styleClass="secondary-button"/>
+          </HBox>
+        </HBox>
+        
+        <StackPane fx:id="pageStack" styleClass="page-stack" VBox.vgrow="ALWAYS">
+          
+          <!-- Dashboard Page -->
+          <VBox fx:id="dashboardPage" spacing="20" styleClass="page">
+            <!-- Top Stats Row -->
+            <HBox spacing="16">
+              <VBox styleClass="hero-card, card" HBox.hgrow="ALWAYS">
+                <HBox alignment="CENTER_LEFT">
+                   <Label text="PROTECTION ACTIVE" styleClass="eyebrow-safe"/>
+                   <Region HBox.hgrow="ALWAYS"/>
+                   <Region styleClass="pulse-indicator-active"/>
+                </HBox>
+                <Label text="Workspace is secured" styleClass="hero-title"/>
+                <Label text="AI WatchDog is actively intercepting and analyzing background telemetry." styleClass="muted" wrapText="true"/>
+              </VBox>
+              <VBox styleClass="score-card, card" prefWidth="240">
+                <Label text="FLEET RISK INDEX" styleClass="eyebrow"/>
+                <Label fx:id="dashboardScore" text="0 / 100" styleClass="score-number"/>
+                <ProgressBar progress="0.0" maxWidth="Double.MAX_VALUE" styleClass="risk-progress"/>
+                <ProgressBar progress="0.0" maxWidth="Infinity" styleClass="risk-progress"/>
+                <Label text="Awaiting data..." styleClass="muted"/>
+              </VBox>
+            </HBox>
+            <!-- Secondary Stats -->
+            <HBox spacing="16">
+              <VBox styleClass="stat-card, card" HBox.hgrow="ALWAYS">
+                <Label text="EVENTS INSPECTED" styleClass="eyebrow"/>
+                <Label fx:id="scannedCount" text="0" styleClass="stat-number"/>
+              </VBox>
+              <VBox styleClass="stat-card, card" HBox.hgrow="ALWAYS">
+                <Label text="THREATS BLOCKED" styleClass="eyebrow"/>
+                <Label fx:id="blockedCount" text="0" styleClass="stat-number, text-danger"/>
+              </VBox>
+              <VBox styleClass="stat-card, card" HBox.hgrow="ALWAYS">
+                <Label text="AI CONFIDENCE" styleClass="eyebrow"/>
+                <Label text="98.2%" styleClass="stat-number, text-accent"/>
+              </VBox>
+            </HBox>
+            <!-- Bottom Panels -->
+            <HBox spacing="16" VBox.vgrow="ALWAYS">
+              <VBox styleClass="panel, card" HBox.hgrow="ALWAYS">
+                <HBox alignment="CENTER_LEFT" spacing="8">
+                  <Label text="Recent Interceptions" styleClass="panel-title"/>
+                  <Region HBox.hgrow="ALWAYS"/>
+                  <Label text="Live Feed" styleClass="eyebrow-accent"/>
+                </HBox>
+                <ListView fx:id="activityList" VBox.vgrow="ALWAYS" styleClass="clean-list"/>
+              </VBox>
+              <VBox prefWidth="280" styleClass="panel, card" spacing="12">
+                <Label text="Simulation Tools" styleClass="panel-title"/>
+                <Label text="Inject mock telemetry into the decision engine." styleClass="muted" wrapText="true"/>
+                <Button text="Inject Clean Payload" onAction="#simulateSafe" styleClass="outline-button, w-full"/>
+                <Button text="Inject Suspicious Signal" onAction="#simulateSuspicious" styleClass="outline-button, outline-warn, w-full"/>
+                <Button text="Inject Malicious Exploit" onAction="#simulatePhishing" styleClass="outline-button, outline-danger, w-full"/>
+              </VBox>
+            </HBox>
+          </VBox>
+
+          <!-- Scanner Page -->
+          <VBox fx:id="scannerPage" visible="false" spacing="20" styleClass="page">
+            <VBox styleClass="card" spacing="16">
+                <Label text="Threat Inspector" styleClass="page-title"/>
+                <Label text="Manually submit a payload URL for AI verification." styleClass="page-subtitle"/>
+                <HBox spacing="8" styleClass="search-bar-container">
+                  <TextField fx:id="urlInput" promptText="https://..." HBox.hgrow="ALWAYS" styleClass="search-input"/>
+                  <Button fx:id="analyzeBtn" text="Analyze Target" onAction="#analyzeManual" styleClass="primary-button"/>
+                </HBox>
+            </VBox>
+            <VBox styleClass="card" spacing="12" VBox.vgrow="ALWAYS">
+                <Label text="Quick Tests" styleClass="panel-title"/>
+                <HBox spacing="12">
+                  <Button text="Test Safe Target" onAction="#simulateSafe" styleClass="secondary-button"/>
+                  <Button text="Test Suspicious Target" onAction="#simulateSuspicious" styleClass="secondary-button"/>
+                </HBox>
+            </VBox>
+          </VBox>
+
+          <!-- Analysis Loading Page -->
+          <VBox fx:id="analysisPage" visible="false" alignment="CENTER" spacing="24" styleClass="page, loading-page">
+            <ProgressIndicator fx:id="analysisProgress" prefWidth="64" prefHeight="64"/>
+            <VBox alignment="CENTER" spacing="8">
+                <Label text="ANALYZING TARGET" styleClass="eyebrow-accent"/>
+                <Label fx:id="analysisUrl" text="..." styleClass="mono-title"/>
+                <Label fx:id="analysisStage" text="Establishing secure connection..." styleClass="muted"/>
+            </VBox>
+          </VBox>
+
+          <!-- Result Page -->
+          <VBox fx:id="resultPage" visible="false" spacing="20" styleClass="page">
+            <HBox spacing="16">
+              <VBox styleClass="card, result-hero" prefWidth="280" alignment="CENTER" spacing="12">
+                <Label text="SYSTEM DECISION" styleClass="eyebrow"/>
+                <Label fx:id="resultTitle" text="DECISION" styleClass="result-decision-text"/>
+                <Label fx:id="resultDecision" text="Policy Decision Details" styleClass="muted, text-center" wrapText="true"/>
+              </VBox>
+              <VBox styleClass="card" HBox.hgrow="ALWAYS" spacing="16">
+                <Label text="AI Risk Assessment" styleClass="panel-title"/>
+                <Label fx:id="resultSubtitle" text="Prediction details" styleClass="hero-title"/>
+                <HBox spacing="24">
+                   <VBox>
+                      <Label text="RISK SCORE" styleClass="eyebrow"/>
+                      <Label fx:id="resultScore" text="0 / 100" styleClass="mono-metric"/>
+                   </VBox>
+                   <VBox>
+                      <Label text="THREAT ENGINE" styleClass="eyebrow"/>
+                      <Label text="Ensemble v2.4" styleClass="mono-metric"/>
+                   </VBox>
+                </HBox>
+                <Separator/>
+                <Label text="Diagnostic Traces" styleClass="eyebrow"/>
+                <Label fx:id="resultReason" wrapText="true" styleClass="mono-text"/>
+              </VBox>
+            </HBox>
+            <HBox spacing="12" alignment="CENTER_LEFT">
+              <Button text="? Return to Workspace" onAction="#backToDashboard" styleClass="secondary-button"/>
+              <Region HBox.hgrow="ALWAYS"/>
+              <Button fx:id="proceedButton" text="Bypass Restriction (Admin)" onAction="#proceedAnyway" styleClass="destructive-button"/>
+            </HBox>
+          </VBox>
+
+          <!-- Other Pages Skeleton -->
+          <VBox fx:id="activityPage" visible="false" spacing="20" styleClass="page">
+            <Label text="Event Telemetry" styleClass="page-title"/>
+            <VBox styleClass="card" VBox.vgrow="ALWAYS" spacing="12">
+                <Label text="Backend event storage is not currently implemented." styleClass="muted"/>
+                <ListView fx:id="threatList" VBox.vgrow="ALWAYS" styleClass="clean-list"/>
+            </VBox>
+          </VBox>
+
+          <VBox fx:id="insightsPage" visible="false" spacing="20" styleClass="page">
+            <Label text="AI Risk Insights" styleClass="page-title"/>
+            <VBox styleClass="card" VBox.vgrow="ALWAYS" alignment="CENTER">
+                <Label text="Telemetry API required for visualizations." styleClass="muted"/>
+            </VBox>
+          </VBox>
+
+          <VBox fx:id="settingsPage" visible="false" spacing="20" styleClass="page">
+            <Label text="System Settings" styleClass="page-title"/>
+            <VBox styleClass="card" spacing="16">
+              <Label text="General Protection Controls" styleClass="panel-title"/>
+              <HBox styleClass="setup-row"><Label text="Active Deep Inspection"/><Region HBox.hgrow="ALWAYS"/><CheckBox selected="true"/></HBox>
+              <HBox styleClass="setup-row"><Label text="Report Telemetry Anonymously"/><Region HBox.hgrow="ALWAYS"/><CheckBox selected="true"/></HBox>
+            </VBox>
+          </VBox>
+
+          <VBox fx:id="errorPage" visible="false" alignment="CENTER" spacing="20" styleClass="page">
+            <Label text="SYSTEM FAULT" styleClass="eyebrow-danger"/>
+            <Label text="Connection Failed" styleClass="page-title"/>
+            <Label fx:id="errorMessageLabel" text="Backend engine unreachable." styleClass="mono-text"/>
+            <Button text="Retry Connection" onAction="#retryConnection" styleClass="primary-button"/>
+          </VBox>
+
+        </StackPane>
+      </VBox>
+    </center>
+  </BorderPane>
+  
+  <Label fx:id="toast" text="Notification" visible="false" styleClass="toast" StackPane.alignment="BOTTOM_CENTER"/>
 </StackPane>

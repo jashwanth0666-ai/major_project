@@ -113,3 +113,6 @@ data/phishing_master.csv
 data/label_conflicts.csv
 datasets/
 data/dataset_report.txt
+
+convert_svg.py
+trash/

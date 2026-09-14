@@ -1,1 +1,16 @@
+com\aiwatchdog\model\AnalyzeResponse.class
+com\aiwatchdog\service\ApiService.class
+com\aiwatchdog\model\AccessDecision.class
+com\aiwatchdog\controller\MainController.class
+com\aiwatchdog\service\AccessControllerService.class
+com\aiwatchdog\controller\MainController$1.class
 com\aiwatchdog\service\AccessControllerService$1.class
+com\aiwatchdog\service\BrowserMonitorService.class
+com\aiwatchdog\service\DemoPhishingDetectionEngine.class
+com\aiwatchdog\MainApp.class
+com\aiwatchdog\service\URLFeatureExtractor.class
+com\aiwatchdog\model\AnalyzeRequest.class
+com\aiwatchdog\model\ThreatLevel.class
+com\aiwatchdog\service\PhishingDetectionEngine.class
+com\aiwatchdog\model\AnalysisResult.class
+com\aiwatchdog\service\DemoModeService.class
