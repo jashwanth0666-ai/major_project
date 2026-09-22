@@ -39,12 +39,24 @@ public class MainController {
     private ListView<String> threatList, activityList, featureList;
     @FXML
     private Button proceedButton, analyzeBtn;
+    @FXML
+    private VBox sidebar;
 
     private final ApiService apiService = new ApiService();
     private final com.aiwatchdog.service.BrowserMonitorService browser = new com.aiwatchdog.service.BrowserMonitorService();
     private int scanned = 0;
     private int blocked = 0;
     private final DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("HH:mm");
+    private boolean sidebarVisible = true;
+
+    @FXML
+    private void toggleSidebar() {
+        if (sidebar != null) {
+            sidebarVisible = !sidebarVisible;
+            sidebar.setVisible(sidebarVisible);
+            sidebar.setManaged(sidebarVisible);
+        }
+    }
 
     @FXML
     private void initialize() {

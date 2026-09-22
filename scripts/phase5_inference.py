@@ -78,40 +78,42 @@ SHORTENER_DOMAINS = {
     "ow.ly",
     "is.gd",
     "buff.ly",
-    "cutt.ly",
-    "rb.gy",
-    "shorturl.at",
     "rebrand.ly",
-    "tiny.cc",
+    "cutt.ly",
+    "shorturl.at",
+    "short.me",
+    "shortme.id",
 }
 
 SUSPICIOUS_KEYWORDS = {
     "login",
     "signin",
+    "sign-in",
     "verify",
     "verification",
+    "authenticate",
+    "authentication",
     "account",
+    "password",
+    "credential",
     "secure",
     "security",
     "update",
     "confirm",
-    "password",
-    "credential",
+    "confirmation",
+    "wallet",
     "bank",
     "payment",
+    "billing",
     "invoice",
-    "wallet",
-    "paypal",
-    "webscr",
-    "authenticate",
-    "auth",
     "recover",
+    "recovery",
     "unlock",
+    "suspend",
     "suspended",
-    "bonus",
-    "free",
-    "claim",
-    "gift",
+    "alert",
+    "webscr",
+    "validate",
 }
 
 IPV4_RE = re.compile(
@@ -140,105 +142,120 @@ def safe_entropy(text: str) -> float:
 
 
 def normalize_url(url: str) -> str:
-    """Normalize only enough to make URL parsing reliable."""
+    """Match the URL normalization used to build the training master data."""
     url = str(url).strip()
 
     if not url:
         raise ValueError("URL is empty.")
 
+    url = url.replace(" ", "")
+
     if not re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", url):
         url = "http://" + url
 
-    return url
+    try:
+        parsed = urlparse(url)
+        hostname = parsed.hostname
+    except ValueError as exc:
+        raise ValueError("URL does not contain a valid host.") from exc
+
+    if not parsed.netloc or not hostname:
+        raise ValueError("URL does not contain a valid host.")
+
+    scheme = parsed.scheme.lower()
+    netloc = re.sub(r":80$", "", parsed.netloc)
+    netloc = re.sub(r":443$", "", netloc)
+    path = parsed.path.rstrip("/")
+
+    return (
+        scheme + "://" + netloc.lower() + path
+        + (("?" + parsed.query) if parsed.query else "")
+    )
+
+
+def _is_ip_address(hostname: str) -> int:
+    return int(bool(IPV4_RE.fullmatch(hostname)))
+
+
+def _training_entropy(text: str) -> float:
+    if not text:
+        return 0.0
+
+    probabilities = [text.count(char) / len(text) for char in set(text)]
+    return float(
+        -sum(probability * math.log2(probability) for probability in probabilities)
+    )
+
+
+def _training_base_features(url: str, parsed) -> dict:
+    hostname = (parsed.hostname or "").lower()
+    path = parsed.path or ""
+    query = parsed.query or ""
+    domain_parts = hostname.split(".")
+    is_ip = _is_ip_address(hostname)
+
+    return {
+        "url_length": len(url),
+        "domain_length": len(hostname),
+        "subdomain_count": 0 if is_ip else max(len(domain_parts) - 2, 0),
+        "path_length": len(path),
+        "query_length": len(query),
+        "has_ip": is_ip,
+        "has_https": int(parsed.scheme.lower() == "https"),
+        "has_at": int("@" in url),
+        "has_dash": int("-" in hostname),
+        "has_multiple_subdomains": int(
+            (0 if is_ip else max(len(domain_parts) - 2, 0)) > 1
+        ),
+        "special_char_count": len(re.findall(r"[^a-zA-Z0-9]", url)),
+        "digit_count": len(re.findall(r"\d", url)),
+        "entropy": _training_entropy(url),
+        "has_shortener": int(hostname in SHORTENER_DOMAINS),
+        "suspicious_keyword_count": sum(
+            keyword in url.lower() for keyword in SUSPICIOUS_KEYWORDS
+        ),
+    }
+
+
+def _engineered_features(url: str, hostname: str, path: str, query: str) -> dict:
+    stripped_path = path.strip("/")
+
+    return {
+        "dot_count": url.count("."),
+        "slash_count": url.count("/"),
+        "hyphen_count": url.count("-"),
+        "percent_encoded_count": len(re.findall(r"%[0-9A-Fa-f]{2}", url)),
+        "query_parameter_count": 0 if not query else query.count("&") + 1,
+        "uppercase_count": len(re.findall(r"[A-Z]", url)),
+        "domain_digit_count": len(re.findall(r"\d", hostname)),
+        "domain_entropy": _training_entropy(hostname),
+        "path_segment_count": 0 if not stripped_path else stripped_path.count("/") + 1,
+        "digit_ratio": len(re.findall(r"\d", url)) / len(url) if url else 0.0,
+    }
 
 
 def extract_features(url: str) -> dict:
-    """
-    Reproduce the 25 Phase 4 features.
-
-    This function intentionally uses only URL-derived information.
-    No DNS, WHOIS, webpage content, or external network request is made.
-    """
+    """Extract the exact 25 features used by Phase 4 training."""
     url = normalize_url(url)
+
     parsed = urlparse(url)
 
     hostname = (parsed.hostname or "").lower()
     path = parsed.path or ""
     query = parsed.query or ""
 
-    # Preserve the original URL text for character-level features.
-    raw = url
-
-    labels = [x for x in hostname.split(".") if x]
-
-    # For a normal domain:
-    # example.com -> 0 subdomains
-    # login.example.com -> 1 subdomain
-    # a.b.example.com -> 2 subdomains
-    subdomain_count = max(len(labels) - 2, 0)
-
-    has_ip = int(bool(IPV4_RE.fullmatch(hostname)))
-
-    # URL path segments, excluding empty components.
-    path_segment_count = len(
-        [segment for segment in path.split("/") if segment]
-    )
-
-    query_parameter_count = (
-        len([x for x in query.split("&") if x])
-        if query
-        else 0
-    )
-
-    digits = sum(ch.isdigit() for ch in raw)
-    uppercase = sum(ch.isupper() for ch in raw)
-    letters = sum(ch.isalpha() for ch in raw)
-    special = sum(not ch.isalnum() for ch in raw)
-
-    digit_ratio = digits / len(raw) if raw else 0.0
-
-    suspicious_keyword_count = sum(
-        1
-        for keyword in SUSPICIOUS_KEYWORDS
-        if keyword in raw.lower()
-    )
-
-    has_shortener = int(
-        hostname in SHORTENER_DOMAINS
-        or any(hostname.endswith("." + d) for d in SHORTENER_DOMAINS)
-    )
-
-    percent_encoded_count = len(re.findall(r"%[0-9A-Fa-f]{2}", raw))
-
-    features = {
-        "url_length": len(raw),
-        "domain_length": len(hostname),
-        "subdomain_count": subdomain_count,
-        "path_length": len(path),
-        "query_length": len(query),
-        "has_ip": has_ip,
-        "has_https": int(parsed.scheme.lower() == "https"),
-        "has_at": int("@" in raw),
-        "has_dash": int("-" in raw),
-        "has_multiple_subdomains": int(subdomain_count >= 2),
-        "special_char_count": special,
-        "digit_count": digits,
-        "entropy": safe_entropy(raw),
-        "has_shortener": has_shortener,
-        "suspicious_keyword_count": suspicious_keyword_count,
-        "dot_count": raw.count("."),
-        "slash_count": raw.count("/"),
-        "hyphen_count": raw.count("-"),
-        "percent_encoded_count": percent_encoded_count,
-        "query_parameter_count": query_parameter_count,
-        "uppercase_count": uppercase,
-        "domain_digit_count": sum(ch.isdigit() for ch in hostname),
-        "domain_entropy": safe_entropy(hostname),
-        "path_segment_count": path_segment_count,
-        "digit_ratio": digit_ratio,
-    }
+    features = _training_base_features(url, parsed)
+    features.update(_engineered_features(url, hostname, path, query))
 
     return features
+
+
+def build_model_input(features: dict) -> pd.DataFrame:
+    """Build the float32, ordered matrix expected by the trained model."""
+    return pd.DataFrame(
+        [[features[feature] for feature in FEATURES]],
+        columns=FEATURES,
+    ).astype(np.float32)
 
 
 # ---------------------------------------------------------------------
@@ -329,10 +346,7 @@ class WatchDogDetector:
     def predict(self, url: str) -> dict:
         features = extract_features(url)
 
-        X = pd.DataFrame(
-            [[features[f] for f in FEATURES]],
-            columns=FEATURES,
-        )
+        X = build_model_input(features)
 
         probability = float(self.model.predict_proba(X)[0, 1])
 
@@ -346,16 +360,7 @@ class WatchDogDetector:
         risk_score = int(np.clip(round(probability * 100), 0, 100))
         level = risk_level(risk_score)
 
-        # User-facing security action is deliberately separate from the
-        # Phase 4 ML prediction threshold.
-        if level == "SAFE":
-            decision = "ALLOW"
-        elif level == "LOW RISK":
-            decision = "REVIEW"
-        elif level == "SUSPICIOUS":
-            decision = "WARN"
-        else:
-            decision = "BLOCK"
+
 
         return {
             "url": url,
@@ -363,7 +368,7 @@ class WatchDogDetector:
             "risk_score": risk_score,
             "risk_level": level,
             "prediction": prediction,
-            "decision": decision,
+            
             "threshold": THRESHOLD,
             "reasons": generate_reasons(url, features),
         }

@@ -116,3 +116,4 @@ class AnalysisServiceTest {
                 assertEquals(MlServiceException.FailureType.MALFORMED_RESPONSE, exception.failureType());
         }
 }
+

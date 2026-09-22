@@ -3,6 +3,7 @@ package com.aiwatchdog.service;
 import com.aiwatchdog.model.AnalyzeRequest;
 import com.aiwatchdog.model.AnalyzeResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -36,9 +37,36 @@ public class ApiService {
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() >= 200 && response.statusCode() < 300) {
-            return mapper.readValue(response.body(), AnalyzeResponse.class);
+            if (response.body() == null || response.body().isBlank()) {
+                throw new IOException("Backend returned an empty analysis response.");
+            }
+
+            AnalyzeResponse result = mapper.readValue(response.body(), AnalyzeResponse.class);
+            if (result == null) {
+                throw new IOException("Backend returned an empty analysis response.");
+            }
+            return result;
         } else {
-            throw new RuntimeException("API error: " + response.statusCode() + " - " + response.body());
+            throw new IOException("Backend analysis failed with HTTP " + response.statusCode() + ".");
         }
+    }
+
+    public boolean isBackendHealthy() throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + "/health"))
+                .timeout(Duration.ofSeconds(5))
+                .GET()
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() < 200 || response.statusCode() >= 300
+                || response.body() == null || response.body().isBlank()) {
+            return false;
+        }
+
+        var health = mapper.readTree(response.body());
+        return "OK".equalsIgnoreCase(health.path("status").asText())
+                && "UP".equalsIgnoreCase(health.path("spring_boot").asText())
+                && "UP".equalsIgnoreCase(health.path("ml_service").asText());
     }
 }

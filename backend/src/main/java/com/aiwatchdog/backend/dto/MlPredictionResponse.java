@@ -8,7 +8,6 @@ public record MlPredictionResponse(
         int risk_score,
         String risk_level,
         String prediction,
-        String decision,
         double threshold,
         List<String> reasons) {
 }

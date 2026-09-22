@@ -1,4 +1,5 @@
 P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\controller\MainController.java
+P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\controller\ManualSim.java
 P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\MainApp.java
 P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\model\AccessDecision.java
 P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\model\AnalysisResult.java
@@ -12,3 +13,4 @@ P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\servi
 P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\service\DemoPhishingDetectionEngine.java
 P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\service\PhishingDetectionEngine.java
 P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\service\URLFeatureExtractor.java
+P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\util\ThemeManager.java

@@ -3,6 +3,8 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.image.*?>
 <?import javafx.geometry.Insets?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
 <StackPane fx:id="root" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.aiwatchdog.controller.MainController" styleClass="app-root">
 
   <VBox fx:id="welcomePage" alignment="CENTER" styleClass="welcome-page-new">
@@ -16,73 +18,96 @@
       <Label text="SECURITY IN EVERY CLICK" styleClass="welcome-subtitle-new"/>
       <Region prefHeight="60"/>
     </VBox>
-    <Button text="GET STARTED  -&gt;" onAction="#startProtection" styleClass="get-started-button"/>
+    <Button fx:id="getStartedBtn" text="GET STARTED  -&gt;" onAction="#startProtection" styleClass="get-started-button"/>
     <Region prefHeight="50"/>
   </VBox>
 
+  <!-- Setup Page (Glass Dark) -->
   <VBox fx:id="setupPage" alignment="CENTER" spacing="20" styleClass="setup-page" visible="false">
     <VBox alignment="CENTER" spacing="12">
-        <Label text="Initialization" styleClass="eyebrow-accent"/>
-        <Label text="Secure Your Workspace" styleClass="page-title"/>
-        <Label text="Review and activate protective boundaries before starting." styleClass="page-subtitle"/>
+        <FontIcon iconLiteral="fth-shield" iconSize="48" iconColor="#0EA5E9"/>
+        <Label text="System Initialization" styleClass="page-title"/>
+        <Label fx:id="protectionStatus" text="Configure deep learning telemetry boundaries." styleClass="page-subtitle"/>
     </VBox>
-    <VBox styleClass="setup-card" spacing="16">
+    <VBox styleClass="glass-card" spacing="16" maxWidth="480">
       <HBox spacing="14" alignment="CENTER_LEFT" styleClass="setup-row">
-        <Label text="01" styleClass="step-number"/>
+        <FontIcon iconLiteral="fth-activity" iconSize="24" iconColor="#3B82F6"/>
         <VBox HBox.hgrow="ALWAYS">
-          <Label text="Real-time URL Protection" styleClass="section-title"/>
-          <Label text="Inspect network events for phishing indicators." styleClass="muted"/>
+          <Label text="Manual Inspection Mode" styleClass="section-title"/>
+          <Label text="Submit URLs manually for neural analysis." styleClass="muted"/>
         </VBox>
-        <CheckBox selected="true"/>
+        <CheckBox text="Unavailable" selected="false" disable="true"/>
       </HBox>
       <HBox spacing="14" alignment="CENTER_LEFT" styleClass="setup-row">
-        <Label text="02" styleClass="step-number"/>
+        <FontIcon iconLiteral="fth-cpu" iconSize="24" iconColor="#3B82F6"/>
         <VBox HBox.hgrow="ALWAYS">
-          <Label text="Telemetry &amp; Alerts" styleClass="section-title"/>
-          <Label text="Stream analytical indicators to the dashboard." styleClass="muted"/>
+          <Label text="AI Heuristics Engine" styleClass="section-title"/>
+          <Label text="Submit suspicious URLs to the neural engine for real-time analysis." styleClass="muted"/>
         </VBox>
-        <CheckBox selected="true"/>
+        <CheckBox text="Unavailable" selected="false" disable="true"/>
       </HBox>
     </VBox>
-    <Button text="Activate Protection System" onAction="#completeSetup" styleClass="primary-button, large-button"/>
+    <Button fx:id="completeSetupBtn" text="Initialize Protection Engine" onAction="#completeSetup" styleClass="primary-button large-button"/>
   </VBox>
 
+  <!-- Main Shell -->
   <BorderPane fx:id="appShell" styleClass="shell" visible="false">
     <left>
-      <VBox styleClass="sidebar" spacing="8">
-        <VBox styleClass="brand-container" alignment="CENTER_LEFT">
-          <HBox spacing="10" alignment="CENTER_LEFT">
-             <Label text="?" styleClass="brand-logo-icon"/>
-             <Label text="AI WatchDog" styleClass="brand-name"/>
-          </HBox>
-          <Label text="ENTERPRISE EDITION" styleClass="brand-subtitle"/>
-        </VBox>
+      <VBox fx:id="sidebar" styleClass="sidebar" spacing="8" prefWidth="250">
+        <HBox alignment="CENTER_LEFT" spacing="12" styleClass="brand-container">
+            <FontIcon iconLiteral="fth-hexagon" iconSize="28" iconColor="#0EA5E9"/>
+            <VBox fx:id="brandTextContainer">
+                <Label text="WATCHDOG" styleClass="brand-name"/>
+                <Label text="ENTERPRISE ML" styleClass="brand-subtitle"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button onAction="#toggleSidebar" styleClass="icon-button">
+                <graphic><FontIcon iconLiteral="fth-menu" iconSize="18"/></graphic>
+            </Button>
+        </HBox>
+        
+        <Region prefHeight="16"/>
+        
         <VBox spacing="4" VBox.vgrow="ALWAYS" styleClass="nav-menu">
-            <Label text="WORKSPACE" styleClass="nav-section-title"/>
-            <Button text="Security Overview" onAction="#navigateDashboard" styleClass="nav-button, nav-active"/>
-            <Button text="Threat Inspector" onAction="#navigateScanner" styleClass="nav-button"/>
-            <Button text="Event Telemetry" onAction="#navigateActivity" styleClass="nav-button"/>
-            <Button text="AI Risk Insights" onAction="#navigateInsights" styleClass="nav-button"/>
+            <Label fx:id="navLabel1" text="DASHBOARD" styleClass="nav-section-title"/>
+            <Button fx:id="navDashboardBtn" text="Security Overview" onAction="#navigateDashboard" styleClass="nav-button nav-active">
+                <graphic><FontIcon iconLiteral="fth-grid" iconSize="18"/></graphic>
+            </Button>
+            <Button fx:id="navScannerBtn" text="URL Inspector" onAction="#navigateScanner" styleClass="nav-button">
+                <graphic><FontIcon iconLiteral="fth-search" iconSize="18"/></graphic>
+            </Button>
+            <Button fx:id="navActivityBtn" text="Threat Activity" onAction="#navigateActivity" styleClass="nav-button">
+                <graphic><FontIcon iconLiteral="fth-list" iconSize="18"/></graphic>
+            </Button>
+            <Button fx:id="navInsightsBtn" text="AI Insights" onAction="#navigateInsights" styleClass="nav-button">
+                <graphic><FontIcon iconLiteral="fth-pie-chart" iconSize="18"/></graphic>
+            </Button>
             
             <Region prefHeight="16"/>
-            <Label text="ADMINISTRATION" styleClass="nav-section-title"/>
-            <Button text="Policy Controls" onAction="#navigateSecurityControls" styleClass="nav-button"/>
-            <Button text="System Settings" onAction="#navigateSettings" styleClass="nav-button"/>
+            <Label fx:id="navLabel2" text="SYSTEM" styleClass="nav-section-title"/>
+            <Button fx:id="navControlsBtn" text="Policy Controls" onAction="#navigateSecurityControls" styleClass="nav-button">
+                <graphic><FontIcon iconLiteral="fth-lock" iconSize="18"/></graphic>
+            </Button>
+            <Button fx:id="navSettingsBtn" text="Settings" onAction="#navigateSettings" styleClass="nav-button">
+                <graphic><FontIcon iconLiteral="fth-settings" iconSize="18"/></graphic>
+            </Button>
         </VBox>
-        <HBox spacing="8" styleClass="status-footer" alignment="CENTER_LEFT">
+        
+        <HBox fx:id="statusFooter" spacing="12" styleClass="status-footer" alignment="CENTER_LEFT">
           <Region styleClass="pulse-indicator-active"/>
-          <Label text="ENGINE ONLINE" styleClass="status-footer-text"/>
+          <Label fx:id="statusFooterText" text="ENGINE ONLINE" styleClass="status-footer-text"/>
         </HBox>
       </VBox>
     </left>
     <center>
       <VBox>
         <HBox alignment="CENTER_LEFT" styleClass="topbar">
-          <Label text="Security Overview" styleClass="topbar-title"/>
+          <Label fx:id="topbarTitle" text="Security Overview" styleClass="topbar-title"/>
           <Region HBox.hgrow="ALWAYS"/>
           <HBox spacing="12" alignment="CENTER">
-             <Label text="WORKSPACE PROTECTED" styleClass="badge, badge-safe"/>
+             <Label fx:id="statusBadge" text="SECURE" styleClass="badge badge-safe"/>
              <Button text="Test Event Bus" onAction="#simulateRandom" styleClass="secondary-button"/>
+             <Button styleClass="icon-button"><graphic><FontIcon iconLiteral="fth-bell" iconSize="18"/></graphic></Button>
           </HBox>
         </HBox>
         
@@ -90,108 +115,120 @@
           
           <!-- Dashboard Page -->
           <VBox fx:id="dashboardPage" spacing="20" styleClass="page">
-            <!-- Top Stats Row -->
             <HBox spacing="16">
-              <VBox styleClass="hero-card, card" HBox.hgrow="ALWAYS">
+              <VBox fx:id="dashCard1" styleClass="glass-card hero-card" HBox.hgrow="ALWAYS">
                 <HBox alignment="CENTER_LEFT">
-                   <Label text="PROTECTION ACTIVE" styleClass="eyebrow-safe"/>
+                   <Label text="THREAT INSPECTION" styleClass="eyebrow-safe"/>
                    <Region HBox.hgrow="ALWAYS"/>
-                   <Region styleClass="pulse-indicator-active"/>
+                   <FontIcon iconLiteral="fth-check-circle" iconSize="24" iconColor="#10B981"/>
                 </HBox>
-                <Label text="Workspace is secured" styleClass="hero-title"/>
-                <Label text="AI WatchDog is actively intercepting and analyzing background telemetry." styleClass="muted" wrapText="true"/>
+                <Label text="Engine Ready" styleClass="hero-title"/>
+                <Label text="Neural engine is standing by for manual URL inspection." styleClass="muted" wrapText="true"/>
               </VBox>
-              <VBox styleClass="score-card, card" prefWidth="240">
-                <Label text="FLEET RISK INDEX" styleClass="eyebrow"/>
-                <Label fx:id="dashboardScore" text="0 / 100" styleClass="score-number"/>
-                <ProgressBar progress="0.0" maxWidth="Double.MAX_VALUE" styleClass="risk-progress"/>
-                <ProgressBar progress="0.0" maxWidth="Infinity" styleClass="risk-progress"/>
-                <Label text="Awaiting data..." styleClass="muted"/>
+              <VBox fx:id="dashCard2" styleClass="glass-card score-card" prefWidth="240">
+                <HBox alignment="CENTER_LEFT">
+                    <Label text="RISK INDEX" styleClass="eyebrow"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <FontIcon iconLiteral="fth-activity" iconSize="18" iconColor="#94A3B8"/>
+                </HBox>
+                <Label fx:id="dashboardScore" text="0" styleClass="score-number"/>
+                <ProgressBar fx:id="riskProgress" progress="0.0" maxWidth="Infinity" styleClass="risk-progress"/>
               </VBox>
             </HBox>
-            <!-- Secondary Stats -->
+            
             <HBox spacing="16">
-              <VBox styleClass="stat-card, card" HBox.hgrow="ALWAYS">
-                <Label text="EVENTS INSPECTED" styleClass="eyebrow"/>
+              <VBox fx:id="dashCard3" styleClass="glass-card stat-card" HBox.hgrow="ALWAYS">
+                <Label text="URLS INSPECTED" styleClass="eyebrow"/>
                 <Label fx:id="scannedCount" text="0" styleClass="stat-number"/>
               </VBox>
-              <VBox styleClass="stat-card, card" HBox.hgrow="ALWAYS">
+              <VBox fx:id="dashCard4" styleClass="glass-card stat-card" HBox.hgrow="ALWAYS">
                 <Label text="THREATS BLOCKED" styleClass="eyebrow"/>
-                <Label fx:id="blockedCount" text="0" styleClass="stat-number, text-danger"/>
+                <Label fx:id="blockedCount" text="0" styleClass="stat-number text-danger"/>
               </VBox>
-              <VBox styleClass="stat-card, card" HBox.hgrow="ALWAYS">
-                <Label text="AI CONFIDENCE" styleClass="eyebrow"/>
-                <Label text="98.2%" styleClass="stat-number, text-accent"/>
+              <VBox fx:id="dashCard5" styleClass="glass-card stat-card" HBox.hgrow="ALWAYS">
+                <Label text="GLOBAL CONFIDENCE" styleClass="eyebrow"/>
+                <Label text="N/A" styleClass="stat-number text-accent"/>
               </VBox>
             </HBox>
-            <!-- Bottom Panels -->
+            
             <HBox spacing="16" VBox.vgrow="ALWAYS">
-              <VBox styleClass="panel, card" HBox.hgrow="ALWAYS">
+              <VBox fx:id="dashCard6" styleClass="glass-card" HBox.hgrow="ALWAYS">
                 <HBox alignment="CENTER_LEFT" spacing="8">
-                  <Label text="Recent Interceptions" styleClass="panel-title"/>
+                  <Label text="Recent Analysis Activity" styleClass="panel-title"/>
                   <Region HBox.hgrow="ALWAYS"/>
-                  <Label text="Live Feed" styleClass="eyebrow-accent"/>
+                  <Region styleClass="pulse-indicator-active"/>
                 </HBox>
                 <ListView fx:id="activityList" VBox.vgrow="ALWAYS" styleClass="clean-list"/>
               </VBox>
-              <VBox prefWidth="280" styleClass="panel, card" spacing="12">
-                <Label text="Simulation Tools" styleClass="panel-title"/>
-                <Label text="Inject mock telemetry into the decision engine." styleClass="muted" wrapText="true"/>
-                <Button text="Inject Clean Payload" onAction="#simulateSafe" styleClass="outline-button, w-full"/>
-                <Button text="Inject Suspicious Signal" onAction="#simulateSuspicious" styleClass="outline-button, outline-warn, w-full"/>
-                <Button text="Inject Malicious Exploit" onAction="#simulatePhishing" styleClass="outline-button, outline-danger, w-full"/>
+              <VBox fx:id="dashCard7" prefWidth="280" styleClass="glass-card" spacing="12">
+                <Label text="Simulate Threat" styleClass="panel-title"/>
+                <Label text="Test ML response with predefined URLs." styleClass="muted" wrapText="true"/>
+                <Button text="Clean Payload" onAction="#simulateSafe" styleClass="outline-button w-full">
+                    <graphic><FontIcon iconLiteral="fth-shield" iconSize="16"/></graphic>
+                </Button>
+                <Button text="Suspicious Traffic" onAction="#simulateSuspicious" styleClass="outline-button outline-warn w-full">
+                    <graphic><FontIcon iconLiteral="fth-alert-triangle" iconSize="16"/></graphic>
+                </Button>
+                <Button text="Malicious Exploit" onAction="#simulatePhishing" styleClass="outline-button outline-danger w-full">
+                    <graphic><FontIcon iconLiteral="fth-alert-octagon" iconSize="16"/></graphic>
+                </Button>
               </VBox>
             </HBox>
           </VBox>
 
           <!-- Scanner Page -->
           <VBox fx:id="scannerPage" visible="false" spacing="20" styleClass="page">
-            <VBox styleClass="card" spacing="16">
-                <Label text="Threat Inspector" styleClass="page-title"/>
-                <Label text="Manually submit a payload URL for AI verification." styleClass="page-subtitle"/>
+            <VBox styleClass="glass-card" spacing="16">
+                <Label text="Deep Inspector" styleClass="page-title"/>
+                <Label text="Submit a specific URL or IP for deep neural analysis." styleClass="page-subtitle"/>
                 <HBox spacing="8" styleClass="search-bar-container">
+                  <FontIcon iconLiteral="fth-search" iconSize="20" iconColor="#64748B" styleClass="search-icon"/>
                   <TextField fx:id="urlInput" promptText="https://..." HBox.hgrow="ALWAYS" styleClass="search-input"/>
                   <Button fx:id="analyzeBtn" text="Analyze Target" onAction="#analyzeManual" styleClass="primary-button"/>
                 </HBox>
             </VBox>
-            <VBox styleClass="card" spacing="12" VBox.vgrow="ALWAYS">
-                <Label text="Quick Tests" styleClass="panel-title"/>
-                <HBox spacing="12">
-                  <Button text="Test Safe Target" onAction="#simulateSafe" styleClass="secondary-button"/>
-                  <Button text="Test Suspicious Target" onAction="#simulateSuspicious" styleClass="secondary-button"/>
-                </HBox>
+            <VBox styleClass="glass-card" spacing="12" VBox.vgrow="ALWAYS">
+                <Label text="Inspection Queue" styleClass="panel-title"/>
+                <Label text="No manual scans running." styleClass="muted"/>
             </VBox>
           </VBox>
 
           <!-- Analysis Loading Page -->
-          <VBox fx:id="analysisPage" visible="false" alignment="CENTER" spacing="24" styleClass="page, loading-page">
-            <ProgressIndicator fx:id="analysisProgress" prefWidth="64" prefHeight="64"/>
+          <VBox fx:id="analysisPage" visible="false" alignment="CENTER" spacing="24" styleClass="page loading-page">
+            <StackPane>
+                <ProgressIndicator fx:id="analysisProgress" prefWidth="80" prefHeight="80" styleClass="large-spinner"/>
+                <FontIcon iconLiteral="fth-cpu" iconSize="32" iconColor="#0EA5E9"/>
+            </StackPane>
             <VBox alignment="CENTER" spacing="8">
-                <Label text="ANALYZING TARGET" styleClass="eyebrow-accent"/>
+                <Label text="EVALUATING SIGNATURES" styleClass="eyebrow-accent"/>
                 <Label fx:id="analysisUrl" text="..." styleClass="mono-title"/>
-                <Label fx:id="analysisStage" text="Establishing secure connection..." styleClass="muted"/>
+                <Label fx:id="analysisStage" text="Contacting neural engine..." styleClass="muted"/>
             </VBox>
           </VBox>
 
           <!-- Result Page -->
           <VBox fx:id="resultPage" visible="false" spacing="20" styleClass="page">
             <HBox spacing="16">
-              <VBox styleClass="card, result-hero" prefWidth="280" alignment="CENTER" spacing="12">
-                <Label text="SYSTEM DECISION" styleClass="eyebrow"/>
+              <VBox fx:id="resultDecisionCard" styleClass="glass-card result-hero" prefWidth="280" alignment="CENTER" spacing="12">
+                <FontIcon fx:id="resultIcon" iconLiteral="fth-shield" iconSize="48"/>
                 <Label fx:id="resultTitle" text="DECISION" styleClass="result-decision-text"/>
-                <Label fx:id="resultDecision" text="Policy Decision Details" styleClass="muted, text-center" wrapText="true"/>
+                <Label fx:id="resultDecision" text="Policy Details" styleClass="muted text-center" wrapText="true"/>
               </VBox>
-              <VBox styleClass="card" HBox.hgrow="ALWAYS" spacing="16">
-                <Label text="AI Risk Assessment" styleClass="panel-title"/>
+              <VBox styleClass="glass-card" HBox.hgrow="ALWAYS" spacing="16">
+                <Label text="Inference Details" styleClass="panel-title"/>
                 <Label fx:id="resultSubtitle" text="Prediction details" styleClass="hero-title"/>
-                <HBox spacing="24">
+                <HBox spacing="32">
                    <VBox>
                       <Label text="RISK SCORE" styleClass="eyebrow"/>
                       <Label fx:id="resultScore" text="0 / 100" styleClass="mono-metric"/>
                    </VBox>
                    <VBox>
                       <Label text="THREAT ENGINE" styleClass="eyebrow"/>
-                      <Label text="Ensemble v2.4" styleClass="mono-metric"/>
+                      <Label fx:id="threatEngine" text="Sentinel v3.1" styleClass="mono-metric"/>
+                   </VBox>
+                   <VBox>
+                      <Label text="CONFIDENCE" styleClass="eyebrow"/>
+                      <Label fx:id="modelConfidence" text="99.9%" styleClass="mono-metric"/>
                    </VBox>
                 </HBox>
                 <Separator/>
@@ -200,38 +237,52 @@
               </VBox>
             </HBox>
             <HBox spacing="12" alignment="CENTER_LEFT">
-              <Button text="? Return to Workspace" onAction="#backToDashboard" styleClass="secondary-button"/>
+              <Button text="Return to Dashboard" onAction="#backToDashboard" styleClass="secondary-button">
+                  <graphic><FontIcon iconLiteral="fth-arrow-left" iconSize="16"/></graphic>
+              </Button>
               <Region HBox.hgrow="ALWAYS"/>
-              <Button fx:id="proceedButton" text="Bypass Restriction (Admin)" onAction="#proceedAnyway" styleClass="destructive-button"/>
+              <Button fx:id="proceedButton" text="Bypass Restriction" onAction="#proceedAnyway" styleClass="destructive-button">
+                  <graphic><FontIcon iconLiteral="fth-unlock" iconSize="16"/></graphic>
+              </Button>
             </HBox>
           </VBox>
 
-          <!-- Other Pages Skeleton -->
           <VBox fx:id="activityPage" visible="false" spacing="20" styleClass="page">
-            <Label text="Event Telemetry" styleClass="page-title"/>
-            <VBox styleClass="card" VBox.vgrow="ALWAYS" spacing="12">
-                <Label text="Backend event storage is not currently implemented." styleClass="muted"/>
+            <Label text="Threat Activity" styleClass="page-title"/>
+            <VBox styleClass="glass-card" VBox.vgrow="ALWAYS" spacing="12">
                 <ListView fx:id="threatList" VBox.vgrow="ALWAYS" styleClass="clean-list"/>
             </VBox>
           </VBox>
 
           <VBox fx:id="insightsPage" visible="false" spacing="20" styleClass="page">
             <Label text="AI Risk Insights" styleClass="page-title"/>
-            <VBox styleClass="card" VBox.vgrow="ALWAYS" alignment="CENTER">
-                <Label text="Telemetry API required for visualizations." styleClass="muted"/>
+            <VBox styleClass="glass-card" VBox.vgrow="ALWAYS" alignment="CENTER" spacing="16">
+                <FontIcon iconLiteral="fth-bar-chart-2" iconSize="64" iconColor="#475569"/>
+                <Label text="Aggregation Engine Offline" styleClass="section-title"/>
+                <Label text="Collect more telemetry to unlock AI insights." styleClass="muted"/>
             </VBox>
           </VBox>
 
           <VBox fx:id="settingsPage" visible="false" spacing="20" styleClass="page">
             <Label text="System Settings" styleClass="page-title"/>
-            <VBox styleClass="card" spacing="16">
-              <Label text="General Protection Controls" styleClass="panel-title"/>
-              <HBox styleClass="setup-row"><Label text="Active Deep Inspection"/><Region HBox.hgrow="ALWAYS"/><CheckBox selected="true"/></HBox>
-              <HBox styleClass="setup-row"><Label text="Report Telemetry Anonymously"/><Region HBox.hgrow="ALWAYS"/><CheckBox selected="true"/></HBox>
+            <VBox styleClass="glass-card" spacing="16">
+              <Label text="Core Protection" styleClass="panel-title"/>
+              <HBox styleClass="setup-row"><Label text="Heuristic Deep Inspection"/><Region HBox.hgrow="ALWAYS"/><CheckBox text="Unavailable" selected="false" disable="true"/></HBox>
+              <HBox styleClass="setup-row"><Label text="Telemetry Analytics Sharing"/><Region HBox.hgrow="ALWAYS"/><CheckBox text="Unavailable" selected="false" disable="true"/></HBox>
+            </VBox>
+          </VBox>
+          
+          <VBox fx:id="securityControlsPage" visible="false" spacing="20" styleClass="page">
+            <Label text="Policy Controls" styleClass="page-title"/>
+            <VBox styleClass="glass-card" spacing="16">
+              <Label text="Strict Enforcement Rules" styleClass="panel-title"/>
+              <HBox styleClass="setup-row"><Label text="Block All Uncategorized URLs"/><Region HBox.hgrow="ALWAYS"/><CheckBox text="Unavailable" selected="false" disable="true"/></HBox>
+              <HBox styleClass="setup-row"><Label text="Enforce SSL/TLS Strict Mode"/><Region HBox.hgrow="ALWAYS"/><CheckBox text="Unavailable" selected="false" disable="true"/></HBox>
             </VBox>
           </VBox>
 
           <VBox fx:id="errorPage" visible="false" alignment="CENTER" spacing="20" styleClass="page">
+            <FontIcon iconLiteral="fth-wifi-off" iconSize="64" iconColor="#EF4444"/>
             <Label text="SYSTEM FAULT" styleClass="eyebrow-danger"/>
             <Label text="Connection Failed" styleClass="page-title"/>
             <Label fx:id="errorMessageLabel" text="Backend engine unreachable." styleClass="mono-text"/>

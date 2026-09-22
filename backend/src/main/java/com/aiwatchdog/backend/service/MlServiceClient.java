@@ -118,8 +118,6 @@ public class MlServiceClient {
                                 || response.risk_level().isBlank()
                                 || response.prediction() == null
                                 || response.prediction().isBlank()
-                                || response.decision() == null
-                                || response.decision().isBlank()
                                 || !Double.isFinite(response.phishing_probability())
                                 || response.phishing_probability() < 0.0
                                 || response.phishing_probability() > 1.0
