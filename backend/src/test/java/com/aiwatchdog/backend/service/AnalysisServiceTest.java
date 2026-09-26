@@ -2,118 +2,194 @@ package com.aiwatchdog.backend.service;
 
 import com.aiwatchdog.backend.dto.AnalyzeResponse;
 import com.aiwatchdog.backend.dto.MlPredictionResponse;
+import com.aiwatchdog.backend.logging.SecurityEventLogger;
 import com.aiwatchdog.backend.policy.Decision;
 import com.aiwatchdog.backend.policy.PolicyEngine;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
 class AnalysisServiceTest {
 
-        @Mock
-        private MlServiceClient mlServiceClient;
+    @Test
+    void validUrlUsesPolicyDecisionAndPreservesMlAssessment() {
 
-        @Mock
-        private PolicyEngine policyEngine;
+        MlServiceClient mlServiceClient = mock(MlServiceClient.class);
+        PolicyEngine policyEngine = mock(PolicyEngine.class);
+        SecurityEventLogger securityEventLogger =
+                mock(SecurityEventLogger.class);
 
-        @Test
-        void validUrlUsesPolicyDecisionAndPreservesMlAssessment() {
-                MlPredictionResponse prediction = new MlPredictionResponse(
-                                "https://example.com",
-                                0.37,
-                                37,
-                                "LOW_RISK",
-                                "BENIGN",
-                                "BLOCK",
-                                0.15,
-                                List.of("example reason"));
-                when(mlServiceClient.predict("https://example.com")).thenReturn(prediction);
-                when(policyEngine.evaluate(org.mockito.ArgumentMatchers.any())).thenReturn(Decision.REVIEW);
+        AnalysisService service = new AnalysisService(
+                mlServiceClient,
+                policyEngine,
+                securityEventLogger);
 
-                AnalyzeResponse response = new AnalysisService(mlServiceClient, policyEngine)
-                                .analyze("https://example.com");
+        MlPredictionResponse prediction =
+                new MlPredictionResponse(
+                        "https://example.com",
+                        0.37,
+                        37,
+                        "LOW_RISK",
+                        "BENIGN",
+                        0.15,
+                        List.of("example reason"));
 
-                assertEquals(prediction.phishing_probability(), response.phishing_probability());
-                assertEquals(prediction.risk_score(), response.risk_score());
-                assertEquals(prediction.risk_level(), response.risk_level());
-                assertEquals("REVIEW", response.decision());
-                assertEquals(prediction.threshold(), response.threshold());
-                verify(mlServiceClient).predict("https://example.com");
-                verify(policyEngine).evaluate(org.mockito.ArgumentMatchers.any());
-        }
+        when(mlServiceClient.predict("https://example.com"))
+                .thenReturn(prediction);
 
-        @Test
-        void malformedUrlIsRejectedBeforeMlCall() {
-                AnalysisService service = new AnalysisService(mlServiceClient, policyEngine);
+        when(policyEngine.evaluate(any()))
+                .thenReturn(Decision.REVIEW);
 
-                assertThrows(InvalidRequestException.class, () -> service.analyze("not-a-url"));
-                verifyNoInteractions(mlServiceClient);
-        }
+        AnalyzeResponse response =
+                service.analyze("https://example.com");
 
-        @Test
-        void blankUrlIsRejectedBeforeMlCall() {
-                AnalysisService service = new AnalysisService(mlServiceClient, policyEngine);
+        assertEquals("https://example.com", response.url());
+        assertEquals(0.37, response.phishing_probability());
+        assertEquals(37, response.risk_score());
+        assertEquals("LOW_RISK", response.risk_level());
+        assertEquals("BENIGN", response.prediction());
+        assertEquals("REVIEW", response.decision());
+        assertEquals(0.15, response.threshold());
+        assertEquals(
+                List.of("example reason"),
+                response.reasons());
 
-                assertThrows(InvalidRequestException.class, () -> service.analyze(" "));
-                verifyNoInteractions(mlServiceClient);
-        }
+        verify(mlServiceClient)
+                .predict("https://example.com");
 
-        @Test
-        void unavailableMlServiceIsPropagated() {
-                when(mlServiceClient.predict("https://example.com"))
-                                .thenThrow(new MlServiceException(
-                                                "AI analysis service is unavailable.",
-                                                MlServiceException.FailureType.UNAVAILABLE,
-                                                null));
+        verify(policyEngine)
+                .evaluate(any());
 
-                MlServiceException exception = assertThrows(
-                                MlServiceException.class,
-                                () -> new AnalysisService(mlServiceClient, policyEngine)
-                                                .analyze("https://example.com"));
+        verify(securityEventLogger)
+                .log(any());
+    }
 
-                assertEquals(MlServiceException.FailureType.UNAVAILABLE, exception.failureType());
-        }
+    @Test
+    void malformedUrlIsRejectedBeforeMlCall() {
 
-        @Test
-        void timedOutMlServiceIsPropagated() {
-                when(mlServiceClient.predict("https://example.com"))
-                                .thenThrow(new MlServiceException(
-                                                "ML service response timed out.",
-                                                MlServiceException.FailureType.TIMEOUT,
-                                                null));
+        MlServiceClient mlServiceClient = mock(MlServiceClient.class);
+        PolicyEngine policyEngine = mock(PolicyEngine.class);
+        SecurityEventLogger securityEventLogger =
+                mock(SecurityEventLogger.class);
 
-                MlServiceException exception = assertThrows(
-                                MlServiceException.class,
-                                () -> new AnalysisService(mlServiceClient, policyEngine)
-                                                .analyze("https://example.com"));
+        AnalysisService service = new AnalysisService(
+                mlServiceClient,
+                policyEngine,
+                securityEventLogger);
 
-                assertEquals(MlServiceException.FailureType.TIMEOUT, exception.failureType());
-        }
+        assertThrows(
+                InvalidRequestException.class,
+                () -> service.analyze("not-a-url"));
 
-        @Test
-        void malformedMlResponseIsPropagated() {
-                when(mlServiceClient.predict("https://example.com"))
-                                .thenThrow(new MlServiceException(
-                                                "ML service returned an unusable response.",
-                                                MlServiceException.FailureType.MALFORMED_RESPONSE,
-                                                null));
+        verifyNoInteractions(mlServiceClient);
+    }
 
-                MlServiceException exception = assertThrows(
-                                MlServiceException.class,
-                                () -> new AnalysisService(mlServiceClient, policyEngine)
-                                                .analyze("https://example.com"));
+    @Test
+    void blankUrlIsRejectedBeforeMlCall() {
 
-                assertEquals(MlServiceException.FailureType.MALFORMED_RESPONSE, exception.failureType());
-        }
+        MlServiceClient mlServiceClient = mock(MlServiceClient.class);
+        PolicyEngine policyEngine = mock(PolicyEngine.class);
+        SecurityEventLogger securityEventLogger =
+                mock(SecurityEventLogger.class);
+
+        AnalysisService service = new AnalysisService(
+                mlServiceClient,
+                policyEngine,
+                securityEventLogger);
+
+        assertThrows(
+                InvalidRequestException.class,
+                () -> service.analyze(" "));
+
+        verifyNoInteractions(mlServiceClient);
+    }
+
+    @Test
+    void unavailableMlServiceIsPropagated() {
+
+        MlServiceClient mlServiceClient = mock(MlServiceClient.class);
+        PolicyEngine policyEngine = mock(PolicyEngine.class);
+        SecurityEventLogger securityEventLogger =
+                mock(SecurityEventLogger.class);
+
+        when(mlServiceClient.predict("https://example.com"))
+                .thenThrow(new MlServiceException(
+                        "AI analysis service is unavailable.",
+                        MlServiceException.FailureType.UNAVAILABLE,
+                        null));
+
+        AnalysisService service = new AnalysisService(
+                mlServiceClient,
+                policyEngine,
+                securityEventLogger);
+
+        MlServiceException exception = assertThrows(
+                MlServiceException.class,
+                () -> service.analyze("https://example.com"));
+
+        assertEquals(
+                MlServiceException.FailureType.UNAVAILABLE,
+                exception.failureType());
+    }
+
+    @Test
+    void timedOutMlServiceIsPropagated() {
+
+        MlServiceClient mlServiceClient = mock(MlServiceClient.class);
+        PolicyEngine policyEngine = mock(PolicyEngine.class);
+        SecurityEventLogger securityEventLogger =
+                mock(SecurityEventLogger.class);
+
+        when(mlServiceClient.predict("https://example.com"))
+                .thenThrow(new MlServiceException(
+                        "ML service response timed out.",
+                        MlServiceException.FailureType.TIMEOUT,
+                        null));
+
+        AnalysisService service = new AnalysisService(
+                mlServiceClient,
+                policyEngine,
+                securityEventLogger);
+
+        MlServiceException exception = assertThrows(
+                MlServiceException.class,
+                () -> service.analyze("https://example.com"));
+
+        assertEquals(
+                MlServiceException.FailureType.TIMEOUT,
+                exception.failureType());
+    }
+
+    @Test
+    void malformedMlResponseIsPropagated() {
+
+        MlServiceClient mlServiceClient = mock(MlServiceClient.class);
+        PolicyEngine policyEngine = mock(PolicyEngine.class);
+        SecurityEventLogger securityEventLogger =
+                mock(SecurityEventLogger.class);
+
+        when(mlServiceClient.predict("https://example.com"))
+                .thenThrow(new MlServiceException(
+                        "ML service returned an unusable response.",
+                        MlServiceException.FailureType.MALFORMED_RESPONSE,
+                        null));
+
+        AnalysisService service = new AnalysisService(
+                mlServiceClient,
+                policyEngine,
+                securityEventLogger);
+
+        MlServiceException exception = assertThrows(
+                MlServiceException.class,
+                () -> service.analyze("https://example.com"));
+
+        assertEquals(
+                MlServiceException.FailureType.MALFORMED_RESPONSE,
+                exception.failureType());
+    }
 }
-
