@@ -2,6 +2,8 @@ package com.aiwatchdog.backend.service;
 
 import com.aiwatchdog.backend.dto.AnalyzeResponse;
 import com.aiwatchdog.backend.dto.MlPredictionResponse;
+import com.aiwatchdog.backend.logging.SecurityEvent;
+import com.aiwatchdog.backend.logging.SecurityEventLogger;
 import com.aiwatchdog.backend.policy.Decision;
 import com.aiwatchdog.backend.policy.PolicyEngine;
 import com.aiwatchdog.backend.policy.PolicyRequest;
@@ -15,14 +17,21 @@ import java.net.URISyntaxException;
 @Service
 public class AnalysisService {
 
-    private static final Logger logger = LoggerFactory.getLogger(AnalysisService.class);
+    private static final Logger logger =
+            LoggerFactory.getLogger(AnalysisService.class);
 
     private final MlServiceClient mlServiceClient;
     private final PolicyEngine policyEngine;
+    private final SecurityEventLogger securityEventLogger;
 
-    public AnalysisService(MlServiceClient mlServiceClient, PolicyEngine policyEngine) {
+    public AnalysisService(
+            MlServiceClient mlServiceClient,
+            PolicyEngine policyEngine,
+            SecurityEventLogger securityEventLogger) {
+
         this.mlServiceClient = mlServiceClient;
         this.policyEngine = policyEngine;
+        this.securityEventLogger = securityEventLogger;
     }
 
     public AnalyzeResponse analyze(String url) {
@@ -30,7 +39,8 @@ public class AnalysisService {
         validateUrl(url);
         logger.info("Analysis request received");
 
-        MlPredictionResponse mlResult = mlServiceClient.predict(url);
+        MlPredictionResponse mlResult =
+                mlServiceClient.predict(url);
 
         logger.info("ML analysis completed");
 
@@ -40,7 +50,21 @@ public class AnalysisService {
                 mlResult.risk_score(),
                 mlResult.risk_level(),
                 mlResult.prediction());
-        Decision finalDecision = policyEngine.evaluate(policyRequest);
+
+        Decision finalDecision =
+                policyEngine.evaluate(policyRequest);
+
+        SecurityEvent event = new SecurityEvent(
+                null,
+                null,
+                mlResult.url(),
+                mlResult.phishing_probability(),
+                mlResult.risk_score(),
+                mlResult.risk_level(),
+                mlResult.prediction(),
+                finalDecision.name());
+
+        securityEventLogger.log(event);
 
         return new AnalyzeResponse(
                 mlResult.url(),
@@ -56,7 +80,8 @@ public class AnalysisService {
     private void validateUrl(String url) {
 
         if (url == null || url.isBlank()) {
-            throw new InvalidRequestException("URL must not be empty.");
+            throw new InvalidRequestException(
+                    "URL must not be empty.");
         }
 
         try {
@@ -66,10 +91,15 @@ public class AnalysisService {
                     || "https".equalsIgnoreCase(parsedUrl.getScheme()))
                     || parsedUrl.getHost() == null
                     || parsedUrl.getHost().isBlank()) {
-                throw new InvalidRequestException("URL must be a valid HTTP or HTTPS URL.");
+
+                throw new InvalidRequestException(
+                        "URL must be a valid HTTP or HTTPS URL.");
             }
+
         } catch (URISyntaxException ex) {
-            throw new InvalidRequestException("URL must be a valid HTTP or HTTPS URL.");
+
+            throw new InvalidRequestException(
+                    "URL must be a valid HTTP or HTTPS URL.");
         }
     }
 }
