@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.Instant;
@@ -103,5 +104,25 @@ class SqliteSecurityEventLoggerTest {
                 IllegalArgumentException.class,
                 () -> logger.log(event)
         );
+    }
+
+    @Test
+    void normalizesSpacedRiskAndLowercaseDecisionBeforePersistence() throws Exception {
+        SqliteSecurityEventLogger logger = new SqliteSecurityEventLogger();
+        String url = "https://normalization-test.invalid/" + System.nanoTime();
+        logger.log(new SecurityEvent(null, Instant.now(), url, 0.99, 99,
+                "HIGH RISK", " phishing ", "block"));
+
+        try (Connection connection = DriverManager.getConnection(DB_URL);
+             PreparedStatement statement = connection.prepareStatement(
+                     "SELECT risk_level, prediction, decision FROM security_events WHERE url = ?")) {
+            statement.setString(1, url);
+            try (ResultSet result = statement.executeQuery()) {
+                assertTrue(result.next());
+                assertEquals("HIGH_RISK", result.getString("risk_level"));
+                assertEquals("PHISHING", result.getString("prediction"));
+                assertEquals("BLOCK", result.getString("decision"));
+            }
+        }
     }
 }

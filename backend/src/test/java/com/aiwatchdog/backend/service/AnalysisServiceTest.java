@@ -3,6 +3,7 @@ package com.aiwatchdog.backend.service;
 import com.aiwatchdog.backend.dto.AnalyzeResponse;
 import com.aiwatchdog.backend.dto.MlPredictionResponse;
 import com.aiwatchdog.backend.logging.SecurityEventLogger;
+import com.aiwatchdog.backend.logging.SecurityEvent;
 import com.aiwatchdog.backend.policy.Decision;
 import com.aiwatchdog.backend.policy.PolicyEngine;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.Mockito.*;
 
 class AnalysisServiceTest {
@@ -67,6 +69,25 @@ class AnalysisServiceTest {
 
         verify(securityEventLogger)
                 .log(any());
+    }
+
+    @Test
+    void stripsCredentialsQueryFragmentAndSecretPathFromPersistedAuditUrl() {
+        String rawUrl = "https://user:secret@example.com/account/session/opaque-secret"
+                + "?access_token=top-secret&next=home#fragment";
+        MlServiceClient mlServiceClient = mock(MlServiceClient.class);
+        PolicyEngine policyEngine = mock(PolicyEngine.class);
+        SecurityEventLogger logger = mock(SecurityEventLogger.class);
+        when(mlServiceClient.predict(rawUrl)).thenReturn(new MlPredictionResponse(
+                rawUrl, 0.02, 2, "SAFE", "BENIGN", 0.15, List.of("test")));
+        when(policyEngine.evaluate(any())).thenReturn(Decision.ALLOW);
+
+        new AnalysisService(mlServiceClient, policyEngine, logger).analyze(rawUrl);
+
+        var captured = forClass(SecurityEvent.class);
+        verify(logger).log(captured.capture());
+        assertEquals("https://example.com/", captured.getValue().url());
+        verify(mlServiceClient).predict(rawUrl);
     }
 
     @Test
