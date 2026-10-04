@@ -1,417 +1,2476 @@
-/* 
-   AI WatchDog Premium Light Theme
-   AtlantaFX + Custom Clean Surfaces
-*/
+/* ==========================================================================
+   AI WatchDog - Stitch AI Design System Stylesheet
+   Modern, Clean Cybersecurity Desktop Dashboard
+   Exact Reproduction of Google Stitch AI Designs
+   ========================================================================== */
+
+.root {
+    -fx-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Inter', Roboto, sans-serif;
+    -fx-background-color: #F4F7FB;
+    -fx-text-fill: #0F172A;
+}
 
 .app-root {
-  -fx-font-family: "Inter", "Segoe UI", sans-serif;
-  -fx-background-color: #f8fafc;
-  -fx-font-smoothing-type: lcd;
+    -fx-background-color: #F4F7FB;
 }
 
-/* Base Typographic Classes */
-.page-title {
-  -fx-font-size: 24px;
-  -fx-font-weight: 600;
-  -fx-text-fill: #0f172a;
-}
-.page-subtitle {
-  -fx-font-size: 14px;
-  -fx-text-fill: #64748b;
-}
-.section-title {
-  -fx-font-size: 16px;
-  -fx-font-weight: 600;
-  -fx-text-fill: #0f172a;
-}
-.panel-title {
-  -fx-font-size: 14px;
-  -fx-font-weight: 600;
-  -fx-text-fill: #1e293b;
-}
-.hero-title {
-  -fx-font-size: 32px;
-  -fx-font-weight: 700;
-  -fx-text-fill: #0f172a;
-}
-.muted {
-  -fx-text-fill: #64748b;
-  -fx-font-size: 13px;
-}
-.mono-title {
-  -fx-font-family: "JetBrains Mono";
-  -fx-font-size: 14px;
-  -fx-font-weight: 500;
-  -fx-text-fill: #0f172a;
-}
-.mono-text {
-  -fx-font-family: "JetBrains Mono";
-  -fx-font-size: 13px;
-  -fx-text-fill: #475569;
-}
-.mono-metric {
-  -fx-font-family: "JetBrains Mono";
-  -fx-font-size: 20px;
-  -fx-font-weight: 600;
-  -fx-text-fill: #0f172a;
-}
-
-.eyebrow {
-  -fx-font-size: 11px;
-  -fx-font-weight: 600;
-  -fx-text-fill: #64748b;
-  -fx-letter-spacing: 0.04em;
-}
-.eyebrow-accent {
-  -fx-font-size: 11px;
-  -fx-font-weight: 600;
-  -fx-text-fill: #0ea5e9;
-}
-.eyebrow-safe {
-  -fx-font-size: 11px;
-  -fx-font-weight: 600;
-  -fx-text-fill: #10b981;
-}
-.eyebrow-danger {
-  -fx-font-size: 11px;
-  -fx-font-weight: 600;
-  -fx-text-fill: #ef4444;
-}
-
-/* Structural Components */
-.shell {
-  -fx-background-color: transparent;
-}
-.topbar {
-  -fx-background-color: #ffffff;
-  -fx-border-color: transparent transparent #e2e8f0 transparent;
-  -fx-padding: 16px 32px;
-}
-.topbar-title {
-  -fx-font-size: 16px;
-  -fx-font-weight: 600;
-  -fx-text-fill: #0f172a;
-}
+/* --------------------------------------------------------------------------
+   Sidebar
+   -------------------------------------------------------------------------- */
 .sidebar {
-  -fx-background-color: #f1f5f9;
-  -fx-border-color: transparent #e2e8f0 transparent transparent;
-  -fx-padding: 24px 16px;
-}
-.page-stack {
-  -fx-padding: 32px;
-}
-.page {
-  -fx-background-color: transparent;
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: transparent #E2E8F0 transparent transparent;
+    -fx-border-width: 0 1px 0 0;
+    -fx-padding: 20px 14px 16px 14px;
+    -fx-min-width: 240px;
+    -fx-pref-width: 240px;
+    -fx-max-width: 250px;
 }
 
-/* Containers & Cards */
-.glass-card {
-  -fx-background-color: #ffffff;
-  -fx-border-color: #e2e8f0;
-  -fx-border-radius: 12px;
-  -fx-background-radius: 12px;
-  -fx-padding: 24px;
-  -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.04), 8, 0.2, 0, 2);
-}
-.setup-row {
-  -fx-padding: 16px;
-  -fx-background-color: #f8fafc;
-  -fx-background-radius: 8px;
-  -fx-border-color: #e2e8f0;
-  -fx-border-radius: 8px;
+.brand-container {
+    -fx-padding: 0 6px 12px 6px;
 }
 
-/* Nav Menu */
-.brand-name {
-  -fx-font-size: 18px;
-  -fx-font-weight: 800;
-  -fx-text-fill: #0f172a;
-  -fx-letter-spacing: 0.05em;
+.brand-icon-box {
+    -fx-background-color: #2563EB;
+    -fx-background-radius: 10px;
+    -fx-min-width: 38px;
+    -fx-min-height: 38px;
+    -fx-max-width: 38px;
+    -fx-max-height: 38px;
+    -fx-alignment: center;
 }
+
+.brand-icon-box .ikonli-font-icon,
+.brand-icon-box FontIcon {
+    -fx-icon-color: #FFFFFF;
+    -fx-fill: #FFFFFF;
+}
+
+.brand-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #0F172A;
+}
+
 .brand-subtitle {
-  -fx-font-size: 10px;
-  -fx-font-weight: 600;
-  -fx-text-fill: #0ea5e9;
-  -fx-letter-spacing: 0.1em;
-}
-.nav-section-title {
-  -fx-font-size: 11px;
-  -fx-font-weight: 600;
-  -fx-text-fill: #94a3b8;
-  -fx-padding: 12px 12px 4px 12px;
-  -fx-letter-spacing: 0.05em;
-}
-.nav-button {
-  -fx-background-color: transparent;
-  -fx-text-fill: #64748b;
-  -fx-font-weight: 500;
-  -fx-font-size: 14px;
-  -fx-alignment: CENTER_LEFT;
-  -fx-padding: 12px 16px;
-  -fx-background-radius: 8px;
-  -fx-graphic-text-gap: 12px;
-}
-.nav-button:hover {
-  -fx-background-color: #e2e8f0;
-  -fx-text-fill: #0f172a;
-}
-.nav-active {
-  -fx-background-color: #eff6ff;
-  -fx-text-fill: #0ea5e9;
-  -fx-font-weight: 600;
-}
-.nav-active .ikonli-font-icon {
-  -fx-icon-color: #0ea5e9;
+    -fx-font-size: 11px;
+    -fx-font-weight: 500;
+    -fx-text-fill: #64748B;
 }
 
-/* Dashboard Specifics */
-.score-number {
-  -fx-font-family: "JetBrains Mono";
-  -fx-font-size: 48px;
-  -fx-font-weight: 700;
-  -fx-text-fill: #0f172a;
-}
-.stat-number {
-  -fx-font-size: 28px;
-  -fx-font-weight: 600;
-  -fx-text-fill: #0f172a;
-}
-.text-danger {
-  -fx-text-fill: #ef4444;
-}
-.text-accent {
-  -fx-text-fill: #0ea5e9;
-}
-.risk-progress {
-  -fx-accent: #0ea5e9;
-  -fx-pref-height: 6px;
+.nav-menu {
+    -fx-spacing: 4px;
+    -fx-padding: 12px 0;
 }
 
-/* Pulse Indicator */
-.pulse-indicator-active {
-  -fx-background-color: #10b981;
-  -fx-min-width: 8px;
-  -fx-min-height: 8px;
-  -fx-max-width: 8px;
-  -fx-max-height: 8px;
-  -fx-background-radius: 4px;
-  -fx-effect: dropshadow(gaussian, rgba(16, 185, 129, 0.4), 8, 0.4, 0, 0);
-}
-.pulse-indicator-inactive {
-  -fx-background-color: #94a3b8;
-  -fx-min-width: 8px;
-  -fx-min-height: 8px;
-  -fx-max-width: 8px;
-  -fx-max-height: 8px;
-  -fx-background-radius: 4px;
-}
-.status-footer {
-  -fx-padding: 16px;
-  -fx-background-color: #e2e8f0;
-  -fx-background-radius: 8px;
-}
-.status-footer-text {
-  -fx-font-family: "JetBrains Mono";
-  -fx-font-size: 11px;
-  -fx-text-fill: #475569;
+.nav-btn {
+    -fx-background-color: transparent;
+    -fx-background-radius: 8px;
+    -fx-text-fill: #475569;
+    -fx-font-size: 13px;
+    -fx-font-weight: 500;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 10px 14px;
+    -fx-cursor: hand;
+    -fx-graphic-text-gap: 12px;
+    -fx-max-width: Infinity;
 }
 
-/* Buttons & Inputs */
-.primary-button {
-  -fx-background-color: #0ea5e9;
-  -fx-text-fill: #ffffff;
-  -fx-font-weight: 600;
-  -fx-font-size: 14px;
-  -fx-padding: 10px 20px;
-  -fx-background-radius: 6px;
-  -fx-cursor: hand;
-}
-.primary-button:hover {
-  -fx-background-color: #0284c7;
-}
-.large-button {
-  -fx-padding: 14px 28px;
-  -fx-font-size: 15px;
-}
-.secondary-button {
-  -fx-background-color: #ffffff;
-  -fx-border-color: #cbd5e1;
-  -fx-border-radius: 6px;
-  -fx-text-fill: #1e293b;
-  -fx-font-weight: 500;
-  -fx-padding: 10px 20px;
-  -fx-cursor: hand;
-}
-.secondary-button:hover {
-  -fx-background-color: #f8fafc;
-  -fx-border-color: #94a3b8;
-}
-.outline-button {
-  -fx-background-color: transparent;
-  -fx-border-color: #cbd5e1;
-  -fx-border-radius: 6px;
-  -fx-text-fill: #334155;
-  -fx-padding: 10px 16px;
-  -fx-cursor: hand;
-  -fx-alignment: CENTER_LEFT;
-  -fx-graphic-text-gap: 12px;
-}
-.outline-button:hover {
-  -fx-background-color: #f1f5f9;
-  -fx-border-color: #94a3b8;
-}
-.outline-warn:hover {
-  -fx-background-color: #fffbeb;
-  -fx-border-color: #fde68a;
-  -fx-text-fill: #b45309;
-}
-.outline-danger:hover {
-  -fx-background-color: #fef2f2;
-  -fx-border-color: #fecaca;
-  -fx-text-fill: #b91c1c;
-}
-.destructive-button {
-  -fx-background-color: #ef4444;
-  -fx-text-fill: white;
-  -fx-padding: 10px 20px;
-  -fx-background-radius: 6px;
-  -fx-font-weight: 600;
-}
-.destructive-button:hover {
-  -fx-background-color: #dc2626;
-}
-.icon-button {
-  -fx-background-color: transparent;
-  -fx-padding: 8px;
-  -fx-cursor: hand;
-  -fx-text-fill: #64748b;
-}
-.icon-button:hover {
-  -fx-background-color: #e2e8f0;
-  -fx-background-radius: 6px;
+.nav-btn:hover {
+    -fx-background-color: #F1F5F9;
+    -fx-text-fill: #1E293B;
 }
 
-.search-bar-container {
-  -fx-background-color: #f8fafc;
-  -fx-border-color: #cbd5e1;
-  -fx-border-radius: 8px;
-  -fx-background-radius: 8px;
-  -fx-padding: 4px 4px 4px 16px;
-}
-.search-input {
-  -fx-background-color: transparent;
-  -fx-border-color: transparent;
-  -fx-text-fill: #0f172a;
-  -fx-font-family: "JetBrains Mono";
-  -fx-font-size: 14px;
-}
-.search-input:focused {
-  -fx-background-color: transparent;
-  -fx-border-color: transparent;
+.nav-btn-active {
+    -fx-background-color: #E8F4FF;
+    -fx-border-color: #B9DFFF;
+    -fx-border-width: 1px;
+    -fx-border-radius: 8px;
+    -fx-text-fill: #1976D2;
+    -fx-font-weight: 600;
 }
 
-/* Result Page Elements */
-.result-decision-text {
-  -fx-font-size: 36px;
-  -fx-font-weight: 800;
-  -fx-text-fill: #0f172a;
-}
-.result-hero {
-  -fx-background-color: #f8fafc;
-  -fx-border-color: #e2e8f0;
-}
-.hero-card {
-  -fx-background-color: #f0f9ff;
-  -fx-border-color: #bae6fd;
+.nav-btn-active .ikonli-font-icon,
+.nav-btn-active FontIcon {
+    -fx-icon-color: #1976D2;
+    -fx-fill: #1976D2;
 }
 
-/* Badges */
-.badge {
-  -fx-padding: 6px 10px;
-  -fx-background-radius: 6px;
-  -fx-font-size: 11px;
-  -fx-font-weight: 700;
-  -fx-letter-spacing: 0.05em;
+.nav-btn-active:hover {
+    -fx-background-color: #DDEEFE;
 }
+
+.protection-status-card {
+    -fx-background-color: #ECFDF5;
+    -fx-border-color: #D1FAE5;
+    -fx-border-width: 1px;
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+    -fx-padding: 10px 12px;
+}
+
+.protection-status-title {
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #065F46;
+}
+
+.protection-status-desc {
+    -fx-font-size: 10px;
+    -fx-text-fill: #047857;
+}
+
+.sec-badge {
+    -fx-background-color: #D1FAE5;
+    -fx-text-fill: #065F46;
+    -fx-font-size: 9px;
+    -fx-font-weight: 700;
+    -fx-padding: 2px 5px;
+    -fx-background-radius: 4px;
+}
+
+.version-label {
+    -fx-font-size: 11px;
+    -fx-text-fill: #94A3B8;
+    -fx-alignment: center;
+}
+
+/* --------------------------------------------------------------------------
+   Top Bar
+   -------------------------------------------------------------------------- */
+.topbar {
+    -fx-background-color: transparent;
+    -fx-padding: 16px 28px 12px 28px;
+}
+
+.top-search-box {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1px;
+    -fx-background-radius: 20px;
+    -fx-border-radius: 20px;
+    -fx-padding: 6px 16px;
+    -fx-pref-width: 440px;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.top-search-input {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-font-size: 13px;
+    -fx-text-fill: #0F172A;
+    -fx-prompt-text-fill: #94A3B8;
+    -fx-padding: 2px 8px;
+}
+
+.top-search-input:focused {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.user-avatar {
+    -fx-background-color: #2563EB;
+    -fx-background-radius: 50%;
+    -fx-min-width: 32px;
+    -fx-min-height: 32px;
+    -fx-max-width: 32px;
+    -fx-max-height: 32px;
+    -fx-alignment: center;
+}
+
+.user-avatar-text {
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #FFFFFF;
+}
+
+.user-name-text {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #0F172A;
+}
+
+/* --------------------------------------------------------------------------
+   Page Header
+   -------------------------------------------------------------------------- */
+.page-header-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #0F172A;
+}
+
+.page-header-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: #64748B;
+}
+
+.header-timestamp {
+    -fx-font-size: 12px;
+    -fx-font-weight: 500;
+    -fx-text-fill: #64748B;
+}
+
+/* --------------------------------------------------------------------------
+   Cards
+   -------------------------------------------------------------------------- */
+.stitch-card {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1px;
+    -fx-background-radius: 12px;
+    -fx-border-radius: 12px;
+    -fx-padding: 20px;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.04), 8, 0, 0, 2);
+}
+
+.metric-card {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1px;
+    -fx-background-radius: 12px;
+    -fx-border-radius: 12px;
+    -fx-padding: 16px 18px;
+    -fx-spacing: 6px;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.03), 6, 0, 0, 1);
+}
+
+.metric-icon-circle {
+    -fx-background-radius: 50%;
+    -fx-min-width: 36px;
+    -fx-min-height: 36px;
+    -fx-max-width: 36px;
+    -fx-max-height: 36px;
+    -fx-alignment: center;
+}
+
+.icon-blue-bg {
+    -fx-background-color: #EBF5FF;
+}
+.icon-red-bg {
+    -fx-background-color: #FEF2F2;
+}
+.icon-amber-bg {
+    -fx-background-color: #FFFBEB;
+}
+.icon-green-bg {
+    -fx-background-color: #ECFDF5;
+}
+.icon-emerald-bg {
+    -fx-background-color: #ECFDF5;
+}
+.icon-cyan-bg {
+    -fx-background-color: #F0FDF4;
+}
+
+.metric-value {
+    -fx-font-size: 24px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #0F172A;
+}
+
+.metric-label {
+    -fx-font-size: 12px;
+    -fx-font-weight: 500;
+    -fx-text-fill: #64748B;
+}
+
+.metric-trend-up {
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #10B981;
+}
+
+.metric-trend-red {
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #EF4444;
+}
+
+.metric-trend-amber {
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #F59E0B;
+}
+
+/* --------------------------------------------------------------------------
+   Badges and Status Pills
+   -------------------------------------------------------------------------- */
+.pill-badge {
+    -fx-background-radius: 20px;
+    -fx-border-radius: 20px;
+    -fx-padding: 3px 10px;
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+}
+
+.badge-operational {
+    -fx-background-color: #ECFDF5;
+    -fx-border-color: #A7F3D0;
+    -fx-border-width: 1px;
+    -fx-text-fill: #059669;
+}
+
 .badge-safe {
-  -fx-background-color: #ecfdf5;
-  -fx-text-fill: #059669;
-  -fx-border-color: #a7f3d0;
-  -fx-border-radius: 6px;
-}
-.badge-danger {
-  -fx-background-color: #fef2f2;
-  -fx-text-fill: #dc2626;
-  -fx-border-color: #fecaca;
-  -fx-border-radius: 6px;
+    -fx-background-color: #ECFDF5;
+    -fx-border-color: #D1FAE5;
+    -fx-border-width: 1px;
+    -fx-text-fill: #059669;
 }
 
-/* Lists & Tables */
-.clean-list {
-  -fx-background-color: transparent;
-  -fx-border-color: transparent;
-  -fx-control-inner-background: transparent;
-  -fx-font-family: "JetBrains Mono";
-  -fx-font-size: 13px;
-}
-.clean-list .list-cell {
-  -fx-padding: 10px 8px;
-  -fx-border-color: transparent transparent #e2e8f0 transparent;
-  -fx-text-fill: #334155;
-}
-.clean-list .list-cell:empty {
-  -fx-border-color: transparent;
+.badge-low-risk {
+    -fx-background-color: #ECFDF5;
+    -fx-border-color: #A7F3D0;
+    -fx-border-width: 1px;
+    -fx-text-fill: #10B981;
 }
 
-/* Misc */
-.toast {
-  -fx-background-color: #0ea5e9;
-  -fx-text-fill: white;
-  -fx-padding: 14px 28px;
-  -fx-background-radius: 8px;
-  -fx-translate-y: -32px;
-  -fx-font-weight: 600;
-  -fx-effect: dropshadow(gaussian, rgba(14, 165, 233, 0.4), 16, 0.4, 0, 4);
-}
-.w-full {
-  -fx-max-width: infinity;
+.badge-suspicious {
+    -fx-background-color: #FFFBEB;
+    -fx-border-color: #FDE68A;
+    -fx-border-width: 1px;
+    -fx-text-fill: #D97706;
 }
 
-/* PRESERVED WELCOME PAGE STYLES */
+.badge-high-risk {
+    -fx-background-color: #FEF2F2;
+    -fx-border-color: #FECACA;
+    -fx-border-width: 1px;
+    -fx-text-fill: #DC2626;
+}
+
+.badge-live-shield {
+    -fx-background-color: #ECFDF5;
+    -fx-border-color: #A7F3D0;
+    -fx-border-width: 1px;
+    -fx-text-fill: #16C784;
+}
+
+.badge-live-shield .ikonli-font-icon,
+.badge-live-shield FontIcon {
+    -fx-icon-color: #16C784;
+    -fx-fill: #16C784;
+}
+
+/* --------------------------------------------------------------------------
+   True Circular Risk Gauge
+   -------------------------------------------------------------------------- */
+.gauge-container {
+    -fx-alignment: center;
+}
+
+.gauge-bg-circle {
+    -fx-fill: transparent;
+    -fx-stroke: #E2E8F0;
+    -fx-stroke-width: 10px;
+}
+
+.gauge-arc-fill {
+    -fx-fill: transparent;
+    -fx-stroke: #10B981;
+    -fx-stroke-width: 10px;
+    -fx-stroke-line-cap: round;
+}
+
+.gauge-score-text {
+    -fx-font-size: 30px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #0F172A;
+    -fx-alignment: center;
+}
+
+.gauge-score-sub {
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #94A3B8;
+    -fx-alignment: center;
+}
+
+.gauge-label {
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #64748B;
+    -fx-letter-spacing: 0.05em;
+}
+
+/* --------------------------------------------------------------------------
+   Threat Breakdown (Dashboard)
+   -------------------------------------------------------------------------- */
+.breakdown-box {
+    -fx-background-color: #F8FAFC;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1px;
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+    -fx-padding: 16px;
+    -fx-pref-width: 280px;
+}
+
+.breakdown-title {
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #1E293B;
+}
+
+.breakdown-sub {
+    -fx-font-size: 11px;
+    -fx-text-fill: #94A3B8;
+}
+
+.custom-progress-bar {
+    -fx-pref-height: 6px;
+    -fx-max-height: 6px;
+}
+
+.custom-progress-bar .track {
+    -fx-background-color: #E2E8F0;
+    -fx-background-radius: 4px;
+}
+
+.custom-progress-bar .bar {
+    -fx-background-radius: 4px;
+    -fx-padding: 3px;
+}
+
+.bar-green .bar {
+    -fx-background-color: #10B981;
+}
+
+.bar-blue .bar {
+    -fx-background-color: #3B82F6;
+}
+
+.bar-amber .bar {
+    -fx-background-color: #F59E0B;
+}
+
+.bar-red .bar {
+    -fx-background-color: #EF4444;
+}
+
+.bar-cyan .bar {
+    -fx-background-color: #06B6D4;
+}
+
+/* --------------------------------------------------------------------------
+   Buttons
+   -------------------------------------------------------------------------- */
+.stitch-btn-primary {
+    -fx-background-color: #2563EB;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-background-radius: 8px;
+    -fx-padding: 9px 18px;
+    -fx-cursor: hand;
+    -fx-graphic-text-gap: 8px;
+}
+
+.stitch-btn-primary:hover {
+    -fx-background-color: #1D4ED8;
+}
+
+.stitch-btn-analyze-green {
+    -fx-background-color: linear-gradient(to bottom, #10B981, #059669);
+    -fx-border-color: rgba(4, 120, 87, 0.40);
+    -fx-border-width: 1px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 13.5px;
+    -fx-font-weight: 700;
+    -fx-padding: 9px 22px;
+    -fx-cursor: hand;
+    -fx-graphic-text-gap: 8px;
+    -fx-effect: dropshadow(gaussian, rgba(5, 150, 105, 0.28), 6, 0, 0, 2);
+}
+
+.stitch-btn-analyze-green:hover {
+    -fx-background-color: linear-gradient(to bottom, #34D399, #10B981);
+    -fx-border-color: rgba(4, 120, 87, 0.60);
+    -fx-effect: dropshadow(gaussian, rgba(5, 150, 105, 0.40), 10, 0.1, 0, 3);
+}
+
+.stitch-btn-analyze-green:pressed {
+    -fx-background-color: linear-gradient(to bottom, #047857, #065F46);
+    -fx-border-color: rgba(4, 120, 87, 0.70);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 2, 0, 0, 1);
+}
+
+.stitch-btn-analyze-green FontIcon,
+.stitch-btn-analyze-green .ikonli-font-icon {
+    -fx-icon-color: #FFFFFF;
+    -fx-fill: #FFFFFF;
+}
+
+.stitch-btn-secondary {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #CBD5E1;
+    -fx-border-width: 1px;
+    -fx-text-fill: #334155;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-padding: 8px 16px;
+    -fx-cursor: hand;
+    -fx-graphic-text-gap: 8px;
+}
+
+.stitch-btn-secondary:hover {
+    -fx-background-color: #F8FAFC;
+    -fx-border-color: #94A3B8;
+}
+
+.icon-btn-round {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1px;
+    -fx-background-radius: 50%;
+    -fx-border-radius: 50%;
+    -fx-min-width: 34px;
+    -fx-min-height: 34px;
+    -fx-max-width: 34px;
+    -fx-max-height: 34px;
+    -fx-alignment: center;
+    -fx-cursor: hand;
+}
+
+.icon-btn-round:hover {
+    -fx-background-color: #F1F5F9;
+}
+
+/* --------------------------------------------------------------------------
+   Stepper (Analyzing State)
+   -------------------------------------------------------------------------- */
+.stepper-item {
+    -fx-alignment: CENTER_LEFT;
+    -fx-spacing: 12px;
+}
+
+.stepper-label-active {
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #0F172A;
+}
+
+.stepper-label-done {
+    -fx-font-size: 14px;
+    -fx-font-weight: 500;
+    -fx-text-fill: #334155;
+}
+
+.stepper-label-pending {
+    -fx-font-size: 14px;
+    -fx-font-weight: 400;
+    -fx-text-fill: #94A3B8;
+}
+
+/* --------------------------------------------------------------------------
+   Radar Scanner Visual
+   -------------------------------------------------------------------------- */
+.radar-center-shield {
+    -fx-background-color: linear-gradient(to bottom right, #34D399, #05B96B);
+    -fx-background-radius: 50%;
+    -fx-min-width: 72px;
+    -fx-min-height: 72px;
+    -fx-max-width: 72px;
+    -fx-max-height: 72px;
+    -fx-alignment: center;
+    -fx-effect: dropshadow(gaussian, rgba(16, 185, 129, 0.45), 18, 0.15, 0, 0);
+}
+
+.radar-center-shield .ikonli-font-icon,
+.radar-center-shield FontIcon {
+    -fx-icon-color: #FFFFFF;
+    -fx-fill: #FFFFFF;
+}
+
+.orbit-icon-circle {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 50%;
+    -fx-border-radius: 50%;
+    -fx-border-width: 1.5px;
+    -fx-min-width: 32px;
+    -fx-min-height: 32px;
+    -fx-max-width: 32px;
+    -fx-max-height: 32px;
+    -fx-alignment: center;
+}
+
+.orbit-badge-blue {
+    -fx-border-color: rgba(59, 130, 246, 0.35);
+    -fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.25), 8, 0, 0, 1);
+}
+
+.orbit-badge-cyan {
+    -fx-border-color: rgba(45, 212, 191, 0.40);
+    -fx-effect: dropshadow(gaussian, rgba(45, 212, 191, 0.25), 8, 0, 0, 1);
+}
+
+.orbit-badge-green {
+    -fx-border-color: rgba(16, 185, 129, 0.40);
+    -fx-effect: dropshadow(gaussian, rgba(16, 185, 129, 0.25), 8, 0, 0, 1);
+}
+
+.orbit-badge-amber {
+    -fx-border-color: rgba(245, 158, 11, 0.40);
+    -fx-effect: dropshadow(gaussian, rgba(245, 158, 11, 0.25), 8, 0, 0, 1);
+}
+
+.radar-ring {
+    -fx-fill: transparent;
+    -fx-stroke: #A7F3D0;
+    -fx-stroke-width: 1.5;
+}
+
+.radar-sweep-cone {
+    -fx-fill: rgba(52, 211, 153, 0.18);
+    -fx-stroke: transparent;
+}
+
+.radar-outer-sweep-arc {
+    -fx-fill: transparent;
+    -fx-stroke: #10B981;
+    -fx-stroke-width: 2.5;
+    -fx-stroke-line-cap: round;
+    -fx-effect: dropshadow(gaussian, rgba(52, 211, 153, 0.50), 8, 0, 0, 0);
+}
+
+/* --------------------------------------------------------------------------
+   Info Key-Value Pairs
+   -------------------------------------------------------------------------- */
+.info-label {
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #64748B;
+    -fx-letter-spacing: 0.04em;
+}
+
+.info-value {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #0F172A;
+}
+
+.feature-key {
+    -fx-font-size: 13px;
+    -fx-font-weight: 500;
+    -fx-text-fill: #475569;
+}
+
+.feature-val {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #0F172A;
+}
+
+/* --------------------------------------------------------------------------
+   Result Status Badge
+   -------------------------------------------------------------------------- */
+.result-status-card {
+    -fx-background-color: #ECFDF5;
+    -fx-border-color: #A7F3D0;
+    -fx-border-width: 1px;
+    -fx-background-radius: 12px;
+    -fx-border-radius: 12px;
+    -fx-padding: 16px 24px;
+}
+
+.result-status-card-danger {
+    -fx-background-color: #FEF2F2;
+    -fx-border-color: #FECACA;
+    -fx-border-width: 1px;
+    -fx-background-radius: 12px;
+    -fx-border-radius: 12px;
+    -fx-padding: 16px 24px;
+}
+
+.result-status-card-warn {
+    -fx-background-color: #FFFBEB;
+    -fx-border-color: #FDE68A;
+    -fx-border-width: 1px;
+    -fx-background-radius: 12px;
+    -fx-border-radius: 12px;
+    -fx-padding: 16px 24px;
+}
+
+.result-title-text {
+    -fx-font-size: 26px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #065F46;
+}
+
+.result-title-danger {
+    -fx-text-fill: #DC2626;
+}
+
+.result-title-warn {
+    -fx-text-fill: #D97706;
+}
+
+.result-sub-text {
+    -fx-font-size: 13px;
+    -fx-text-fill: #047857;
+}
+
+.result-sub-danger {
+    -fx-text-fill: #B91C1C;
+}
+
+.result-sub-warn {
+    -fx-text-fill: #B45309;
+}
+
+/* --------------------------------------------------------------------------
+   Banner Bottom
+   -------------------------------------------------------------------------- */
+.banner-safe {
+    -fx-background-color: #ECFDF5;
+    -fx-border-color: #A7F3D0;
+    -fx-border-width: 1px;
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+    -fx-padding: 12px 18px;
+}
+
+.banner-danger {
+    -fx-background-color: #FEF2F2;
+    -fx-border-color: #FECACA;
+    -fx-border-width: 1px;
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+    -fx-padding: 12px 18px;
+}
+
+.banner-text-safe {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #065F46;
+}
+
+.banner-text-danger {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #B91C1C;
+}
+
+/* --------------------------------------------------------------------------
+   Tables and Lists
+   -------------------------------------------------------------------------- */
+.table-header-row {
+    -fx-background-color: #F8FAFC;
+    -fx-padding: 8px 12px;
+    -fx-border-color: transparent transparent #E2E8F0 transparent;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.table-header-label {
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #64748B;
+    -fx-letter-spacing: 0.04em;
+}
+
+.table-row-item {
+    -fx-padding: 12px 12px;
+    -fx-border-color: transparent transparent #F1F5F9 transparent;
+    -fx-border-width: 0 0 1px 0;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.table-row-item:hover {
+    -fx-background-color: #F8FAFC;
+}
+
+.url-table-text {
+    -fx-font-size: 13px;
+    -fx-font-weight: 500;
+    -fx-text-fill: #1E293B;
+}
+
+.url-table-text-danger {
+    -fx-font-size: 13px;
+    -fx-font-weight: 500;
+    -fx-text-fill: #DC2626;
+}
+
+.url-table-time {
+    -fx-font-size: 12px;
+    -fx-text-fill: #94A3B8;
+}
+
+/* --------------------------------------------------------------------------
+   Form Inputs & Dropdowns
+   -------------------------------------------------------------------------- */
+.stitch-text-field {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #CBD5E1;
+    -fx-border-width: 1px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-padding: 9px 14px;
+    -fx-font-size: 13px;
+    -fx-text-fill: #0F172A;
+}
+
+.stitch-text-field:focused {
+    -fx-border-color: #2563EB;
+}
+
+.stitch-combo-box {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #CBD5E1;
+    -fx-border-width: 1px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-font-size: 12px;
+    -fx-text-fill: #334155;
+    -fx-padding: 2px 8px;
+}
+
+/* --------------------------------------------------------------------------
+   Toggle Switch (iOS Style)
+   -------------------------------------------------------------------------- */
+.toggle-switch-on {
+    -fx-background-color: #2563EB;
+    -fx-background-radius: 12px;
+    -fx-pref-width: 44px;
+    -fx-pref-height: 24px;
+    -fx-min-width: 44px;
+    -fx-min-height: 24px;
+    -fx-max-width: 44px;
+    -fx-max-height: 24px;
+    -fx-alignment: CENTER_RIGHT;
+    -fx-padding: 0 3px 0 0;
+    -fx-cursor: hand;
+}
+
+.toggle-switch-off {
+    -fx-background-color: #CBD5E1;
+    -fx-background-radius: 12px;
+    -fx-pref-width: 44px;
+    -fx-pref-height: 24px;
+    -fx-min-width: 44px;
+    -fx-min-height: 24px;
+    -fx-max-width: 44px;
+    -fx-max-height: 24px;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 0 0 0 3px;
+    -fx-cursor: hand;
+}
+
+.toggle-knob {
+    -fx-fill: #FFFFFF;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 3, 0, 0, 1);
+}
+
+/* --------------------------------------------------------------------------
+   Settings Sub-Nav
+   -------------------------------------------------------------------------- */
+.settings-subnav-btn {
+    -fx-background-color: transparent;
+    -fx-background-radius: 8px;
+    -fx-text-fill: #475569;
+    -fx-font-size: 13px;
+    -fx-font-weight: 500;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 10px 14px;
+    -fx-cursor: hand;
+    -fx-graphic-text-gap: 12px;
+    -fx-max-width: Infinity;
+}
+
+.settings-subnav-btn:hover {
+    -fx-background-color: #F1F5F9;
+    -fx-text-fill: #1E293B;
+}
+
+.settings-subnav-btn-active {
+    -fx-background-color: #E8F4FF;
+    -fx-border-color: #B9DFFF;
+    -fx-border-width: 1px;
+    -fx-border-radius: 8px;
+    -fx-text-fill: #1976D2;
+    -fx-font-weight: 600;
+}
+
+.settings-subnav-btn-active .ikonli-font-icon,
+.settings-subnav-btn-active FontIcon {
+    -fx-icon-color: #1976D2;
+    -fx-fill: #1976D2;
+}
+
+.settings-subnav-btn-active:hover {
+    -fx-background-color: #DDEEFE;
+}
+
+/* Theme Cards in Settings -> Appearance */
+.theme-card-selected {
+    -fx-background-color: #ECFDF5;
+    -fx-border-color: #16C784;
+    -fx-border-width: 2px;
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+    -fx-text-fill: #0F172A;
+    -fx-cursor: hand;
+}
+
+.theme-card-selected .ikonli-font-icon,
+.theme-card-selected FontIcon {
+    -fx-icon-color: #16C784;
+    -fx-fill: #16C784;
+}
+
+.theme-card-unselected {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1px;
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+    -fx-text-fill: #64748B;
+    -fx-cursor: hand;
+}
+
+.theme-card-unselected .ikonli-font-icon,
+.theme-card-unselected FontIcon {
+    -fx-icon-color: #64748B;
+    -fx-fill: #64748B;
+}
+
+.theme-card-unselected:hover {
+    -fx-background-color: #F8FAFC;
+    -fx-border-color: #CBD5E1;
+}
+
+/* --------------------------------------------------------------------------
+   AI Insights Step Cards
+   -------------------------------------------------------------------------- */
+.detection-step-card {
+    -fx-background-color: #F8FAFC;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1px;
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+    -fx-padding: 14px 12px;
+    -fx-spacing: 8px;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.step-number-circle {
+    -fx-background-color: #2563EB;
+    -fx-background-radius: 50%;
+    -fx-min-width: 22px;
+    -fx-min-height: 22px;
+    -fx-max-width: 22px;
+    -fx-max-height: 22px;
+    -fx-alignment: center;
+}
+
+.step-number-text {
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #FFFFFF;
+}
+
+/* --------------------------------------------------------------------------
+   ScrollPanes
+   -------------------------------------------------------------------------- */
+.scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+/* --------------------------------------------------------------------------
+   Toast Notification
+   -------------------------------------------------------------------------- */
+.toast-badge {
+    -fx-background-color: #0F172A;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 13px;
+    -fx-font-weight: 500;
+    -fx-background-radius: 20px;
+    -fx-padding: 8px 20px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 12, 0, 0, 4);
+}
+
+.engine-status-box {
+    -fx-background-color: #F8FAFC;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-padding: 10px 14px;
+}
+
+/* --------------------------------------------------------------------------
+   Radar Endpoint Marker
+   -------------------------------------------------------------------------- */
+.radar-endpoint-marker {
+    -fx-fill: #05B96B;
+    -fx-stroke: #FFFFFF;
+    -fx-stroke-width: 1.5px;
+    -fx-effect: dropshadow(gaussian, rgba(5, 185, 107, 0.8), 8, 0.4, 0, 0);
+}
+
+.badge-potential-risk {
+    -fx-background-color: #FFFBEB;
+    -fx-border-color: #FDE68A;
+    -fx-border-width: 1px;
+    -fx-text-fill: #D97706;
+}
+
+/* ==========================================================================
+   Splash / Starting Page (Light, Clean, Cybersecurity)
+   Colors: navy #06214f, blue #1e7bff, cyan #00b4ff, background #eef6ff
+   ========================================================================== */
 .welcome-page-new {
-  -fx-background-image: url("../images/background.png");
-  -fx-background-size: cover;
-  -fx-background-position: center center;
-  -fx-background-repeat: no-repeat;
-  -fx-background-color: #f0f8ff;
+    -fx-background-color: #eef6ff;
+    -fx-background-image: url("../images/background.png");
+    -fx-background-size: cover;
+    -fx-background-position: center center;
+    -fx-background-repeat: no-repeat;
 }
 
 .welcome-title-new {
-  -fx-font-size: 38px;
-  -fx-font-weight: 900;
-  -fx-text-fill: #06193b;
-  -fx-font-family: "Geist", "Segoe UI", sans-serif;
+    -fx-font-size: 34px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #06214f;
+    -fx-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Inter', Roboto, sans-serif;
+    -fx-letter-spacing: 0.05em;
+    -fx-effect: dropshadow(gaussian, rgba(6, 33, 79, 0.15), 10, 0.2, 0, 2);
 }
 
 .welcome-subtitle-new {
-  -fx-font-size: 14px;
-  -fx-font-weight: 700;
-  -fx-text-fill: #2765b0;
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #1e7bff;
+    -fx-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Inter', Roboto, sans-serif;
+    -fx-letter-spacing: 0.14em;
+}
+
+.splash-glow-circle {
+    -fx-fill: rgba(30, 123, 255, 0.15);
+    -fx-stroke: transparent;
+    -fx-effect: dropshadow(gaussian, rgba(0, 180, 255, 0.45), 36, 0.35, 0, 0);
+}
+
+.splash-progress-bar {
+    -fx-pref-height: 3.5px;
+    -fx-min-height: 3.5px;
+    -fx-max-height: 3.5px;
+}
+
+.splash-progress-bar > .track {
+    -fx-background-color: rgba(30, 123, 255, 0.15);
+    -fx-background-radius: 4px;
+    -fx-border-color: transparent;
+}
+
+.splash-progress-bar > .bar {
+    -fx-background-color: linear-gradient(to right, #1e7bff, #00b4ff);
+    -fx-background-radius: 4px;
+    -fx-background-insets: 0;
+    -fx-effect: dropshadow(gaussian, rgba(0, 180, 255, 0.5), 6, 0.3, 0, 0);
 }
 
 .get-started-button {
-  -fx-background-color: #0b1528;
-  -fx-text-fill: #ffffff;
-  -fx-font-weight: bold;
-  -fx-font-size: 13px;
-  -fx-padding: 12px 42px;
-  -fx-background-radius: 30px;
-  -fx-effect: dropshadow(gaussian, rgba(0, 150, 255, 0.7), 25, 0.4, 0, 0);
-  -fx-cursor: hand;
-  -fx-border-width: 0;
+    -fx-background-color: #0b1528;
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+    -fx-padding: 12px 42px;
+    -fx-background-radius: 30px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 150, 255, 0.7), 25, 0.4, 0, 0);
+    -fx-cursor: hand;
+    -fx-border-width: 1px;
+    -fx-border-color: rgba(96, 165, 250, 0.5);
+    -fx-border-radius: 30px;
 }
 
 .get-started-button:hover {
-  -fx-background-color: #1a2a45;
-  -fx-effect: dropshadow(gaussian, rgba(0, 150, 255, 0.9), 30, 0.5, 0, 0);
+    -fx-background-color: #1a2a45;
+    -fx-border-color: #60A5FA;
+    -fx-effect: dropshadow(gaussian, rgba(0, 150, 255, 0.9), 30, 0.5, 0, 0);
+}
+
+.subtle-v-separator {
+    -fx-padding: 0 4px;
+}
+
+.subtle-v-separator .line {
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 0 1px 0 0;
+}
+
+/* ========================================================================= */
+/* AI WatchDog Upgraded Dashboard - Stat Cards & Risk Status (wd-)           */
+/* ========================================================================= */
+.wd-stats {
+    -fx-hgap: 16px;
+    -fx-vgap: 16px;
+}
+
+.wd-card {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e6ecf5;
+    -fx-border-width: 1px;
+    -fx-border-radius: 14px;
+    -fx-background-radius: 14px;
+    -fx-padding: 18px 20px 22px 20px;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.04), 8, 0, 0, 2);
+    -fx-cursor: hand;
+}
+
+.wd-card-hover {
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.12), 24, 0, 0, 8);
+}
+
+.wd-ic {
+    -fx-min-width: 42px;
+    -fx-min-height: 42px;
+    -fx-pref-width: 42px;
+    -fx-pref-height: 42px;
+    -fx-max-width: 42px;
+    -fx-max-height: 42px;
+    -fx-background-radius: 12px;
+    -fx-alignment: center;
+}
+
+.wd-ic-blue { -fx-background-color: #e8f0ff; }
+.wd-ic-red { -fx-background-color: #fdecec; }
+.wd-ic-amber { -fx-background-color: #fff4dc; }
+.wd-ic-green { -fx-background-color: #e4f8ee; }
+
+.wd-ic-blue-hover { -fx-background-color: #3b6df0; }
+.wd-ic-red-hover { -fx-background-color: #ef4444; }
+.wd-ic-amber-hover { -fx-background-color: #f59e0b; }
+.wd-ic-green-hover { -fx-background-color: #10b981; }
+
+.wd-tr-blue { -fx-text-fill: #2f5bd6; -fx-font-size: 12px; -fx-font-weight: 700; }
+.wd-tr-red { -fx-text-fill: #d93636; -fx-font-size: 12px; -fx-font-weight: 700; }
+.wd-tr-amber { -fx-text-fill: #c27803; -fx-font-size: 12px; -fx-font-weight: 700; }
+.wd-tr-green { -fx-text-fill: #0b8f65; -fx-font-size: 12px; -fx-font-weight: 700; }
+
+.wd-lb {
+    -fx-text-fill: #64748b;
+    -fx-font-size: 14px;
+    -fx-font-weight: 500;
+}
+
+.wd-nm {
+    -fx-text-fill: #0f172a;
+    -fx-font-size: 32px;
+    -fx-font-weight: 700;
+}
+
+.wd-sb {
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 12px;
+}
+
+.wd-ln {
+    -fx-pref-height: 3px;
+    -fx-min-height: 3px;
+    -fx-max-height: 3px;
+}
+
+.wd-ln-blue { -fx-background-color: #3b6df0; }
+.wd-ln-red { -fx-background-color: #ef4444; }
+.wd-ln-amber { -fx-background-color: #f59e0b; }
+.wd-ln-green { -fx-background-color: #10b981; }
+
+/* Current Risk Status Panel */
+.wd-risk {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e6ecf5;
+    -fx-border-width: 1px;
+    -fx-border-radius: 16px;
+    -fx-background-radius: 16px;
+    -fx-padding: 24px 26px;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.04), 8, 0, 0, 2);
+}
+
+.wd-ok {
+    -fx-text-fill: #0b8f65;
+    -fx-background-color: #e4f8ee;
+    -fx-border-color: #bfeed6;
+    -fx-border-width: 1px;
+    -fx-border-radius: 999px;
+    -fx-background-radius: 999px;
+    -fx-padding: 5px 12px;
+    -fx-font-size: 12.5px;
+    -fx-font-weight: 600;
+}
+
+.wd-ring {
+    -fx-cursor: hand;
+}
+
+.wd-rchip {
+    -fx-font-size: 10.5px;
+    -fx-font-weight: 700;
+    -fx-padding: 4px 14px;
+    -fx-border-radius: 999px;
+    -fx-background-radius: 999px;
+    -fx-border-width: 1px;
+}
+
+.wd-rchip-low {
+    -fx-text-fill: #10b981;
+    -fx-background-color: #e4f8ee;
+    -fx-border-color: #bfeed6;
+}
+
+.wd-rchip-med {
+    -fx-text-fill: #f59e0b;
+    -fx-background-color: #fff4dc;
+    -fx-border-color: #fde3a6;
+}
+
+.wd-rchip-high {
+    -fx-text-fill: #ef4444;
+    -fx-background-color: #fdecec;
+    -fx-border-color: #f9c6c6;
+}
+
+.wd-radar-num {
+    -fx-text-fill: #0f172a;
+    -fx-font-size: 30px;
+    -fx-font-weight: 700;
+}
+
+.wd-mid {
+    -fx-padding: 0 34px;
+    -fx-border-color: transparent #e6ecf5 transparent #e6ecf5;
+    -fx-border-width: 0 1px 0 1px;
+}
+
+.wd-status-low { -fx-text-fill: #0b8f65; -fx-font-size: 12.5px; -fx-font-weight: 600; }
+.wd-status-med { -fx-text-fill: #c27803; -fx-font-size: 12.5px; -fx-font-weight: 600; }
+.wd-status-high { -fx-text-fill: #d93636; -fx-font-size: 12.5px; -fx-font-weight: 600; }
+
+.wd-live {
+    -fx-padding: 10px 18px;
+    -fx-background-radius: 999px;
+    -fx-border-radius: 999px;
+    -fx-border-color: #bfeed6;
+    -fx-border-width: 1px;
+    -fx-background-color: #ecfaf3;
+}
+
+.wd-brk {
+    -fx-background-color: #f8fafd;
+    -fx-border-color: #e6ecf5;
+    -fx-border-width: 1px;
+    -fx-border-radius: 14px;
+    -fx-background-radius: 14px;
+    -fx-padding: 18px 20px;
+}
+
+.wd-tk {
+    -fx-pref-height: 6px;
+    -fx-min-height: 6px;
+    -fx-max-height: 6px;
+    -fx-background-color: #e6ecf5;
+    -fx-background-radius: 3px;
+}
+
+/* --------------------------------------------------------------------------
+   Collapsible Sidebar & Hamburger Menu (wd-)
+   -------------------------------------------------------------------------- */
+.wd-burger {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E6ECF5;
+    -fx-border-width: 1px;
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+    -fx-min-width: 38px;
+    -fx-min-height: 38px;
+    -fx-pref-width: 38px;
+    -fx-pref-height: 38px;
+    -fx-max-width: 38px;
+    -fx-max-height: 38px;
+    -fx-padding: 0;
+    -fx-alignment: center;
+    -fx-cursor: hand;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.wd-burger:hover {
+    -fx-background-color: #E8F0FF;
+    -fx-border-color: #3B6DF0;
+}
+
+.wd-burger-bar {
+    -fx-background-color: #334155;
+    -fx-background-radius: 1px;
+}
+
+.wd-burger:hover .wd-burger-bar {
+    -fx-background-color: #3B6DF0;
+}
+
+/* Sidebar Navigation ScrollPane */
+.wd-sidebar-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 0;
+}
+
+.wd-sidebar-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+/* Slim 6px Scrollbar */
+.wd-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.wd-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.wd-scroll > .scroll-bar:vertical {
+    -fx-pref-width: 6px;
+    -fx-min-width: 6px;
+    -fx-max-width: 6px;
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.wd-scroll > .scroll-bar:vertical > .track {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.wd-scroll > .scroll-bar:vertical > .thumb {
+    -fx-background-color: #CBD5E1;
+    -fx-background-radius: 3px;
+}
+
+.wd-scroll > .scroll-bar:vertical > .thumb:hover {
+    -fx-background-color: #94A3B8;
+}
+
+.wd-scroll > .scroll-bar:vertical > .increment-button,
+.wd-scroll > .scroll-bar:vertical > .decrement-button {
+    -fx-pref-height: 0px;
+    -fx-min-height: 0px;
+    -fx-max-height: 0px;
+    -fx-padding: 0px;
+    -fx-opacity: 0;
+}
+
+.wd-scroll > .scroll-bar:vertical > .increment-arrow,
+.wd-scroll > .scroll-bar:vertical > .decrement-arrow {
+    -fx-shape: " ";
+    -fx-padding: 0px;
+}
+
+.wd-scroll > .scroll-bar:horizontal {
+    -fx-pref-height: 0px;
+    -fx-min-height: 0px;
+    -fx-max-height: 0px;
+    -fx-padding: 0px;
+    -fx-opacity: 0;
+}
+
+.wd-scroll > .scroll-bar:horizontal > .track,
+.wd-scroll > .scroll-bar:horizontal > .thumb,
+.wd-scroll > .scroll-bar:horizontal > .increment-button,
+.wd-scroll > .scroll-bar:horizontal > .decrement-button {
+    -fx-pref-height: 0px;
+    -fx-min-height: 0px;
+    -fx-max-height: 0px;
+    -fx-padding: 0px;
+    -fx-opacity: 0;
+}
+
+/* Active Hamburger State (Menu Open) */
+.wd-burger-on {
+    -fx-background-color: #E8F0FF;
+    -fx-border-color: #3B6DF0;
+}
+
+.wd-burger-on .wd-burger-bar {
+    -fx-background-color: #3B6DF0;
+}
+
+/* Stat Cards Bottom Padding (+6px so bottom line never touches "this week") */
+.wd-card {
+    -fx-padding: 18px 20px 28px 20px;
+}
+
+/* ==========================================================================
+   Threat Center - Threat Insights Donut & Risk Score
+   ========================================================================== */
+.wd-threat-donut-track {
+    -fx-fill: transparent;
+    -fx-stroke: #E2E8F0;
+    -fx-stroke-width: 14;
+}
+
+.wd-threat-donut-count {
+    -fx-font-size: 22px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #0F172A;
+}
+
+.wd-threat-donut-sub {
+    -fx-font-size: 10px;
+    -fx-font-weight: 500;
+    -fx-text-fill: #64748B;
+}
+
+.wd-threat-legend-row {
+    -fx-padding: 5px 8px;
+    -fx-background-radius: 6px;
+    -fx-cursor: hand;
+}
+
+.wd-threat-legend-row:hover,
+.wd-threat-legend-hover {
+    -fx-background-color: #F1F5F9;
+}
+
+.wd-threat-legend-pct {
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #0F172A;
+}
+
+/* Stat Cards Enhanced Hover & Tile Animations */
+.wd-tile-red-hover { -fx-background-color: #EF4444; }
+.wd-tile-amber-hover { -fx-background-color: #F59E0B; }
+.wd-tile-blue-hover { -fx-background-color: #3B82F6; }
+.wd-tile-green-hover { -fx-background-color: #10B981; }
+
+/* ==========================================================================
+   Visibility & Theme Decoupling (Light Theme)
+   ========================================================================== */
+.panel-title {
+    -fx-text-fill: #0F172A;
+}
+
+.stitch-btn-icon {
+    -fx-icon-color: #334155;
+    -fx-fill: #334155;
+}
+
+.wd-live-text {
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #0B8F65;
+}
+
+.wd-section-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #0F172A;
+}
+
+.wd-section-sub-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #0F172A;
+}
+
+.wd-scan-status {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #1E293B;
+}
+
+.wd-dominant-vector-text {
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #1E293B;
+}
+
+.wd-insight-card {
+    -fx-background-color: #F8FAFC;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1px;
+    -fx-background-radius: 12px;
+    -fx-border-radius: 12px;
+}
+
+.wd-rec-row {
+    -fx-padding: 10px 8px;
+    -fx-background-color: #F8FAFC;
+    -fx-background-radius: 8px;
+}
+
+.wd-rec-title {
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #0F172A;
+}
+
+.wd-step-title {
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #0F172A;
+}
+
+.wd-settings-sidebar-divider {
+    -fx-border-color: transparent #E2E8F0 transparent transparent;
+    -fx-border-width: 0 1px 0 0;
+    -fx-padding: 0 16px 0 0;
+}
+
+.wd-about-box {
+    -fx-background-color: #F8FAFC;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1px;
+    -fx-border-radius: 10px;
+    -fx-background-radius: 10px;
+    -fx-padding: 16px;
+}
+
+.wd-about-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #0F172A;
+}
+
+.wd-sync-label {
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #065F46;
+}
+
+.wd-exception-row {
+    -fx-background-color: #F8FAFC;
+    -fx-background-radius: 8px;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1px;
+    -fx-border-radius: 8px;
+    -fx-padding: 12px 16px;
+}
+
+.wd-exception-desc {
+    -fx-font-size: 12px;
+    -fx-text-fill: #64748B;
+}
+
+.wd-exception-domain {
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #0F172A;
+}
+
+/* ==========================================================================
+   Analyzing Website Screen - Stepper & Status (wd-)
+   ========================================================================== */
+.wd-stp-row {
+    -fx-alignment: center-left;
+    -fx-spacing: 15px;
+    -fx-min-height: 48px;
+    -fx-pref-height: 48px;
+    -fx-max-height: 48px;
+}
+
+.wd-stp-box-pending {
+    -fx-min-width: 40px;
+    -fx-min-height: 40px;
+    -fx-pref-width: 40px;
+    -fx-pref-height: 40px;
+    -fx-max-width: 40px;
+    -fx-max-height: 40px;
+    -fx-background-color: #F4F6FA;
+    -fx-background-radius: 50%;
+    -fx-border-color: #E8EDF4;
+    -fx-border-width: 1.5px;
+    -fx-border-radius: 50%;
+    -fx-alignment: center;
+}
+
+.wd-stp-label-pending {
+    -fx-font-size: 14px;
+    -fx-font-weight: 500;
+    -fx-text-fill: #9AA8BB;
+}
+
+.wd-stp-box-active {
+    -fx-min-width: 40px;
+    -fx-min-height: 40px;
+    -fx-pref-width: 40px;
+    -fx-pref-height: 40px;
+    -fx-max-width: 40px;
+    -fx-max-height: 40px;
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 50%;
+    -fx-border-color: #A9C4FF;
+    -fx-border-width: 2px;
+    -fx-border-radius: 50%;
+    -fx-alignment: center;
+    -fx-effect: dropshadow(gaussian, rgba(59, 109, 240, 0.22), 8, 0.2, 0, 0);
+}
+
+.wd-stp-label-active {
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #0F172A;
+}
+
+.wd-stp-box-done {
+    -fx-min-width: 40px;
+    -fx-min-height: 40px;
+    -fx-pref-width: 40px;
+    -fx-pref-height: 40px;
+    -fx-max-width: 40px;
+    -fx-max-height: 40px;
+    -fx-background-color: #E4F8EE;
+    -fx-background-radius: 50%;
+    -fx-border-color: #BFEED6;
+    -fx-border-width: 1.5px;
+    -fx-border-radius: 50%;
+    -fx-alignment: center;
+}
+
+.wd-stp-label-done {
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #0F172A;
+}
+
+.wd-stg {
+    -fx-font-size: 15px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #0F172A;
+    -fx-alignment: center;
+}
+
+.wd-pc {
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #10B981;
+    -fx-min-width: 39px;
+}
+
+
+/* ==========================================================================
+   AI WatchDog Native JavaFX Button System (wd-buttons-fx.css)
+   Clean, unified design system matching Section B5 & B9
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Base Button
+   -------------------------------------------------------------------------- */
+.button.wd-btn,
+.wd-btn {
+    -fx-font-weight: 600;
+    -fx-cursor: hand;
+    -fx-border-style: solid;
+    -fx-border-width: 1px;
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+    -fx-alignment: center;
+}
+
+.button.wd-btn--round,
+.wd-btn--round {
+    -fx-background-radius: 50%;
+    -fx-border-radius: 50%;
+}
+
+/* --------------------------------------------------------------------------
+   2. Primary Variant (Blue Default / Emerald Secure / Indigo AI)
+   -------------------------------------------------------------------------- */
+/* Default (Blue #2563eb) */
+.button.wd-primary,
+.button.wd-btn--primary,
+.wd-btn.wd-primary,
+.wd-btn.wd-btn--primary,
+.wd-primary,
+.wd-btn--primary {
+    -fx-background-color: #2563eb;
+    -fx-border-color: #2563eb;
+    -fx-text-fill: #ffffff;
+    -fx-effect: dropshadow(gaussian, rgba(37, 99, 235, 0.40), 10, 0, 0, 3);
+}
+.button.wd-primary:hover,
+.button.wd-btn--primary:hover,
+.wd-btn.wd-primary:hover,
+.wd-btn.wd-btn--primary:hover,
+.wd-primary:hover,
+.wd-btn--primary:hover {
+    -fx-background-color: #1d4ed8;
+    -fx-border-color: #1d4ed8;
+    -fx-effect: dropshadow(gaussian, rgba(37, 99, 235, 0.45), 14, 0, 0, 4);
+}
+.button.wd-primary:pressed,
+.button.wd-btn--primary:pressed,
+.wd-btn.wd-primary:pressed,
+.wd-btn.wd-btn--primary:pressed,
+.wd-primary:pressed,
+.wd-btn--primary:pressed {
+    -fx-background-color: #1e40af;
+    -fx-border-color: #1e40af;
+    -fx-effect: dropshadow(gaussian, rgba(37, 99, 235, 0.25), 4, 0, 0, 1);
+}
+.button.wd-primary FontIcon,
+.button.wd-primary .ikonli-font-icon,
+.button.wd-btn--primary FontIcon,
+.button.wd-btn--primary .ikonli-font-icon,
+.wd-primary FontIcon,
+.wd-primary .ikonli-font-icon,
+.wd-btn--primary FontIcon,
+.wd-btn--primary .ikonli-font-icon {
+    -fx-icon-color: #ffffff;
+    -fx-fill: #ffffff;
+}
+
+/* Secure Access Accent (Emerald #047857) */
+.wd-pg-secure .button.wd-primary,
+.wd-pg-secure .button.wd-btn--primary,
+.wd-pg-secure .wd-btn.wd-primary,
+.wd-pg-secure .wd-btn.wd-btn--primary,
+.wd-pg-secure .wd-primary,
+.wd-pg-secure .wd-btn--primary {
+    -fx-background-color: #047857;
+    -fx-border-color: #047857;
+    -fx-text-fill: #ffffff;
+    -fx-effect: dropshadow(gaussian, rgba(4, 120, 87, 0.40), 10, 0, 0, 3);
+}
+.wd-pg-secure .button.wd-primary:hover,
+.wd-pg-secure .button.wd-btn--primary:hover,
+.wd-pg-secure .wd-btn.wd-primary:hover,
+.wd-pg-secure .wd-btn.wd-btn--primary:hover,
+.wd-pg-secure .wd-primary:hover,
+.wd-pg-secure .wd-btn--primary:hover {
+    -fx-background-color: #065f46;
+    -fx-border-color: #065f46;
+    -fx-effect: dropshadow(gaussian, rgba(4, 120, 87, 0.45), 14, 0, 0, 4);
+}
+.wd-pg-secure .button.wd-primary:pressed,
+.wd-pg-secure .button.wd-btn--primary:pressed,
+.wd-pg-secure .wd-btn.wd-primary:pressed,
+.wd-pg-secure .wd-btn.wd-btn--primary:pressed,
+.wd-pg-secure .wd-primary:pressed,
+.wd-pg-secure .wd-btn--primary:pressed {
+    -fx-background-color: #064e3b;
+    -fx-border-color: #064e3b;
+    -fx-effect: dropshadow(gaussian, rgba(4, 120, 87, 0.25), 4, 0, 0, 1);
+}
+
+/* AI Insights Accent (Indigo #4f46e5) */
+.wd-pg-ai .button.wd-primary,
+.wd-pg-ai .button.wd-btn--primary,
+.wd-pg-ai .wd-btn.wd-primary,
+.wd-pg-ai .wd-btn.wd-btn--primary,
+.wd-pg-ai .wd-primary,
+.wd-pg-ai .wd-btn--primary {
+    -fx-background-color: #4f46e5;
+    -fx-border-color: #4f46e5;
+    -fx-text-fill: #ffffff;
+    -fx-effect: dropshadow(gaussian, rgba(79, 70, 229, 0.40), 10, 0, 0, 3);
+}
+.wd-pg-ai .button.wd-primary:hover,
+.wd-pg-ai .button.wd-btn--primary:hover,
+.wd-pg-ai .wd-btn.wd-primary:hover,
+.wd-pg-ai .wd-btn.wd-btn--primary:hover,
+.wd-pg-ai .wd-primary:hover,
+.wd-pg-ai .wd-btn--primary:hover {
+    -fx-background-color: #4338ca;
+    -fx-border-color: #4338ca;
+    -fx-effect: dropshadow(gaussian, rgba(79, 70, 229, 0.45), 14, 0, 0, 4);
+}
+.wd-pg-ai .button.wd-primary:pressed,
+.wd-pg-ai .button.wd-btn--primary:pressed,
+.wd-pg-ai .wd-btn.wd-primary:pressed,
+.wd-pg-ai .wd-btn.wd-btn--primary:pressed,
+.wd-pg-ai .wd-primary:pressed,
+.wd-pg-ai .wd-btn--primary:pressed {
+    -fx-background-color: #3730a3;
+    -fx-border-color: #3730a3;
+    -fx-effect: dropshadow(gaussian, rgba(79, 70, 229, 0.25), 4, 0, 0, 1);
+}
+
+/* --------------------------------------------------------------------------
+   3. Secondary Variant
+   -------------------------------------------------------------------------- */
+.button.wd-secondary,
+.button.wd-btn--secondary,
+.wd-btn.wd-secondary,
+.wd-btn.wd-btn--secondary,
+.wd-secondary,
+.wd-btn--secondary {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #cbd5e1;
+    -fx-text-fill: #1e293b;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.06), 4, 0, 0, 1);
+}
+.button.wd-secondary:hover,
+.button.wd-btn--secondary:hover,
+.wd-btn.wd-secondary:hover,
+.wd-btn.wd-btn--secondary:hover,
+.wd-secondary:hover,
+.wd-btn--secondary:hover {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #94a3b8;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.12), 6, 0, 0, 2);
+}
+.button.wd-secondary:pressed,
+.button.wd-btn--secondary:pressed,
+.wd-btn.wd-secondary:pressed,
+.wd-btn.wd-btn--secondary:pressed,
+.wd-secondary:pressed,
+.wd-btn--secondary:pressed {
+    -fx-background-color: #f1f5f9;
+    -fx-border-color: #94a3b8;
+    -fx-effect: null;
+}
+.button.wd-secondary FontIcon,
+.button.wd-secondary .ikonli-font-icon,
+.button.wd-btn--secondary FontIcon,
+.button.wd-btn--secondary .ikonli-font-icon,
+.wd-secondary FontIcon,
+.wd-secondary .ikonli-font-icon,
+.wd-btn--secondary FontIcon,
+.wd-btn--secondary .ikonli-font-icon {
+    -fx-icon-color: #334155;
+    -fx-fill: #334155;
+}
+
+/* --------------------------------------------------------------------------
+   4. Ghost Variant
+   -------------------------------------------------------------------------- */
+.button.wd-ghost,
+.button.wd-btn--ghost,
+.wd-btn.wd-ghost,
+.wd-btn.wd-btn--ghost,
+.wd-ghost,
+.wd-btn--ghost {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: #475569;
+    -fx-effect: null;
+}
+.button.wd-ghost:hover,
+.button.wd-btn--ghost:hover,
+.wd-btn.wd-ghost:hover,
+.wd-btn.wd-btn--ghost:hover,
+.wd-ghost:hover,
+.wd-btn--ghost:hover {
+    -fx-background-color: #f1f5f9;
+    -fx-border-color: transparent;
+    -fx-text-fill: #0f172a;
+}
+.button.wd-ghost:pressed,
+.button.wd-btn--ghost:pressed,
+.wd-btn.wd-ghost:pressed,
+.wd-btn.wd-btn--ghost:pressed,
+.wd-ghost:pressed,
+.wd-btn--ghost:pressed {
+    -fx-background-color: #e2e8f0;
+    -fx-border-color: transparent;
+    -fx-text-fill: #0f172a;
+}
+.button.wd-ghost FontIcon,
+.button.wd-ghost .ikonli-font-icon,
+.button.wd-btn--ghost FontIcon,
+.button.wd-btn--ghost .ikonli-font-icon,
+.wd-ghost FontIcon,
+.wd-ghost .ikonli-font-icon,
+.wd-btn--ghost FontIcon,
+.wd-btn--ghost .ikonli-font-icon {
+    -fx-icon-color: #475569;
+    -fx-fill: #475569;
+}
+.button.wd-ghost:hover FontIcon,
+.button.wd-ghost:hover .ikonli-font-icon,
+.button.wd-btn--ghost:hover FontIcon,
+.button.wd-btn--ghost:hover .ikonli-font-icon,
+.wd-ghost:hover FontIcon,
+.wd-ghost:hover .ikonli-font-icon,
+.wd-btn--ghost:hover FontIcon,
+.wd-btn--ghost:hover .ikonli-font-icon {
+    -fx-icon-color: #0f172a;
+    -fx-fill: #0f172a;
+}
+
+/* --------------------------------------------------------------------------
+   5. Tonal Variant
+   -------------------------------------------------------------------------- */
+/* Default Blue tonal */
+.button.wd-tonal,
+.button.wd-btn--tonal,
+.wd-btn.wd-tonal,
+.wd-btn.wd-btn--tonal,
+.wd-tonal,
+.wd-btn--tonal {
+    -fx-background-color: #eff6ff;
+    -fx-border-color: #bfdbfe;
+    -fx-text-fill: #1d4ed8;
+    -fx-effect: null;
+}
+.button.wd-tonal:hover,
+.button.wd-btn--tonal:hover,
+.wd-btn.wd-tonal:hover,
+.wd-btn.wd-btn--tonal:hover,
+.wd-tonal:hover,
+.wd-btn--tonal:hover {
+    -fx-background-color: #dbeafe;
+    -fx-border-color: #93c5fd;
+}
+.button.wd-tonal:pressed,
+.button.wd-btn--tonal:pressed,
+.wd-btn.wd-tonal:pressed,
+.wd-btn.wd-btn--tonal:pressed,
+.wd-tonal:pressed,
+.wd-btn--tonal:pressed {
+    -fx-background-color: #bfdbfe;
+    -fx-border-color: #93c5fd;
+}
+.button.wd-tonal FontIcon,
+.button.wd-tonal .ikonli-font-icon,
+.button.wd-btn--tonal FontIcon,
+.button.wd-btn--tonal .ikonli-font-icon,
+.wd-tonal FontIcon,
+.wd-tonal .ikonli-font-icon,
+.wd-btn--tonal FontIcon,
+.wd-btn--tonal .ikonli-font-icon {
+    -fx-icon-color: #1d4ed8;
+    -fx-fill: #1d4ed8;
+}
+
+/* AI Insights Indigo tonal */
+.wd-pg-ai .button.wd-tonal,
+.wd-pg-ai .button.wd-btn--tonal,
+.wd-pg-ai .wd-btn.wd-tonal,
+.wd-pg-ai .wd-btn.wd-btn--tonal,
+.wd-pg-ai .wd-tonal,
+.wd-pg-ai .wd-btn--tonal {
+    -fx-background-color: #eef2ff;
+    -fx-border-color: #c7d2fe;
+    -fx-text-fill: #3730a3;
+}
+.wd-pg-ai .button.wd-tonal:hover,
+.wd-pg-ai .button.wd-btn--tonal:hover,
+.wd-pg-ai .wd-btn.wd-tonal:hover,
+.wd-pg-ai .wd-btn.wd-btn--tonal:hover,
+.wd-pg-ai .wd-tonal:hover,
+.wd-pg-ai .wd-btn--tonal:hover {
+    -fx-background-color: #e0e7ff;
+    -fx-border-color: #a5b4fc;
+}
+.wd-pg-ai .button.wd-tonal:pressed,
+.wd-pg-ai .button.wd-btn--tonal:pressed,
+.wd-pg-ai .wd-btn.wd-tonal:pressed,
+.wd-pg-ai .wd-btn.wd-btn--tonal:pressed,
+.wd-pg-ai .wd-tonal:pressed,
+.wd-pg-ai .wd-btn--tonal:pressed {
+    -fx-background-color: #c7d2fe;
+    -fx-border-color: #a5b4fc;
+}
+.wd-pg-ai .button.wd-tonal FontIcon,
+.wd-pg-ai .button.wd-tonal .ikonli-font-icon,
+.wd-pg-ai .wd-tonal FontIcon,
+.wd-pg-ai .wd-tonal .ikonli-font-icon {
+    -fx-icon-color: #3730a3;
+    -fx-fill: #3730a3;
+}
+
+/* Secure Access Emerald tonal */
+.wd-pg-secure .button.wd-tonal,
+.wd-pg-secure .button.wd-btn--tonal,
+.wd-pg-secure .wd-btn.wd-tonal,
+.wd-pg-secure .wd-btn.wd-btn--tonal,
+.wd-pg-secure .wd-tonal,
+.wd-pg-secure .wd-btn--tonal {
+    -fx-background-color: #ecfdf5;
+    -fx-border-color: #a7f3d0;
+    -fx-text-fill: #065f46;
+}
+.wd-pg-secure .button.wd-tonal:hover,
+.wd-pg-secure .button.wd-btn--tonal:hover,
+.wd-pg-secure .wd-btn.wd-tonal:hover,
+.wd-pg-secure .wd-btn.wd-btn--tonal:hover,
+.wd-pg-secure .wd-tonal:hover,
+.wd-pg-secure .wd-btn--tonal:hover {
+    -fx-background-color: #d1fae5;
+    -fx-border-color: #6ee7b7;
+}
+.wd-pg-secure .button.wd-tonal:pressed,
+.wd-pg-secure .button.wd-btn--tonal:pressed,
+.wd-pg-secure .wd-btn.wd-tonal:pressed,
+.wd-pg-secure .wd-btn.wd-btn--tonal:pressed,
+.wd-pg-secure .wd-tonal:pressed,
+.wd-pg-secure .wd-btn--tonal:pressed {
+    -fx-background-color: #a7f3d0;
+    -fx-border-color: #6ee7b7;
+}
+.wd-pg-secure .button.wd-tonal FontIcon,
+.wd-pg-secure .button.wd-tonal .ikonli-font-icon,
+.wd-pg-secure .wd-tonal FontIcon,
+.wd-pg-secure .wd-tonal .ikonli-font-icon {
+    -fx-icon-color: #065f46;
+    -fx-fill: #065f46;
+}
+
+/* --------------------------------------------------------------------------
+   6. Success & Danger & Warning Solid Variants
+   -------------------------------------------------------------------------- */
+/* Success (Emerald #047857) */
+.button.wd-success,
+.button.wd-btn--success,
+.wd-btn.wd-success,
+.wd-btn.wd-btn--success,
+.wd-success,
+.wd-btn--success {
+    -fx-background-color: #047857;
+    -fx-border-color: #047857;
+    -fx-text-fill: #ffffff;
+    -fx-effect: dropshadow(gaussian, rgba(4, 120, 87, 0.40), 10, 0, 0, 3);
+}
+.button.wd-success:hover,
+.button.wd-btn--success:hover,
+.wd-btn.wd-success:hover,
+.wd-btn.wd-btn--success:hover,
+.wd-success:hover,
+.wd-btn--success:hover {
+    -fx-background-color: #065f46;
+    -fx-border-color: #065f46;
+    -fx-effect: dropshadow(gaussian, rgba(4, 120, 87, 0.45), 14, 0, 0, 4);
+}
+.button.wd-success:pressed,
+.button.wd-btn--success:pressed,
+.wd-btn.wd-success:pressed,
+.wd-btn.wd-btn--success:pressed,
+.wd-success:pressed,
+.wd-btn--success:pressed {
+    -fx-background-color: #064e3b;
+    -fx-border-color: #064e3b;
+    -fx-effect: dropshadow(gaussian, rgba(4, 120, 87, 0.25), 4, 0, 0, 1);
+}
+.button.wd-success FontIcon,
+.button.wd-success .ikonli-font-icon,
+.button.wd-btn--success FontIcon,
+.button.wd-btn--success .ikonli-font-icon,
+.wd-success FontIcon,
+.wd-success .ikonli-font-icon,
+.wd-btn--success FontIcon,
+.wd-btn--success .ikonli-font-icon {
+    -fx-icon-color: #ffffff;
+    -fx-fill: #ffffff;
+}
+
+/* Danger (Red #dc2626) */
+.button.wd-danger,
+.button.wd-btn--danger,
+.wd-btn.wd-danger,
+.wd-btn.wd-btn--danger,
+.wd-danger,
+.wd-btn--danger {
+    -fx-background-color: #dc2626;
+    -fx-border-color: #dc2626;
+    -fx-text-fill: #ffffff;
+    -fx-effect: dropshadow(gaussian, rgba(220, 38, 38, 0.40), 10, 0, 0, 3);
+}
+.button.wd-danger:hover,
+.button.wd-btn--danger:hover,
+.wd-btn.wd-danger:hover,
+.wd-btn.wd-btn--danger:hover,
+.wd-danger:hover,
+.wd-btn--danger:hover {
+    -fx-background-color: #b91c1c;
+    -fx-border-color: #b91c1c;
+    -fx-effect: dropshadow(gaussian, rgba(220, 38, 38, 0.45), 14, 0, 0, 4);
+}
+.button.wd-danger:pressed,
+.button.wd-btn--danger:pressed,
+.wd-btn.wd-danger:pressed,
+.wd-btn.wd-btn--danger:pressed,
+.wd-danger:pressed,
+.wd-btn--danger:pressed {
+    -fx-background-color: #991b1b;
+    -fx-border-color: #991b1b;
+    -fx-effect: dropshadow(gaussian, rgba(220, 38, 38, 0.25), 4, 0, 0, 1);
+}
+.button.wd-danger FontIcon,
+.button.wd-danger .ikonli-font-icon,
+.button.wd-btn--danger FontIcon,
+.button.wd-btn--danger .ikonli-font-icon,
+.wd-danger FontIcon,
+.wd-danger .ikonli-font-icon,
+.wd-btn--danger FontIcon,
+.wd-btn--danger .ikonli-font-icon {
+    -fx-icon-color: #ffffff;
+    -fx-fill: #ffffff;
+}
+
+/* Warning (Amber #fbbf24) */
+.button.wd-warning,
+.button.wd-btn--warning,
+.wd-btn.wd-warning,
+.wd-btn.wd-btn--warning,
+.wd-warning,
+.wd-btn--warning {
+    -fx-background-color: #fbbf24;
+    -fx-border-color: #fbbf24;
+    -fx-text-fill: #451a03;
+    -fx-effect: dropshadow(gaussian, rgba(217, 119, 6, 0.35), 10, 0, 0, 3);
+}
+.button.wd-warning:hover,
+.button.wd-btn--warning:hover,
+.wd-btn.wd-warning:hover,
+.wd-btn.wd-btn--warning:hover,
+.wd-warning:hover,
+.wd-btn--warning:hover {
+    -fx-background-color: #f59e0b;
+    -fx-border-color: #f59e0b;
+    -fx-effect: dropshadow(gaussian, rgba(217, 119, 6, 0.40), 14, 0, 0, 4);
+}
+.button.wd-warning:pressed,
+.button.wd-btn--warning:pressed,
+.wd-btn.wd-warning:pressed,
+.wd-btn.wd-btn--warning:pressed,
+.wd-warning:pressed,
+.wd-btn--warning:pressed {
+    -fx-background-color: #d97706;
+    -fx-border-color: #d97706;
+    -fx-effect: dropshadow(gaussian, rgba(217, 119, 6, 0.25), 4, 0, 0, 1);
+}
+.button.wd-warning FontIcon,
+.button.wd-warning .ikonli-font-icon,
+.button.wd-btn--warning FontIcon,
+.button.wd-btn--warning .ikonli-font-icon,
+.wd-warning FontIcon,
+.wd-warning .ikonli-font-icon,
+.wd-btn--warning FontIcon,
+.wd-btn--warning .ikonli-font-icon {
+    -fx-icon-color: #451a03;
+    -fx-fill: #451a03;
+}
+
+/* --------------------------------------------------------------------------
+   7. Soft Row & Secondary Action Variants
+   -------------------------------------------------------------------------- */
+/* Danger Soft */
+.button.wd-danger-soft,
+.button.wd-btn--danger-soft,
+.wd-btn.wd-danger-soft,
+.wd-btn.wd-btn--danger-soft,
+.wd-danger-soft,
+.wd-btn--danger-soft {
+    -fx-background-color: #fef2f2;
+    -fx-border-color: #fecaca;
+    -fx-text-fill: #b91c1c;
+    -fx-effect: null;
+}
+.button.wd-danger-soft:hover,
+.button.wd-btn--danger-soft:hover,
+.wd-btn.wd-danger-soft:hover,
+.wd-btn.wd-btn--danger-soft:hover,
+.wd-danger-soft:hover,
+.wd-btn--danger-soft:hover {
+    -fx-background-color: #fee2e2;
+    -fx-border-color: #fca5a5;
+    -fx-text-fill: #b91c1c;
+}
+.button.wd-danger-soft:pressed,
+.button.wd-btn--danger-soft:pressed,
+.wd-btn.wd-danger-soft:pressed,
+.wd-btn.wd-btn--danger-soft:pressed,
+.wd-danger-soft:pressed,
+.wd-btn--danger-soft:pressed {
+    -fx-background-color: #fecaca;
+    -fx-border-color: #f87171;
+    -fx-text-fill: #991b1b;
+}
+.button.wd-danger-soft FontIcon,
+.button.wd-danger-soft .ikonli-font-icon,
+.button.wd-btn--danger-soft FontIcon,
+.button.wd-btn--danger-soft .ikonli-font-icon,
+.wd-danger-soft FontIcon,
+.wd-danger-soft .ikonli-font-icon,
+.wd-btn--danger-soft FontIcon,
+.wd-btn--danger-soft .ikonli-font-icon {
+    -fx-icon-color: #b91c1c;
+    -fx-fill: #b91c1c;
+}
+
+/* Success Soft */
+.button.wd-success-soft,
+.button.wd-btn--success-soft,
+.wd-btn.wd-success-soft,
+.wd-btn.wd-btn--success-soft,
+.wd-success-soft,
+.wd-btn--success-soft {
+    -fx-background-color: #ecfdf5;
+    -fx-border-color: #a7f3d0;
+    -fx-text-fill: #065f46;
+    -fx-effect: null;
+}
+.button.wd-success-soft:hover,
+.button.wd-btn--success-soft:hover,
+.wd-btn.wd-success-soft:hover,
+.wd-btn.wd-btn--success-soft:hover,
+.wd-success-soft:hover,
+.wd-btn--success-soft:hover {
+    -fx-background-color: #d1fae5;
+    -fx-border-color: #6ee7b7;
+}
+.button.wd-success-soft:pressed,
+.button.wd-btn--success-soft:pressed,
+.wd-btn.wd-success-soft:pressed,
+.wd-btn.wd-btn--success-soft:pressed,
+.wd-success-soft:pressed,
+.wd-btn--success-soft:pressed {
+    -fx-background-color: #a7f3d0;
+    -fx-border-color: #34d399;
+}
+.button.wd-success-soft FontIcon,
+.button.wd-success-soft .ikonli-font-icon,
+.button.wd-btn--success-soft FontIcon,
+.button.wd-btn--success-soft .ikonli-font-icon,
+.wd-success-soft FontIcon,
+.wd-success-soft .ikonli-font-icon,
+.wd-btn--success-soft FontIcon,
+.wd-btn--success-soft .ikonli-font-icon {
+    -fx-icon-color: #065f46;
+    -fx-fill: #065f46;
+}
+
+/* Warning Soft */
+.button.wd-warn-soft,
+.button.wd-btn--warn-soft,
+.wd-btn.wd-warn-soft,
+.wd-btn.wd-btn--warn-soft,
+.wd-warn-soft,
+.wd-btn--warn-soft {
+    -fx-background-color: #fffbeb;
+    -fx-border-color: #fde68a;
+    -fx-text-fill: #92400e;
+    -fx-effect: null;
+}
+.button.wd-warn-soft:hover,
+.button.wd-btn--warn-soft:hover,
+.wd-btn.wd-warn-soft:hover,
+.wd-btn.wd-btn--warn-soft:hover,
+.wd-warn-soft:hover,
+.wd-btn--warn-soft:hover {
+    -fx-background-color: #fef3c7;
+    -fx-border-color: #fcd34d;
+}
+.button.wd-warn-soft:pressed,
+.button.wd-btn--warn-soft:pressed,
+.wd-btn.wd-warn-soft:pressed,
+.wd-btn.wd-btn--warn-soft:pressed,
+.wd-warn-soft:pressed,
+.wd-btn--warn-soft:pressed {
+    -fx-background-color: #fde68a;
+    -fx-border-color: #f59e0b;
+}
+.button.wd-warn-soft FontIcon,
+.button.wd-warn-soft .ikonli-font-icon,
+.button.wd-btn--warn-soft FontIcon,
+.button.wd-btn--warn-soft .ikonli-font-icon,
+.wd-warn-soft FontIcon,
+.wd-warn-soft .ikonli-font-icon,
+.wd-btn--warn-soft FontIcon,
+.wd-btn--warn-soft .ikonli-font-icon {
+    -fx-icon-color: #92400e;
+    -fx-fill: #92400e;
+}
+
+/* --------------------------------------------------------------------------
+   8. Icon Button Variant
+   -------------------------------------------------------------------------- */
+.button.wd-icon,
+.button.wd-btn--icon,
+.wd-btn.wd-icon,
+.wd-btn.wd-btn--icon,
+.wd-icon,
+.wd-btn--icon {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e2e8f0;
+    -fx-text-fill: #334155;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.05), 4, 0, 0, 1);
+}
+.button.wd-icon:hover,
+.button.wd-btn--icon:hover,
+.wd-btn.wd-icon:hover,
+.wd-btn.wd-btn--icon:hover,
+.wd-icon:hover,
+.wd-btn--icon:hover {
+    -fx-background-color: #eff6ff;
+    -fx-border-color: #bfdbfe;
+    -fx-text-fill: #1d4ed8;
+}
+.button.wd-icon:pressed,
+.button.wd-btn--icon:pressed,
+.wd-btn.wd-icon:pressed,
+.wd-btn.wd-btn--icon:pressed,
+.wd-icon:pressed,
+.wd-btn--icon:pressed {
+    -fx-background-color: #dbeafe;
+    -fx-border-color: #93c5fd;
+}
+.button.wd-icon FontIcon,
+.button.wd-icon .ikonli-font-icon,
+.button.wd-btn--icon FontIcon,
+.button.wd-btn--icon .ikonli-font-icon,
+.wd-icon FontIcon,
+.wd-icon .ikonli-font-icon,
+.wd-btn--icon FontIcon,
+.wd-btn--icon .ikonli-font-icon {
+    -fx-icon-color: #334155;
+    -fx-fill: #334155;
+}
+.button.wd-icon:hover FontIcon,
+.button.wd-icon:hover .ikonli-font-icon,
+.button.wd-btn--icon:hover FontIcon,
+.button.wd-btn--icon:hover .ikonli-font-icon,
+.wd-icon:hover FontIcon,
+.wd-icon:hover .ikonli-font-icon,
+.wd-btn--icon:hover FontIcon,
+.wd-btn--icon:hover .ikonli-font-icon {
+    -fx-icon-color: #1d4ed8;
+    -fx-fill: #1d4ed8;
+}
+
+/* --------------------------------------------------------------------------
+   9. Chip Variant
+   -------------------------------------------------------------------------- */
+.button.wd-chip,
+.button.wd-btn--chip,
+.wd-btn.wd-chip,
+.wd-btn.wd-btn--chip,
+.wd-chip,
+.wd-btn--chip {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e2e8f0;
+    -fx-text-fill: #475569;
+    -fx-background-radius: 999px;
+    -fx-border-radius: 999px;
+    -fx-effect: null;
+}
+.button.wd-chip:hover,
+.button.wd-btn--chip:hover,
+.wd-btn.wd-chip:hover,
+.wd-btn.wd-btn--chip:hover,
+.wd-chip:hover,
+.wd-btn--chip:hover {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #cbd5e1;
+    -fx-text-fill: #0f172a;
+}
+.button.wd-chip.wd-on,
+.button.wd-btn--chip.wd-on,
+.button.wd-chip.settings-subnav-btn-active,
+.button.wd-btn--chip.settings-subnav-btn-active,
+.wd-btn.wd-chip.wd-on,
+.wd-btn.wd-btn--chip.wd-on,
+.wd-chip.wd-on,
+.wd-btn--chip.wd-on,
+.wd-chip.settings-subnav-btn-active,
+.wd-btn--chip.settings-subnav-btn-active {
+    -fx-background-color: #eff6ff;
+    -fx-border-color: #bfdbfe;
+    -fx-text-fill: #1d4ed8;
+    -fx-font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   10. Nav Item Variant
+   -------------------------------------------------------------------------- */
+.button.wd-nav,
+.wd-btn.wd-nav,
+.wd-nav {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: #475569;
+    -fx-cursor: hand;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+}
+.button.wd-nav:hover,
+.wd-btn.wd-nav:hover,
+.wd-nav:hover {
+    -fx-background-color: #f1f5f9;
+    -fx-text-fill: #0f172a;
+}
+.button.wd-nav.wd-on,
+.button.wd-nav.nav-btn-active,
+.wd-btn.wd-nav.wd-on,
+.wd-btn.wd-nav.nav-btn-active,
+.wd-nav.wd-on,
+.wd-nav.nav-btn-active {
+    -fx-background-color: #eff6ff;
+    -fx-text-fill: #2563eb;
+    -fx-font-weight: 700;
+    -fx-border-color: #2563eb;
+    -fx-border-width: 0 0 0 3px;
+    -fx-border-radius: 0;
+}
+.button.wd-nav.wd-on FontIcon,
+.button.wd-nav.wd-on .ikonli-font-icon,
+.button.wd-nav.nav-btn-active FontIcon,
+.button.wd-nav.nav-btn-active .ikonli-font-icon,
+.wd-nav.wd-on FontIcon,
+.wd-nav.wd-on .ikonli-font-icon,
+.wd-nav.nav-btn-active FontIcon,
+.wd-nav.nav-btn-active .ikonli-font-icon {
+    -fx-icon-color: #2563eb;
+    -fx-fill: #2563eb;
+}
+
+/* --------------------------------------------------------------------------
+   11. State Matrix: Disabled & Focused
+   -------------------------------------------------------------------------- */
+.button.wd-btn:disabled,
+.button.wd-btn.wd-disabled,
+.wd-btn:disabled,
+.wd-btn.wd-disabled {
+    -fx-background-color: #f1f5f9;
+    -fx-border-color: #e2e8f0;
+    -fx-text-fill: #94a3b8;
+    -fx-effect: null;
+    -fx-cursor: default;
+    -fx-opacity: 0.7;
+}
+.button.wd-btn:disabled FontIcon,
+.button.wd-btn:disabled .ikonli-font-icon,
+.button.wd-btn.wd-disabled FontIcon,
+.button.wd-btn.wd-disabled .ikonli-font-icon,
+.wd-btn:disabled FontIcon,
+.wd-btn:disabled .ikonli-font-icon,
+.wd-btn.wd-disabled FontIcon,
+.wd-btn.wd-disabled .ikonli-font-icon {
+    -fx-icon-color: #94a3b8;
+    -fx-fill: #94a3b8;
+}
+
+.button.wd-btn:focused,
+.wd-btn:focused {
+    -fx-border-color: rgba(37, 99, 235, 0.45);
+    -fx-border-width: 1.5px;
+}
+
+/* --------------------------------------------------------------------------
+   12. Specificity Overrides for Seamless Harmony with Existing Classes
+   -------------------------------------------------------------------------- */
+.wd-btn.stitch-btn-primary {
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+}
+.wd-btn.stitch-btn-secondary {
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+}
+.wd-btn.stitch-btn-analyze-green.wd-primary {
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
 }

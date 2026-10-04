@@ -10,12 +10,21 @@ import java.io.InputStreamReader;
 public class ThemeManager {
     public enum ThemeMode { LIGHT, DARK, SYSTEM }
     
-    private static ThemeMode currentMode = ThemeMode.SYSTEM;
+    private static ThemeMode currentMode = ThemeMode.LIGHT;
     private static Scene currentScene;
     
     public static void init(Scene scene) {
         currentScene = scene;
-        applyTheme(ThemeMode.SYSTEM);
+        applyTheme(currentMode);
+    }
+    
+    public static void setScene(Scene scene) {
+        currentScene = scene;
+        applyTheme(currentMode);
+    }
+    
+    public static Scene getCurrentScene() {
+        return currentScene;
     }
     
     public static void applyTheme(ThemeMode mode) {

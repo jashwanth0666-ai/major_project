@@ -1,0 +1,95 @@
+/* ===== AI WatchDog button system ===== */
+:root{--wd-p:#2563eb;--wd-p-h:#1d4ed8;--wd-p-a:#1e40af;--wd-ps:#eff6ff;--wd-ps-h:#dbeafe;--wd-ps-a:#bfdbfe;--wd-pst:#1d4ed8;--wd-psb:#bfdbfe;--wd-glow:37,99,235;--wd-ring:rgba(37,99,235,.45)}
+.wd-pg-secure{--wd-p:#047857;--wd-p-h:#065f46;--wd-p-a:#064e3b;--wd-ps:#ecfdf5;--wd-ps-h:#d1fae5;--wd-ps-a:#a7f3d0;--wd-pst:#065f46;--wd-psb:#a7f3d0;--wd-glow:4,120,87;--wd-ring:rgba(4,120,87,.45)}
+.wd-pg-ai{--wd-p:#4f46e5;--wd-p-h:#4338ca;--wd-p-a:#3730a3;--wd-ps:#eef2ff;--wd-ps-h:#e0e7ff;--wd-ps-a:#c7d2fe;--wd-pst:#3730a3;--wd-psb:#c7d2fe;--wd-glow:79,70,229;--wd-ring:rgba(79,70,229,.45)}
+
+/* base: no width/height/padding/margin/font-size/display on purpose, so existing layout is untouched */
+.wd-btn{position:relative;font-family:inherit;font-weight:600;cursor:pointer;-webkit-user-select:none;user-select:none;border-style:solid;border-radius:10px;transition:background-color .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease,transform .16s ease}
+.wd-btn:hover{transform:translateY(-1px)}
+.wd-btn:active{transform:translateY(0) scale(.97);transition-duration:.09s}
+.wd-btn:focus{outline:none}
+.wd-kb .wd-btn:focus,.wd-kb .wd-nav:focus{outline:3px solid var(--wd-ring);outline-offset:2px}
+.wd-btn svg{flex:none;transition:transform .2s ease}
+.wd-btn--round{border-radius:50%}
+.wd-btn--static:hover,.wd-btn--static:active{transform:none}
+
+/* solid variants (+ sheen) */
+.wd-btn--primary,.wd-btn--success,.wd-btn--danger{color:#fff;overflow:hidden;--wd-spin:#fff}
+.wd-btn--primary{background:var(--wd-p);border-color:var(--wd-p);box-shadow:0 1px 2px rgba(var(--wd-glow),.30),0 4px 10px -3px rgba(var(--wd-glow),.40),inset 0 1px 0 rgba(255,255,255,.16)}
+.wd-btn--primary:hover{background:var(--wd-p-h);border-color:var(--wd-p-h);box-shadow:0 2px 4px rgba(var(--wd-glow),.30),0 8px 16px -4px rgba(var(--wd-glow),.45),inset 0 1px 0 rgba(255,255,255,.16)}
+.wd-btn--primary:active{background:var(--wd-p-a);border-color:var(--wd-p-a);box-shadow:0 1px 2px rgba(var(--wd-glow),.25)}
+.wd-btn--success{background:#047857;border-color:#047857;box-shadow:0 1px 2px rgba(4,120,87,.30),0 4px 10px -3px rgba(4,120,87,.40),inset 0 1px 0 rgba(255,255,255,.16)}
+.wd-btn--success:hover{background:#065f46;border-color:#065f46;box-shadow:0 2px 4px rgba(4,120,87,.30),0 8px 16px -4px rgba(4,120,87,.45),inset 0 1px 0 rgba(255,255,255,.16)}
+.wd-btn--success:active{background:#064e3b;border-color:#064e3b;box-shadow:0 1px 2px rgba(4,120,87,.25)}
+.wd-btn--danger{background:#dc2626;border-color:#dc2626;box-shadow:0 1px 2px rgba(220,38,38,.30),0 4px 10px -3px rgba(220,38,38,.40),inset 0 1px 0 rgba(255,255,255,.16)}
+.wd-btn--danger:hover{background:#b91c1c;border-color:#b91c1c;box-shadow:0 2px 4px rgba(220,38,38,.30),0 8px 16px -4px rgba(220,38,38,.45),inset 0 1px 0 rgba(255,255,255,.16)}
+.wd-btn--danger:active{background:#991b1b;border-color:#991b1b;box-shadow:0 1px 2px rgba(220,38,38,.25)}
+.wd-btn--primary:after,.wd-btn--success:after,.wd-btn--danger:after{content:"";position:absolute;top:0;left:0;width:40%;height:100%;background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,.30),rgba(255,255,255,0));transform:translateX(-150%) skewX(-20deg);pointer-events:none}
+.wd-btn--primary:hover:after,.wd-btn--success:hover:after,.wd-btn--danger:hover:after{transform:translateX(400%) skewX(-20deg);transition:transform .65s ease}
+
+/* warning (dark text on amber) */
+.wd-btn--warning{background:#fbbf24;border-color:#fbbf24;color:#451a03;--wd-spin:#451a03;box-shadow:0 1px 2px rgba(217,119,6,.30),0 4px 10px -3px rgba(217,119,6,.35)}
+.wd-btn--warning:hover{background:#f59e0b;border-color:#f59e0b;box-shadow:0 2px 4px rgba(217,119,6,.30),0 8px 16px -4px rgba(217,119,6,.40)}
+.wd-btn--warning:active{background:#d97706;border-color:#d97706;box-shadow:0 1px 2px rgba(217,119,6,.25)}
+
+/* secondary / ghost / tonal */
+.wd-btn--secondary{background:#fff;border-color:#cbd5e1;color:#1e293b;--wd-spin:#334155;box-shadow:0 1px 2px rgba(15,23,42,.06)}
+.wd-btn--secondary:hover{background:#f8fafc;border-color:#94a3b8;box-shadow:0 3px 8px -2px rgba(15,23,42,.12)}
+.wd-btn--secondary:active{background:#f1f5f9;box-shadow:none}
+.wd-btn--ghost{background:transparent;border-color:transparent;color:#475569;--wd-spin:#475569}
+.wd-btn--ghost:hover{background:#f1f5f9;color:#0f172a}
+.wd-btn--ghost:active{background:#e2e8f0}
+.wd-btn--tonal{background:var(--wd-ps);border-color:var(--wd-psb);color:var(--wd-pst);--wd-spin:var(--wd-pst)}
+.wd-btn--tonal:hover{background:var(--wd-ps-h)}
+.wd-btn--tonal:active{background:var(--wd-ps-a)}
+
+/* soft row-action variants */
+.wd-btn--success-soft{background:#ecfdf5;border-color:#a7f3d0;color:#065f46;--wd-spin:#065f46}
+.wd-btn--success-soft:hover{background:#d1fae5}.wd-btn--success-soft:active{background:#a7f3d0}
+.wd-btn--danger-soft{background:#fef2f2;border-color:#fecaca;color:#b91c1c;--wd-spin:#b91c1c}
+.wd-btn--danger-soft:hover{background:#fee2e2}.wd-btn--danger-soft:active{background:#fecaca;color:#991b1b}
+.wd-btn--warn-soft{background:#fffbeb;border-color:#fde68a;color:#92400e;--wd-spin:#92400e}
+.wd-btn--warn-soft:hover{background:#fef3c7}.wd-btn--warn-soft:active{background:#fde68a}
+
+/* icon button (no overflow clipping, so notification badges stay visible) */
+.wd-btn--icon{background:#fff;border-color:#e2e8f0;color:#334155;--wd-spin:#334155;box-shadow:0 1px 2px rgba(15,23,42,.05)}
+.wd-btn--icon:hover{background:var(--wd-ps);border-color:var(--wd-psb);color:var(--wd-pst)}
+.wd-btn--icon:active{background:var(--wd-ps-h)}
+
+/* chip */
+.wd-btn--chip{background:#fff;border-color:#e2e8f0;color:#475569;border-radius:999px;--wd-spin:#475569}
+.wd-btn--chip:hover{background:#f8fafc;border-color:#cbd5e1;color:#0f172a}
+.wd-btn--chip.wd-on{background:var(--wd-ps);border-color:var(--wd-psb);color:var(--wd-pst)}
+
+/* sidebar nav item: duplicate the .wd-on rule with the project's existing active class (Phase 1, item 6) */
+.wd-nav{position:relative;transition:background-color .16s ease,color .16s ease,border-color .16s ease;cursor:pointer}
+.wd-nav:hover{background:#f1f5f9;color:#0f172a}
+.wd-nav:after{content:"";position:absolute;left:0;top:22%;bottom:22%;width:3px;border-radius:3px;background:var(--wd-p);opacity:0;transform:scaleY(.3);transition:opacity .16s ease,transform .2s ease}
+.wd-nav.wd-on{background:var(--wd-ps);color:var(--wd-pst);border-color:var(--wd-psb)}
+.wd-nav.wd-on:after{opacity:1;transform:scaleY(1)}
+
+/* icon motion */
+.wd-btn--spin:hover svg{transform:rotate(180deg)}
+.wd-btn--back:hover svg{transform:translateX(-3px)}
+.wd-btn--bell:hover svg{animation:wd-swing .5s ease}
+@keyframes wd-swing{0%{transform:rotate(0)}25%{transform:rotate(14deg)}55%{transform:rotate(-10deg)}80%{transform:rotate(5deg)}100%{transform:rotate(0)}}
+
+/* loading */
+.wd-btn.wd-loading{pointer-events:none;color:transparent!important}  /* allowed !important #1: hides the label */
+.wd-btn.wd-loading svg{opacity:0}
+.wd-btn.wd-loading:before{content:"";position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;border:2px solid var(--wd-spin,#334155);border-right-color:transparent;animation:wd-spin .7s linear infinite}
+@keyframes wd-spin{to{transform:rotate(360deg)}}
+
+/* disabled */
+.wd-btn:disabled,.wd-btn[disabled],.wd-btn.wd-disabled{background:#f1f5f9;border-color:#e2e8f0;color:#94a3b8;box-shadow:none;cursor:not-allowed;transform:none}
+.wd-btn.wd-disabled{pointer-events:none}
+.wd-btn:disabled:after,.wd-btn[disabled]:after,.wd-btn.wd-disabled:after{display:none}
+
+/* reduced motion */
+@media (prefers-reduced-motion:reduce){.wd-btn,.wd-btn svg,.wd-nav,.wd-nav:after{transition:none!important;animation:none!important}}  /* allowed !important #2 */
+
+/* optional sizes, ONLY for brand-new buttons that have no size or layout of their own */
+.wd-btn--sm,.wd-btn--md,.wd-btn--lg{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-width:1px}
+.wd-btn--sm{height:32px;padding:0 12px;font-size:13px}
+.wd-btn--md{height:40px;padding:0 16px;font-size:14px}
+.wd-btn--lg{height:48px;padding:0 22px;font-size:15px}

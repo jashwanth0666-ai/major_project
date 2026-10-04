@@ -1,0 +1,815 @@
+/* ==========================================================================
+   AI WatchDog Native JavaFX Button System (wd-buttons-fx.css)
+   Clean, unified design system matching Section B5 & B9
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Base Button
+   -------------------------------------------------------------------------- */
+.button.wd-btn,
+.wd-btn {
+    -fx-font-weight: 600;
+    -fx-cursor: hand;
+    -fx-border-style: solid;
+    -fx-border-width: 1px;
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+    -fx-alignment: center;
+}
+
+.button.wd-btn--round,
+.wd-btn--round {
+    -fx-background-radius: 50%;
+    -fx-border-radius: 50%;
+}
+
+/* --------------------------------------------------------------------------
+   2. Primary Variant (Blue Default / Emerald Secure / Indigo AI)
+   -------------------------------------------------------------------------- */
+/* Default (Blue #2563eb) */
+.button.wd-primary,
+.button.wd-btn--primary,
+.wd-btn.wd-primary,
+.wd-btn.wd-btn--primary,
+.wd-primary,
+.wd-btn--primary {
+    -fx-background-color: #2563eb;
+    -fx-border-color: #2563eb;
+    -fx-text-fill: #ffffff;
+    -fx-effect: dropshadow(gaussian, rgba(37, 99, 235, 0.40), 10, 0, 0, 3);
+}
+.button.wd-primary:hover,
+.button.wd-btn--primary:hover,
+.wd-btn.wd-primary:hover,
+.wd-btn.wd-btn--primary:hover,
+.wd-primary:hover,
+.wd-btn--primary:hover {
+    -fx-background-color: #1d4ed8;
+    -fx-border-color: #1d4ed8;
+    -fx-effect: dropshadow(gaussian, rgba(37, 99, 235, 0.45), 14, 0, 0, 4);
+}
+.button.wd-primary:pressed,
+.button.wd-btn--primary:pressed,
+.wd-btn.wd-primary:pressed,
+.wd-btn.wd-btn--primary:pressed,
+.wd-primary:pressed,
+.wd-btn--primary:pressed {
+    -fx-background-color: #1e40af;
+    -fx-border-color: #1e40af;
+    -fx-effect: dropshadow(gaussian, rgba(37, 99, 235, 0.25), 4, 0, 0, 1);
+}
+.button.wd-primary FontIcon,
+.button.wd-primary .ikonli-font-icon,
+.button.wd-btn--primary FontIcon,
+.button.wd-btn--primary .ikonli-font-icon,
+.wd-primary FontIcon,
+.wd-primary .ikonli-font-icon,
+.wd-btn--primary FontIcon,
+.wd-btn--primary .ikonli-font-icon {
+    -fx-icon-color: #ffffff;
+    -fx-fill: #ffffff;
+}
+
+/* Secure Access Accent (Emerald #047857) */
+.wd-pg-secure .button.wd-primary,
+.wd-pg-secure .button.wd-btn--primary,
+.wd-pg-secure .wd-btn.wd-primary,
+.wd-pg-secure .wd-btn.wd-btn--primary,
+.wd-pg-secure .wd-primary,
+.wd-pg-secure .wd-btn--primary {
+    -fx-background-color: #047857;
+    -fx-border-color: #047857;
+    -fx-text-fill: #ffffff;
+    -fx-effect: dropshadow(gaussian, rgba(4, 120, 87, 0.40), 10, 0, 0, 3);
+}
+.wd-pg-secure .button.wd-primary:hover,
+.wd-pg-secure .button.wd-btn--primary:hover,
+.wd-pg-secure .wd-btn.wd-primary:hover,
+.wd-pg-secure .wd-btn.wd-btn--primary:hover,
+.wd-pg-secure .wd-primary:hover,
+.wd-pg-secure .wd-btn--primary:hover {
+    -fx-background-color: #065f46;
+    -fx-border-color: #065f46;
+    -fx-effect: dropshadow(gaussian, rgba(4, 120, 87, 0.45), 14, 0, 0, 4);
+}
+.wd-pg-secure .button.wd-primary:pressed,
+.wd-pg-secure .button.wd-btn--primary:pressed,
+.wd-pg-secure .wd-btn.wd-primary:pressed,
+.wd-pg-secure .wd-btn.wd-btn--primary:pressed,
+.wd-pg-secure .wd-primary:pressed,
+.wd-pg-secure .wd-btn--primary:pressed {
+    -fx-background-color: #064e3b;
+    -fx-border-color: #064e3b;
+    -fx-effect: dropshadow(gaussian, rgba(4, 120, 87, 0.25), 4, 0, 0, 1);
+}
+
+/* AI Insights Accent (Indigo #4f46e5) */
+.wd-pg-ai .button.wd-primary,
+.wd-pg-ai .button.wd-btn--primary,
+.wd-pg-ai .wd-btn.wd-primary,
+.wd-pg-ai .wd-btn.wd-btn--primary,
+.wd-pg-ai .wd-primary,
+.wd-pg-ai .wd-btn--primary {
+    -fx-background-color: #4f46e5;
+    -fx-border-color: #4f46e5;
+    -fx-text-fill: #ffffff;
+    -fx-effect: dropshadow(gaussian, rgba(79, 70, 229, 0.40), 10, 0, 0, 3);
+}
+.wd-pg-ai .button.wd-primary:hover,
+.wd-pg-ai .button.wd-btn--primary:hover,
+.wd-pg-ai .wd-btn.wd-primary:hover,
+.wd-pg-ai .wd-btn.wd-btn--primary:hover,
+.wd-pg-ai .wd-primary:hover,
+.wd-pg-ai .wd-btn--primary:hover {
+    -fx-background-color: #4338ca;
+    -fx-border-color: #4338ca;
+    -fx-effect: dropshadow(gaussian, rgba(79, 70, 229, 0.45), 14, 0, 0, 4);
+}
+.wd-pg-ai .button.wd-primary:pressed,
+.wd-pg-ai .button.wd-btn--primary:pressed,
+.wd-pg-ai .wd-btn.wd-primary:pressed,
+.wd-pg-ai .wd-btn.wd-btn--primary:pressed,
+.wd-pg-ai .wd-primary:pressed,
+.wd-pg-ai .wd-btn--primary:pressed {
+    -fx-background-color: #3730a3;
+    -fx-border-color: #3730a3;
+    -fx-effect: dropshadow(gaussian, rgba(79, 70, 229, 0.25), 4, 0, 0, 1);
+}
+
+/* --------------------------------------------------------------------------
+   3. Secondary Variant
+   -------------------------------------------------------------------------- */
+.button.wd-secondary,
+.button.wd-btn--secondary,
+.wd-btn.wd-secondary,
+.wd-btn.wd-btn--secondary,
+.wd-secondary,
+.wd-btn--secondary {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #cbd5e1;
+    -fx-text-fill: #1e293b;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.06), 4, 0, 0, 1);
+}
+.button.wd-secondary:hover,
+.button.wd-btn--secondary:hover,
+.wd-btn.wd-secondary:hover,
+.wd-btn.wd-btn--secondary:hover,
+.wd-secondary:hover,
+.wd-btn--secondary:hover {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #94a3b8;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.12), 6, 0, 0, 2);
+}
+.button.wd-secondary:pressed,
+.button.wd-btn--secondary:pressed,
+.wd-btn.wd-secondary:pressed,
+.wd-btn.wd-btn--secondary:pressed,
+.wd-secondary:pressed,
+.wd-btn--secondary:pressed {
+    -fx-background-color: #f1f5f9;
+    -fx-border-color: #94a3b8;
+    -fx-effect: null;
+}
+.button.wd-secondary FontIcon,
+.button.wd-secondary .ikonli-font-icon,
+.button.wd-btn--secondary FontIcon,
+.button.wd-btn--secondary .ikonli-font-icon,
+.wd-secondary FontIcon,
+.wd-secondary .ikonli-font-icon,
+.wd-btn--secondary FontIcon,
+.wd-btn--secondary .ikonli-font-icon {
+    -fx-icon-color: #334155;
+    -fx-fill: #334155;
+}
+
+/* --------------------------------------------------------------------------
+   4. Ghost Variant
+   -------------------------------------------------------------------------- */
+.button.wd-ghost,
+.button.wd-btn--ghost,
+.wd-btn.wd-ghost,
+.wd-btn.wd-btn--ghost,
+.wd-ghost,
+.wd-btn--ghost {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: #475569;
+    -fx-effect: null;
+}
+.button.wd-ghost:hover,
+.button.wd-btn--ghost:hover,
+.wd-btn.wd-ghost:hover,
+.wd-btn.wd-btn--ghost:hover,
+.wd-ghost:hover,
+.wd-btn--ghost:hover {
+    -fx-background-color: #f1f5f9;
+    -fx-border-color: transparent;
+    -fx-text-fill: #0f172a;
+}
+.button.wd-ghost:pressed,
+.button.wd-btn--ghost:pressed,
+.wd-btn.wd-ghost:pressed,
+.wd-btn.wd-btn--ghost:pressed,
+.wd-ghost:pressed,
+.wd-btn--ghost:pressed {
+    -fx-background-color: #e2e8f0;
+    -fx-border-color: transparent;
+    -fx-text-fill: #0f172a;
+}
+.button.wd-ghost FontIcon,
+.button.wd-ghost .ikonli-font-icon,
+.button.wd-btn--ghost FontIcon,
+.button.wd-btn--ghost .ikonli-font-icon,
+.wd-ghost FontIcon,
+.wd-ghost .ikonli-font-icon,
+.wd-btn--ghost FontIcon,
+.wd-btn--ghost .ikonli-font-icon {
+    -fx-icon-color: #475569;
+    -fx-fill: #475569;
+}
+.button.wd-ghost:hover FontIcon,
+.button.wd-ghost:hover .ikonli-font-icon,
+.button.wd-btn--ghost:hover FontIcon,
+.button.wd-btn--ghost:hover .ikonli-font-icon,
+.wd-ghost:hover FontIcon,
+.wd-ghost:hover .ikonli-font-icon,
+.wd-btn--ghost:hover FontIcon,
+.wd-btn--ghost:hover .ikonli-font-icon {
+    -fx-icon-color: #0f172a;
+    -fx-fill: #0f172a;
+}
+
+/* --------------------------------------------------------------------------
+   5. Tonal Variant
+   -------------------------------------------------------------------------- */
+/* Default Blue tonal */
+.button.wd-tonal,
+.button.wd-btn--tonal,
+.wd-btn.wd-tonal,
+.wd-btn.wd-btn--tonal,
+.wd-tonal,
+.wd-btn--tonal {
+    -fx-background-color: #eff6ff;
+    -fx-border-color: #bfdbfe;
+    -fx-text-fill: #1d4ed8;
+    -fx-effect: null;
+}
+.button.wd-tonal:hover,
+.button.wd-btn--tonal:hover,
+.wd-btn.wd-tonal:hover,
+.wd-btn.wd-btn--tonal:hover,
+.wd-tonal:hover,
+.wd-btn--tonal:hover {
+    -fx-background-color: #dbeafe;
+    -fx-border-color: #93c5fd;
+}
+.button.wd-tonal:pressed,
+.button.wd-btn--tonal:pressed,
+.wd-btn.wd-tonal:pressed,
+.wd-btn.wd-btn--tonal:pressed,
+.wd-tonal:pressed,
+.wd-btn--tonal:pressed {
+    -fx-background-color: #bfdbfe;
+    -fx-border-color: #93c5fd;
+}
+.button.wd-tonal FontIcon,
+.button.wd-tonal .ikonli-font-icon,
+.button.wd-btn--tonal FontIcon,
+.button.wd-btn--tonal .ikonli-font-icon,
+.wd-tonal FontIcon,
+.wd-tonal .ikonli-font-icon,
+.wd-btn--tonal FontIcon,
+.wd-btn--tonal .ikonli-font-icon {
+    -fx-icon-color: #1d4ed8;
+    -fx-fill: #1d4ed8;
+}
+
+/* AI Insights Indigo tonal */
+.wd-pg-ai .button.wd-tonal,
+.wd-pg-ai .button.wd-btn--tonal,
+.wd-pg-ai .wd-btn.wd-tonal,
+.wd-pg-ai .wd-btn.wd-btn--tonal,
+.wd-pg-ai .wd-tonal,
+.wd-pg-ai .wd-btn--tonal {
+    -fx-background-color: #eef2ff;
+    -fx-border-color: #c7d2fe;
+    -fx-text-fill: #3730a3;
+}
+.wd-pg-ai .button.wd-tonal:hover,
+.wd-pg-ai .button.wd-btn--tonal:hover,
+.wd-pg-ai .wd-btn.wd-tonal:hover,
+.wd-pg-ai .wd-btn.wd-btn--tonal:hover,
+.wd-pg-ai .wd-tonal:hover,
+.wd-pg-ai .wd-btn--tonal:hover {
+    -fx-background-color: #e0e7ff;
+    -fx-border-color: #a5b4fc;
+}
+.wd-pg-ai .button.wd-tonal:pressed,
+.wd-pg-ai .button.wd-btn--tonal:pressed,
+.wd-pg-ai .wd-btn.wd-tonal:pressed,
+.wd-pg-ai .wd-btn.wd-btn--tonal:pressed,
+.wd-pg-ai .wd-tonal:pressed,
+.wd-pg-ai .wd-btn--tonal:pressed {
+    -fx-background-color: #c7d2fe;
+    -fx-border-color: #a5b4fc;
+}
+.wd-pg-ai .button.wd-tonal FontIcon,
+.wd-pg-ai .button.wd-tonal .ikonli-font-icon,
+.wd-pg-ai .wd-tonal FontIcon,
+.wd-pg-ai .wd-tonal .ikonli-font-icon {
+    -fx-icon-color: #3730a3;
+    -fx-fill: #3730a3;
+}
+
+/* Secure Access Emerald tonal */
+.wd-pg-secure .button.wd-tonal,
+.wd-pg-secure .button.wd-btn--tonal,
+.wd-pg-secure .wd-btn.wd-tonal,
+.wd-pg-secure .wd-btn.wd-btn--tonal,
+.wd-pg-secure .wd-tonal,
+.wd-pg-secure .wd-btn--tonal {
+    -fx-background-color: #ecfdf5;
+    -fx-border-color: #a7f3d0;
+    -fx-text-fill: #065f46;
+}
+.wd-pg-secure .button.wd-tonal:hover,
+.wd-pg-secure .button.wd-btn--tonal:hover,
+.wd-pg-secure .wd-btn.wd-tonal:hover,
+.wd-pg-secure .wd-btn.wd-btn--tonal:hover,
+.wd-pg-secure .wd-tonal:hover,
+.wd-pg-secure .wd-btn--tonal:hover {
+    -fx-background-color: #d1fae5;
+    -fx-border-color: #6ee7b7;
+}
+.wd-pg-secure .button.wd-tonal:pressed,
+.wd-pg-secure .button.wd-btn--tonal:pressed,
+.wd-pg-secure .wd-btn.wd-tonal:pressed,
+.wd-pg-secure .wd-btn.wd-btn--tonal:pressed,
+.wd-pg-secure .wd-tonal:pressed,
+.wd-pg-secure .wd-btn--tonal:pressed {
+    -fx-background-color: #a7f3d0;
+    -fx-border-color: #6ee7b7;
+}
+.wd-pg-secure .button.wd-tonal FontIcon,
+.wd-pg-secure .button.wd-tonal .ikonli-font-icon,
+.wd-pg-secure .wd-tonal FontIcon,
+.wd-pg-secure .wd-tonal .ikonli-font-icon {
+    -fx-icon-color: #065f46;
+    -fx-fill: #065f46;
+}
+
+/* --------------------------------------------------------------------------
+   6. Success & Danger & Warning Solid Variants
+   -------------------------------------------------------------------------- */
+/* Success (Emerald #047857) */
+.button.wd-success,
+.button.wd-btn--success,
+.wd-btn.wd-success,
+.wd-btn.wd-btn--success,
+.wd-success,
+.wd-btn--success {
+    -fx-background-color: #047857;
+    -fx-border-color: #047857;
+    -fx-text-fill: #ffffff;
+    -fx-effect: dropshadow(gaussian, rgba(4, 120, 87, 0.40), 10, 0, 0, 3);
+}
+.button.wd-success:hover,
+.button.wd-btn--success:hover,
+.wd-btn.wd-success:hover,
+.wd-btn.wd-btn--success:hover,
+.wd-success:hover,
+.wd-btn--success:hover {
+    -fx-background-color: #065f46;
+    -fx-border-color: #065f46;
+    -fx-effect: dropshadow(gaussian, rgba(4, 120, 87, 0.45), 14, 0, 0, 4);
+}
+.button.wd-success:pressed,
+.button.wd-btn--success:pressed,
+.wd-btn.wd-success:pressed,
+.wd-btn.wd-btn--success:pressed,
+.wd-success:pressed,
+.wd-btn--success:pressed {
+    -fx-background-color: #064e3b;
+    -fx-border-color: #064e3b;
+    -fx-effect: dropshadow(gaussian, rgba(4, 120, 87, 0.25), 4, 0, 0, 1);
+}
+.button.wd-success FontIcon,
+.button.wd-success .ikonli-font-icon,
+.button.wd-btn--success FontIcon,
+.button.wd-btn--success .ikonli-font-icon,
+.wd-success FontIcon,
+.wd-success .ikonli-font-icon,
+.wd-btn--success FontIcon,
+.wd-btn--success .ikonli-font-icon {
+    -fx-icon-color: #ffffff;
+    -fx-fill: #ffffff;
+}
+
+/* Danger (Red #dc2626) */
+.button.wd-danger,
+.button.wd-btn--danger,
+.wd-btn.wd-danger,
+.wd-btn.wd-btn--danger,
+.wd-danger,
+.wd-btn--danger {
+    -fx-background-color: #dc2626;
+    -fx-border-color: #dc2626;
+    -fx-text-fill: #ffffff;
+    -fx-effect: dropshadow(gaussian, rgba(220, 38, 38, 0.40), 10, 0, 0, 3);
+}
+.button.wd-danger:hover,
+.button.wd-btn--danger:hover,
+.wd-btn.wd-danger:hover,
+.wd-btn.wd-btn--danger:hover,
+.wd-danger:hover,
+.wd-btn--danger:hover {
+    -fx-background-color: #b91c1c;
+    -fx-border-color: #b91c1c;
+    -fx-effect: dropshadow(gaussian, rgba(220, 38, 38, 0.45), 14, 0, 0, 4);
+}
+.button.wd-danger:pressed,
+.button.wd-btn--danger:pressed,
+.wd-btn.wd-danger:pressed,
+.wd-btn.wd-btn--danger:pressed,
+.wd-danger:pressed,
+.wd-btn--danger:pressed {
+    -fx-background-color: #991b1b;
+    -fx-border-color: #991b1b;
+    -fx-effect: dropshadow(gaussian, rgba(220, 38, 38, 0.25), 4, 0, 0, 1);
+}
+.button.wd-danger FontIcon,
+.button.wd-danger .ikonli-font-icon,
+.button.wd-btn--danger FontIcon,
+.button.wd-btn--danger .ikonli-font-icon,
+.wd-danger FontIcon,
+.wd-danger .ikonli-font-icon,
+.wd-btn--danger FontIcon,
+.wd-btn--danger .ikonli-font-icon {
+    -fx-icon-color: #ffffff;
+    -fx-fill: #ffffff;
+}
+
+/* Warning (Amber #fbbf24) */
+.button.wd-warning,
+.button.wd-btn--warning,
+.wd-btn.wd-warning,
+.wd-btn.wd-btn--warning,
+.wd-warning,
+.wd-btn--warning {
+    -fx-background-color: #fbbf24;
+    -fx-border-color: #fbbf24;
+    -fx-text-fill: #451a03;
+    -fx-effect: dropshadow(gaussian, rgba(217, 119, 6, 0.35), 10, 0, 0, 3);
+}
+.button.wd-warning:hover,
+.button.wd-btn--warning:hover,
+.wd-btn.wd-warning:hover,
+.wd-btn.wd-btn--warning:hover,
+.wd-warning:hover,
+.wd-btn--warning:hover {
+    -fx-background-color: #f59e0b;
+    -fx-border-color: #f59e0b;
+    -fx-effect: dropshadow(gaussian, rgba(217, 119, 6, 0.40), 14, 0, 0, 4);
+}
+.button.wd-warning:pressed,
+.button.wd-btn--warning:pressed,
+.wd-btn.wd-warning:pressed,
+.wd-btn.wd-btn--warning:pressed,
+.wd-warning:pressed,
+.wd-btn--warning:pressed {
+    -fx-background-color: #d97706;
+    -fx-border-color: #d97706;
+    -fx-effect: dropshadow(gaussian, rgba(217, 119, 6, 0.25), 4, 0, 0, 1);
+}
+.button.wd-warning FontIcon,
+.button.wd-warning .ikonli-font-icon,
+.button.wd-btn--warning FontIcon,
+.button.wd-btn--warning .ikonli-font-icon,
+.wd-warning FontIcon,
+.wd-warning .ikonli-font-icon,
+.wd-btn--warning FontIcon,
+.wd-btn--warning .ikonli-font-icon {
+    -fx-icon-color: #451a03;
+    -fx-fill: #451a03;
+}
+
+/* --------------------------------------------------------------------------
+   7. Soft Row & Secondary Action Variants
+   -------------------------------------------------------------------------- */
+/* Danger Soft */
+.button.wd-danger-soft,
+.button.wd-btn--danger-soft,
+.wd-btn.wd-danger-soft,
+.wd-btn.wd-btn--danger-soft,
+.wd-danger-soft,
+.wd-btn--danger-soft {
+    -fx-background-color: #fef2f2;
+    -fx-border-color: #fecaca;
+    -fx-text-fill: #b91c1c;
+    -fx-effect: null;
+}
+.button.wd-danger-soft:hover,
+.button.wd-btn--danger-soft:hover,
+.wd-btn.wd-danger-soft:hover,
+.wd-btn.wd-btn--danger-soft:hover,
+.wd-danger-soft:hover,
+.wd-btn--danger-soft:hover {
+    -fx-background-color: #fee2e2;
+    -fx-border-color: #fca5a5;
+    -fx-text-fill: #b91c1c;
+}
+.button.wd-danger-soft:pressed,
+.button.wd-btn--danger-soft:pressed,
+.wd-btn.wd-danger-soft:pressed,
+.wd-btn.wd-btn--danger-soft:pressed,
+.wd-danger-soft:pressed,
+.wd-btn--danger-soft:pressed {
+    -fx-background-color: #fecaca;
+    -fx-border-color: #f87171;
+    -fx-text-fill: #991b1b;
+}
+.button.wd-danger-soft FontIcon,
+.button.wd-danger-soft .ikonli-font-icon,
+.button.wd-btn--danger-soft FontIcon,
+.button.wd-btn--danger-soft .ikonli-font-icon,
+.wd-danger-soft FontIcon,
+.wd-danger-soft .ikonli-font-icon,
+.wd-btn--danger-soft FontIcon,
+.wd-btn--danger-soft .ikonli-font-icon {
+    -fx-icon-color: #b91c1c;
+    -fx-fill: #b91c1c;
+}
+
+/* Success Soft */
+.button.wd-success-soft,
+.button.wd-btn--success-soft,
+.wd-btn.wd-success-soft,
+.wd-btn.wd-btn--success-soft,
+.wd-success-soft,
+.wd-btn--success-soft {
+    -fx-background-color: #ecfdf5;
+    -fx-border-color: #a7f3d0;
+    -fx-text-fill: #065f46;
+    -fx-effect: null;
+}
+.button.wd-success-soft:hover,
+.button.wd-btn--success-soft:hover,
+.wd-btn.wd-success-soft:hover,
+.wd-btn.wd-btn--success-soft:hover,
+.wd-success-soft:hover,
+.wd-btn--success-soft:hover {
+    -fx-background-color: #d1fae5;
+    -fx-border-color: #6ee7b7;
+}
+.button.wd-success-soft:pressed,
+.button.wd-btn--success-soft:pressed,
+.wd-btn.wd-success-soft:pressed,
+.wd-btn.wd-btn--success-soft:pressed,
+.wd-success-soft:pressed,
+.wd-btn--success-soft:pressed {
+    -fx-background-color: #a7f3d0;
+    -fx-border-color: #34d399;
+}
+.button.wd-success-soft FontIcon,
+.button.wd-success-soft .ikonli-font-icon,
+.button.wd-btn--success-soft FontIcon,
+.button.wd-btn--success-soft .ikonli-font-icon,
+.wd-success-soft FontIcon,
+.wd-success-soft .ikonli-font-icon,
+.wd-btn--success-soft FontIcon,
+.wd-btn--success-soft .ikonli-font-icon {
+    -fx-icon-color: #065f46;
+    -fx-fill: #065f46;
+}
+
+/* Warning Soft */
+.button.wd-warn-soft,
+.button.wd-btn--warn-soft,
+.wd-btn.wd-warn-soft,
+.wd-btn.wd-btn--warn-soft,
+.wd-warn-soft,
+.wd-btn--warn-soft {
+    -fx-background-color: #fffbeb;
+    -fx-border-color: #fde68a;
+    -fx-text-fill: #92400e;
+    -fx-effect: null;
+}
+.button.wd-warn-soft:hover,
+.button.wd-btn--warn-soft:hover,
+.wd-btn.wd-warn-soft:hover,
+.wd-btn.wd-btn--warn-soft:hover,
+.wd-warn-soft:hover,
+.wd-btn--warn-soft:hover {
+    -fx-background-color: #fef3c7;
+    -fx-border-color: #fcd34d;
+}
+.button.wd-warn-soft:pressed,
+.button.wd-btn--warn-soft:pressed,
+.wd-btn.wd-warn-soft:pressed,
+.wd-btn.wd-btn--warn-soft:pressed,
+.wd-warn-soft:pressed,
+.wd-btn--warn-soft:pressed {
+    -fx-background-color: #fde68a;
+    -fx-border-color: #f59e0b;
+}
+.button.wd-warn-soft FontIcon,
+.button.wd-warn-soft .ikonli-font-icon,
+.button.wd-btn--warn-soft FontIcon,
+.button.wd-btn--warn-soft .ikonli-font-icon,
+.wd-warn-soft FontIcon,
+.wd-warn-soft .ikonli-font-icon,
+.wd-btn--warn-soft FontIcon,
+.wd-btn--warn-soft .ikonli-font-icon {
+    -fx-icon-color: #92400e;
+    -fx-fill: #92400e;
+}
+
+/* --------------------------------------------------------------------------
+   8. Icon Button Variant
+   -------------------------------------------------------------------------- */
+.button.wd-icon,
+.button.wd-btn--icon,
+.wd-btn.wd-icon,
+.wd-btn.wd-btn--icon,
+.wd-icon,
+.wd-btn--icon {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e2e8f0;
+    -fx-text-fill: #334155;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.05), 4, 0, 0, 1);
+}
+.button.wd-icon:hover,
+.button.wd-btn--icon:hover,
+.wd-btn.wd-icon:hover,
+.wd-btn.wd-btn--icon:hover,
+.wd-icon:hover,
+.wd-btn--icon:hover {
+    -fx-background-color: #eff6ff;
+    -fx-border-color: #bfdbfe;
+    -fx-text-fill: #1d4ed8;
+}
+.button.wd-icon:pressed,
+.button.wd-btn--icon:pressed,
+.wd-btn.wd-icon:pressed,
+.wd-btn.wd-btn--icon:pressed,
+.wd-icon:pressed,
+.wd-btn--icon:pressed {
+    -fx-background-color: #dbeafe;
+    -fx-border-color: #93c5fd;
+}
+.button.wd-icon FontIcon,
+.button.wd-icon .ikonli-font-icon,
+.button.wd-btn--icon FontIcon,
+.button.wd-btn--icon .ikonli-font-icon,
+.wd-icon FontIcon,
+.wd-icon .ikonli-font-icon,
+.wd-btn--icon FontIcon,
+.wd-btn--icon .ikonli-font-icon {
+    -fx-icon-color: #334155;
+    -fx-fill: #334155;
+}
+.button.wd-icon:hover FontIcon,
+.button.wd-icon:hover .ikonli-font-icon,
+.button.wd-btn--icon:hover FontIcon,
+.button.wd-btn--icon:hover .ikonli-font-icon,
+.wd-icon:hover FontIcon,
+.wd-icon:hover .ikonli-font-icon,
+.wd-btn--icon:hover FontIcon,
+.wd-btn--icon:hover .ikonli-font-icon {
+    -fx-icon-color: #1d4ed8;
+    -fx-fill: #1d4ed8;
+}
+
+/* --------------------------------------------------------------------------
+   9. Chip Variant
+   -------------------------------------------------------------------------- */
+.button.wd-chip,
+.button.wd-btn--chip,
+.wd-btn.wd-chip,
+.wd-btn.wd-btn--chip,
+.wd-chip,
+.wd-btn--chip {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e2e8f0;
+    -fx-text-fill: #475569;
+    -fx-background-radius: 999px;
+    -fx-border-radius: 999px;
+    -fx-effect: null;
+}
+.button.wd-chip:hover,
+.button.wd-btn--chip:hover,
+.wd-btn.wd-chip:hover,
+.wd-btn.wd-btn--chip:hover,
+.wd-chip:hover,
+.wd-btn--chip:hover {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #cbd5e1;
+    -fx-text-fill: #0f172a;
+}
+.button.wd-chip.wd-on,
+.button.wd-btn--chip.wd-on,
+.button.wd-chip.settings-subnav-btn-active,
+.button.wd-btn--chip.settings-subnav-btn-active,
+.wd-btn.wd-chip.wd-on,
+.wd-btn.wd-btn--chip.wd-on,
+.wd-chip.wd-on,
+.wd-btn--chip.wd-on,
+.wd-chip.settings-subnav-btn-active,
+.wd-btn--chip.settings-subnav-btn-active {
+    -fx-background-color: #eff6ff;
+    -fx-border-color: #bfdbfe;
+    -fx-text-fill: #1d4ed8;
+    -fx-font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   10. Nav Item Variant
+   -------------------------------------------------------------------------- */
+.button.wd-nav,
+.wd-btn.wd-nav,
+.wd-nav {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: #475569;
+    -fx-cursor: hand;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+}
+.button.wd-nav:hover,
+.wd-btn.wd-nav:hover,
+.wd-nav:hover {
+    -fx-background-color: #f1f5f9;
+    -fx-text-fill: #0f172a;
+}
+.button.wd-nav.wd-on,
+.button.wd-nav.nav-btn-active,
+.wd-btn.wd-nav.wd-on,
+.wd-btn.wd-nav.nav-btn-active,
+.wd-nav.wd-on,
+.wd-nav.nav-btn-active {
+    -fx-background-color: #eff6ff;
+    -fx-text-fill: #2563eb;
+    -fx-font-weight: 700;
+    -fx-border-color: #2563eb;
+    -fx-border-width: 0 0 0 3px;
+    -fx-border-radius: 0;
+}
+.button.wd-nav.wd-on FontIcon,
+.button.wd-nav.wd-on .ikonli-font-icon,
+.button.wd-nav.nav-btn-active FontIcon,
+.button.wd-nav.nav-btn-active .ikonli-font-icon,
+.wd-nav.wd-on FontIcon,
+.wd-nav.wd-on .ikonli-font-icon,
+.wd-nav.nav-btn-active FontIcon,
+.wd-nav.nav-btn-active .ikonli-font-icon {
+    -fx-icon-color: #2563eb;
+    -fx-fill: #2563eb;
+}
+
+/* --------------------------------------------------------------------------
+   11. State Matrix: Disabled & Focused
+   -------------------------------------------------------------------------- */
+.button.wd-btn:disabled,
+.button.wd-btn.wd-disabled,
+.wd-btn:disabled,
+.wd-btn.wd-disabled {
+    -fx-background-color: #f1f5f9;
+    -fx-border-color: #e2e8f0;
+    -fx-text-fill: #94a3b8;
+    -fx-effect: null;
+    -fx-cursor: default;
+    -fx-opacity: 0.7;
+}
+.button.wd-btn:disabled FontIcon,
+.button.wd-btn:disabled .ikonli-font-icon,
+.button.wd-btn.wd-disabled FontIcon,
+.button.wd-btn.wd-disabled .ikonli-font-icon,
+.wd-btn:disabled FontIcon,
+.wd-btn:disabled .ikonli-font-icon,
+.wd-btn.wd-disabled FontIcon,
+.wd-btn.wd-disabled .ikonli-font-icon {
+    -fx-icon-color: #94a3b8;
+    -fx-fill: #94a3b8;
+}
+
+.button.wd-btn:focused,
+.wd-btn:focused {
+    -fx-border-color: rgba(37, 99, 235, 0.45);
+    -fx-border-width: 1.5px;
+}
+
+/* --------------------------------------------------------------------------
+   12. Specificity Overrides for Seamless Harmony with Existing Classes
+   -------------------------------------------------------------------------- */
+.wd-btn.stitch-btn-primary {
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+}
+.wd-btn.stitch-btn-secondary {
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+}
+.wd-btn.stitch-btn-analyze-green.wd-primary {
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+}
