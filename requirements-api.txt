@@ -2,7 +2,7 @@ fastapi
 uvicorn[standard]
 pydantic
 joblib
-scikit-learn
+scikit-learn==1.8.0
 xgboost
 pandas
 numpy

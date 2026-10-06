@@ -1,5 +1,9 @@
 package com.aiwatchdog.backend.logging;
 
+import com.aiwatchdog.backend.policy.Decision;
+import com.aiwatchdog.backend.policy.RiskLevel;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.sql.Connection;
@@ -16,9 +20,16 @@ import java.util.List;
 @Service
 public class SqliteSecurityEventLogger implements SecurityEventLogger {
 
-    private static final String DB_URL = "jdbc:sqlite:aiwatchdog.db";
+    private final String dbUrl;
 
     public SqliteSecurityEventLogger() {
+        this("aiwatchdog.db");
+    }
+
+    @Autowired
+    public SqliteSecurityEventLogger(
+            @Value("${ai-watchdog.security.db-path:aiwatchdog.db}") String dbPath) {
+        this.dbUrl = "jdbc:sqlite:" + dbPath;
         initializeDatabase();
     }
 
@@ -36,7 +47,7 @@ public class SqliteSecurityEventLogger implements SecurityEventLogger {
                 )
                 """;
 
-        try (Connection connection = DriverManager.getConnection(DB_URL);
+        try (Connection connection = DriverManager.getConnection(dbUrl);
              Statement statement = connection.createStatement()) {
 
             statement.execute(sql);
@@ -79,6 +90,13 @@ public class SqliteSecurityEventLogger implements SecurityEventLogger {
                     "Phishing probability must be between 0.0 and 1.0");
         }
 
+        String normalizedRiskLevel = RiskLevel.parse(event.riskLevel()).name();
+        String normalizedDecision = parseDecision(event.decision()).name();
+        String normalizedPrediction = event.prediction().trim().toUpperCase(java.util.Locale.ROOT);
+        if (!normalizedPrediction.equals("BENIGN") && !normalizedPrediction.equals("PHISHING")) {
+            throw new IllegalArgumentException("Prediction must be BENIGN or PHISHING");
+        }
+
         String sql = """
                 INSERT INTO security_events
                 (timestamp, url, phishing_probability, risk_score,
@@ -90,22 +108,30 @@ public class SqliteSecurityEventLogger implements SecurityEventLogger {
                 ? event.timestamp()
                 : Instant.now();
 
-        try (Connection connection = DriverManager.getConnection(DB_URL);
+        try (Connection connection = DriverManager.getConnection(dbUrl);
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, timestamp.toString());
             statement.setString(2, event.url());
             statement.setDouble(3, event.phishingProbability());
             statement.setInt(4, event.riskScore());
-            statement.setString(5, event.riskLevel());
-            statement.setString(6, event.prediction());
-            statement.setString(7, event.decision());
+            statement.setString(5, normalizedRiskLevel);
+            statement.setString(6, normalizedPrediction);
+            statement.setString(7, normalizedDecision);
 
             statement.executeUpdate();
 
         } catch (SQLException e) {
             throw new IllegalStateException(
                     "Failed to persist security event", e);
+        }
+    }
+
+    private Decision parseDecision(String value) {
+        try {
+            return Decision.valueOf(value.trim().toUpperCase(java.util.Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            throw new IllegalArgumentException("Unsupported decision: " + value, exception);
         }
     }
 }

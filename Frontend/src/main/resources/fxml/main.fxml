@@ -168,12 +168,12 @@
                     <Region HBox.hgrow="ALWAYS"/>
                     <HBox alignment="CENTER" spacing="2">
                       <Label fx:id="dashScannedTrend" text="â†‘" styleClass="wd-tr-blue" style="-fx-font-weight: 700;"/>
-                      <Label text="12%" styleClass="wd-tr-blue"/>
+                      <Label text="—" styleClass="wd-tr-blue"/>
                     </HBox>
                   </HBox>
                   <Label text="URLs Scanned" styleClass="wd-lb" style="-fx-padding: 16px 0 0 0;"/>
-                  <Label fx:id="dashScannedCount" text="1,248" styleClass="wd-nm"/>
-                  <Label text="this week" styleClass="wd-sb" style="-fx-padding: 6px 0 0 0;"/>
+                  <Label fx:id="dashScannedCount" text="—" styleClass="wd-nm"/>
+                  <Label text="Backend total" styleClass="wd-sb" style="-fx-padding: 6px 0 0 0;"/>
                   <Region fx:id="dashScannedLine" styleClass="wd-ln, wd-ln-blue"/>
                 </VBox>
 
@@ -186,12 +186,12 @@
                     <Region HBox.hgrow="ALWAYS"/>
                     <HBox alignment="CENTER" spacing="2">
                       <Label fx:id="dashBlockedTrend" text="â†‘" styleClass="wd-tr-red" style="-fx-font-weight: 700;"/>
-                      <Label text="5%" styleClass="wd-tr-red"/>
+                      <Label text="—" styleClass="wd-tr-red"/>
                     </HBox>
                   </HBox>
                   <Label text="Threats Blocked" styleClass="wd-lb" style="-fx-padding: 16px 0 0 0;"/>
-                  <Label fx:id="dashThreatsBlockedCount" text="28" styleClass="wd-nm"/>
-                  <Label text="this week" styleClass="wd-sb" style="-fx-padding: 6px 0 0 0;"/>
+                  <Label fx:id="dashThreatsBlockedCount" text="—" styleClass="wd-nm"/>
+                  <Label text="Backend total" styleClass="wd-sb" style="-fx-padding: 6px 0 0 0;"/>
                   <Region fx:id="dashBlockedLine" styleClass="wd-ln, wd-ln-red"/>
                 </VBox>
 
@@ -204,12 +204,12 @@
                     <Region HBox.hgrow="ALWAYS"/>
                     <HBox alignment="CENTER" spacing="2">
                       <Label fx:id="dashReviewTrend" text="â†‘" styleClass="wd-tr-amber" style="-fx-font-weight: 700;"/>
-                      <Label text="2%" styleClass="wd-tr-amber"/>
+                      <Label text="—" styleClass="wd-tr-amber"/>
                     </HBox>
                   </HBox>
                   <Label text="In Review" styleClass="wd-lb" style="-fx-padding: 16px 0 0 0;"/>
-                  <Label fx:id="dashInReviewCount" text="14" styleClass="wd-nm"/>
-                  <Label text="this week" styleClass="wd-sb" style="-fx-padding: 6px 0 0 0;"/>
+                  <Label fx:id="dashInReviewCount" text="—" styleClass="wd-nm"/>
+                  <Label text="Backend total" styleClass="wd-sb" style="-fx-padding: 6px 0 0 0;"/>
                   <Region fx:id="dashReviewLine" styleClass="wd-ln, wd-ln-amber"/>
                 </VBox>
 
@@ -222,12 +222,12 @@
                     <Region HBox.hgrow="ALWAYS"/>
                     <HBox alignment="CENTER" spacing="2">
                       <Label fx:id="dashAllowedTrend" text="â†‘" styleClass="wd-tr-green" style="-fx-font-weight: 700;"/>
-                      <Label text="10%" styleClass="wd-tr-green"/>
+                      <Label text="—" styleClass="wd-tr-green"/>
                     </HBox>
                   </HBox>
                   <Label text="Allowed URLs" styleClass="wd-lb" style="-fx-padding: 16px 0 0 0;"/>
-                  <Label fx:id="dashAllowedCount" text="1,206" styleClass="wd-nm"/>
-                  <Label text="this week" styleClass="wd-sb" style="-fx-padding: 6px 0 0 0;"/>
+                  <Label fx:id="dashAllowedCount" text="—" styleClass="wd-nm"/>
+                  <Label text="Backend total" styleClass="wd-sb" style="-fx-padding: 6px 0 0 0;"/>
                   <Region fx:id="dashAllowedLine" styleClass="wd-ln, wd-ln-green"/>
                 </VBox>
               </GridPane>
@@ -252,7 +252,7 @@
                         <Arc fx:id="dashScoreArc" radiusX="72" radiusY="72" startAngle="90" length="-43.2" type="OPEN" styleClass="gauge-arc-fill" visible="false" managed="false"/>
                       </Group>
                       <!-- Centered score number -->
-                      <Label fx:id="dashScoreNumber" text="12" styleClass="wd-radar-num"/>
+                      <Label fx:id="dashScoreNumber" text="0" styleClass="wd-radar-num"/>
                     </StackPane>
                     <Label fx:id="dashScorePill" text="RISK SCORE Â· /100" styleClass="wd-rchip, wd-rchip-low"/>
                   </VBox>
@@ -261,11 +261,11 @@
                   <VBox styleClass="wd-mid" spacing="6" HBox.hgrow="ALWAYS" alignment="CENTER_LEFT">
                     <Label fx:id="dashStatusNormalLabel" text="â— STATUS NORMAL" styleClass="wd-status-low"/>
                     <Label fx:id="dashRiskLevelTitle" text="Low Risk" styleClass="hero-title" style="-fx-font-size: 34px; -fx-font-weight: 600;"/>
-                    <Label fx:id="dashRiskDescription" text="Your network browsing and real-time DNS queries are fully protected against known threat patterns." wrapText="true" styleClass="page-header-subtitle" maxWidth="430" style="-fx-padding: 0 0 10px 0;"/>
+                    <Label fx:id="dashRiskDescription" text="Risk score from the latest URL assessment returned by Spring Boot." wrapText="true" styleClass="page-header-subtitle" maxWidth="430" style="-fx-padding: 0 0 10px 0;"/>
                     <HBox alignment="CENTER_LEFT">
                       <HBox fx:id="dashLiveShieldBox" alignment="CENTER_LEFT" spacing="8" styleClass="wd-live">
                         <FontIcon fx:id="dashLiveShieldIcon" iconLiteral="fth-shield" iconSize="18" iconColor="#10B981"/>
-                        <Label text="Live Shield Active" styleClass="wd-live-text"/>
+                        <Label fx:id="dashLiveShieldText" text="Live Shield Paused" styleClass="wd-live-text"/>
                       </HBox>
                     </HBox>
                   </VBox>
@@ -286,9 +286,9 @@
                           <Label text="Safe" styleClass="metric-label" style="-fx-font-size: 14px;"/>
                         </HBox>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Label fx:id="dashSafePercent" text="70%" styleClass="metric-label" style="-fx-font-size: 14px; -fx-text-fill: #64748b;"/>
+                        <Label fx:id="dashSafePercent" text="—" styleClass="metric-label" style="-fx-font-size: 14px; -fx-text-fill: #64748b;"/>
                       </HBox>
-                      <ProgressBar fx:id="dashSafeProgress" progress="0.70" maxWidth="Infinity" styleClass="custom-progress-bar, bar-green"/>
+                      <ProgressBar fx:id="dashSafeProgress" progress="0" maxWidth="Infinity" styleClass="custom-progress-bar, bar-green"/>
                     </VBox>
 
                     <!-- Suspicious -->
@@ -299,9 +299,9 @@
                           <Label text="Suspicious" styleClass="metric-label" style="-fx-font-size: 14px;"/>
                         </HBox>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Label fx:id="dashSuspiciousPercent" text="20%" styleClass="metric-label" style="-fx-font-size: 14px; -fx-text-fill: #64748b;"/>
+                        <Label fx:id="dashSuspiciousPercent" text="—" styleClass="metric-label" style="-fx-font-size: 14px; -fx-text-fill: #64748b;"/>
                       </HBox>
-                      <ProgressBar fx:id="dashSuspiciousProgress" progress="0.20" maxWidth="Infinity" styleClass="custom-progress-bar, bar-blue"/>
+                      <ProgressBar fx:id="dashSuspiciousProgress" progress="0" maxWidth="Infinity" styleClass="custom-progress-bar, bar-blue"/>
                     </VBox>
 
                     <!-- Potential Risk -->
@@ -312,9 +312,9 @@
                           <Label text="Potential Risk" styleClass="metric-label" style="-fx-font-size: 14px;"/>
                         </HBox>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Label fx:id="dashPotentialPercent" text="8%" styleClass="metric-label" style="-fx-font-size: 14px; -fx-text-fill: #64748b;"/>
+                        <Label fx:id="dashPotentialPercent" text="—" styleClass="metric-label" style="-fx-font-size: 14px; -fx-text-fill: #64748b;"/>
                       </HBox>
-                      <ProgressBar fx:id="dashPotentialProgress" progress="0.08" maxWidth="Infinity" styleClass="custom-progress-bar, bar-amber"/>
+                      <ProgressBar fx:id="dashPotentialProgress" progress="0" maxWidth="Infinity" styleClass="custom-progress-bar, bar-amber"/>
                     </VBox>
 
                     <!-- High Risk -->
@@ -325,9 +325,9 @@
                           <Label text="High Risk" styleClass="metric-label" style="-fx-font-size: 14px;"/>
                         </HBox>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Label fx:id="dashHighRiskPercent" text="2%" styleClass="metric-label" style="-fx-font-size: 14px; -fx-text-fill: #64748b;"/>
+                        <Label fx:id="dashHighRiskPercent" text="—" styleClass="metric-label" style="-fx-font-size: 14px; -fx-text-fill: #64748b;"/>
                       </HBox>
-                      <ProgressBar fx:id="dashHighRiskProgress" progress="0.02" maxWidth="Infinity" styleClass="custom-progress-bar, bar-red"/>
+                      <ProgressBar fx:id="dashHighRiskProgress" progress="0" maxWidth="Infinity" styleClass="custom-progress-bar, bar-red"/>
                     </VBox>
                   </VBox>
                 </HBox>
@@ -593,8 +593,8 @@
                     <Label text="Decision" GridPane.columnIndex="0" GridPane.rowIndex="2" styleClass="info-label"/>
                     <Label fx:id="resultDecision" text="ALLOW" GridPane.columnIndex="1" GridPane.rowIndex="2" styleClass="info-value" style="-fx-font-weight: 700; -fx-text-fill: #10B981;"/>
 
-                    <Label text="Confidence" GridPane.columnIndex="0" GridPane.rowIndex="3" styleClass="info-label"/>
-                    <Label fx:id="resultConfidence" text="98.8%" GridPane.columnIndex="1" GridPane.rowIndex="3" styleClass="info-value"/>
+                    <Label text="Phishing Probability" GridPane.columnIndex="0" GridPane.rowIndex="3" styleClass="info-label"/>
+                    <Label fx:id="resultConfidence" text="—" GridPane.columnIndex="1" GridPane.rowIndex="3" styleClass="info-value"/>
                   </GridPane>
                 </HBox>
               </VBox>
@@ -623,7 +623,7 @@
                         <Label text="URL Length" styleClass="feature-key"/>
                       </HBox>
                       <Region HBox.hgrow="ALWAYS"/>
-                      <Label fx:id="featUrlLength" text="22" styleClass="feature-val"/>
+                      <Label fx:id="featUrlLength" text="—" styleClass="feature-val"/>
                     </HBox>
 
                     <HBox alignment="CENTER_LEFT">
@@ -632,7 +632,7 @@
                         <Label text="Has HTTPS" styleClass="feature-key"/>
                       </HBox>
                       <Region HBox.hgrow="ALWAYS"/>
-                      <Label fx:id="featHasHttps" text="Yes" styleClass="feature-val"/>
+                      <Label fx:id="featHasHttps" text="—" styleClass="feature-val"/>
                     </HBox>
 
                     <HBox alignment="CENTER_LEFT">
@@ -641,7 +641,7 @@
                         <Label text="Number of Dots" styleClass="feature-key"/>
                       </HBox>
                       <Region HBox.hgrow="ALWAYS"/>
-                      <Label fx:id="featDotCount" text="1" styleClass="feature-val"/>
+                      <Label fx:id="featDotCount" text="—" styleClass="feature-val"/>
                     </HBox>
 
                     <HBox alignment="CENTER_LEFT">
@@ -650,7 +650,7 @@
                         <Label text="Domain Age" styleClass="feature-key"/>
                       </HBox>
                       <Region HBox.hgrow="ALWAYS"/>
-                      <Label fx:id="featDomainAge" text="5845 days" styleClass="feature-val"/>
+                      <Label fx:id="featDomainAge" text="—" styleClass="feature-val"/>
                     </HBox>
 
                     <HBox alignment="CENTER_LEFT">
@@ -659,7 +659,7 @@
                         <Label text="Suspicious Keywords" styleClass="feature-key"/>
                       </HBox>
                       <Region HBox.hgrow="ALWAYS"/>
-                      <Label fx:id="featKeywords" text="0" styleClass="feature-val"/>
+                      <Label fx:id="featKeywords" text="—" styleClass="feature-val"/>
                     </HBox>
 
                     <HBox alignment="CENTER_LEFT">
@@ -668,7 +668,7 @@
                         <Label text="IP Address Used" styleClass="feature-key"/>
                       </HBox>
                       <Region HBox.hgrow="ALWAYS"/>
-                      <Label fx:id="featIpUsed" text="No" styleClass="feature-val"/>
+                      <Label fx:id="featIpUsed" text="—" styleClass="feature-val"/>
                     </HBox>
                   </VBox>
                 </VBox>
@@ -768,9 +768,9 @@
                       <FontIcon fx:id="threatIcon0" iconLiteral="fth-alert-triangle" iconSize="18" iconColor="#EF4444"/>
                     </StackPane>
                   </HBox>
-                  <Label fx:id="threatBlockedCount" text="28" styleClass="metric-value"/>
+                  <Label fx:id="threatBlockedCount" text="—" styleClass="metric-value"/>
                   <Label text="High Risk Threats" styleClass="metric-label"/>
-                  <Label fx:id="threatTrend0" text="â†‘ 5% this week" styleClass="metric-trend-red"/>
+                  <Label fx:id="threatTrend0" text="No trend data" styleClass="metric-trend-red"/>
                 </VBox>
 
                 <!-- Potential Risk (In Review) -->
@@ -780,9 +780,9 @@
                       <FontIcon fx:id="threatIcon1" iconLiteral="fth-target" iconSize="18" iconColor="#F59E0B"/>
                     </StackPane>
                   </HBox>
-                  <Label fx:id="threatInReviewCount" text="14" styleClass="metric-value"/>
+                  <Label fx:id="threatInReviewCount" text="—" styleClass="metric-value"/>
                   <Label text="Potential Risk" styleClass="metric-label"/>
-                  <Label fx:id="threatTrend1" text="â†“ 2% this week" styleClass="metric-trend-amber"/>
+                  <Label fx:id="threatTrend1" text="No trend data" styleClass="metric-trend-amber"/>
                 </VBox>
 
                 <!-- Suspicious Links -->
@@ -792,9 +792,9 @@
                       <FontIcon fx:id="threatIcon2" iconLiteral="fth-alert-circle" iconSize="18" iconColor="#3B82F6"/>
                     </StackPane>
                   </HBox>
-                  <Label fx:id="threatHighRiskCount" text="8" styleClass="metric-value"/>
+                  <Label fx:id="threatHighRiskCount" text="—" styleClass="metric-value"/>
                   <Label text="Suspicious Links" styleClass="metric-label"/>
-                  <Label fx:id="threatTrend2" text="â†‘ 3% this week" styleClass="metric-trend-amber"/>
+                  <Label fx:id="threatTrend2" text="No trend data" styleClass="metric-trend-amber"/>
                 </VBox>
 
                 <!-- Safe / Allowed -->
@@ -804,9 +804,9 @@
                       <FontIcon fx:id="threatIcon3" iconLiteral="fth-check-circle" iconSize="18" iconColor="#16C784"/>
                     </StackPane>
                   </HBox>
-                  <Label fx:id="threatSafeCount" text="1,207" styleClass="metric-value"/>
+                  <Label fx:id="threatSafeCount" text="—" styleClass="metric-value"/>
                   <Label text="Safe / Allowed" styleClass="metric-label"/>
-                  <Label fx:id="threatTrend3" text="â†‘ 10% this week" styleClass="metric-trend-up"/>
+                  <Label fx:id="threatTrend3" text="No trend data" styleClass="metric-trend-up"/>
                 </VBox>
               </GridPane>
 
@@ -853,7 +853,7 @@
                           <Arc fx:id="threatArcInfo" radiusX="50" radiusY="50" startAngle="-180" length="-90" type="OPEN" style="-fx-fill: transparent; -fx-stroke: #3B82F6; -fx-stroke-width: 14; -fx-cursor: hand;"/>
                         </Group>
                         <VBox alignment="CENTER" spacing="1">
-                          <Label fx:id="threatTotalCountLabel" text="45" styleClass="wd-threat-donut-count"/>
+                          <Label fx:id="threatTotalCountLabel" text="—" styleClass="wd-threat-donut-count"/>
                           <Label fx:id="threatTotalSubLabel" text="Total threats" styleClass="wd-threat-donut-sub"/>
                         </VBox>
                       </StackPane>
@@ -864,19 +864,19 @@
                           <Circle radius="4" fill="#EF4444"/>
                           <Label text="High Risk" styleClass="metric-label" style="-fx-font-weight: 600;"/>
                           <Region HBox.hgrow="ALWAYS"/>
-                          <Label fx:id="threatLegendHighPct" text="40%" styleClass="wd-threat-legend-pct"/>
+                          <Label fx:id="threatLegendHighPct" text="—" styleClass="wd-threat-legend-pct"/>
                         </HBox>
                         <HBox fx:id="threatLegendSusp" alignment="CENTER_LEFT" spacing="8" styleClass="wd-threat-legend-row">
                           <Circle radius="4" fill="#F59E0B"/>
                           <Label text="Suspicious" styleClass="metric-label" style="-fx-font-weight: 600;"/>
                           <Region HBox.hgrow="ALWAYS"/>
-                          <Label fx:id="threatLegendSuspPct" text="35%" styleClass="wd-threat-legend-pct"/>
+                          <Label fx:id="threatLegendSuspPct" text="—" styleClass="wd-threat-legend-pct"/>
                         </HBox>
                         <HBox fx:id="threatLegendInfo" alignment="CENTER_LEFT" spacing="8" styleClass="wd-threat-legend-row">
                           <Circle radius="4" fill="#3B82F6"/>
                           <Label text="Info" styleClass="metric-label" style="-fx-font-weight: 600;"/>
                           <Region HBox.hgrow="ALWAYS"/>
-                          <Label fx:id="threatLegendInfoPct" text="25%" styleClass="wd-threat-legend-pct"/>
+                          <Label fx:id="threatLegendInfoPct" text="—" styleClass="wd-threat-legend-pct"/>
                         </HBox>
                       </VBox>
                     </HBox>
@@ -931,7 +931,7 @@
                       <FontIcon fx:id="activityIcon0" iconLiteral="fth-file-text" iconSize="18" iconColor="#2563EB"/>
                     </StackPane>
                   </HBox>
-                  <Label fx:id="activityCount0" text="1,284" styleClass="metric-value"/>
+                  <Label fx:id="activityCount0" text="—" styleClass="metric-value"/>
                   <Label text="Total Events" styleClass="metric-label"/>
                   <Label text="All recorded events" styleClass="breakdown-sub"/>
                 </VBox>
@@ -943,7 +943,7 @@
                       <FontIcon fx:id="activityIcon1" iconLiteral="fth-globe" iconSize="18" iconColor="#2563EB"/>
                     </StackPane>
                   </HBox>
-                  <Label fx:id="activityCount1" text="1,248" styleClass="metric-value"/>
+                  <Label fx:id="activityCount1" text="—" styleClass="metric-value"/>
                   <Label text="URLs Scanned" styleClass="metric-label"/>
                   <Label text="Recent URL analyses" styleClass="breakdown-sub"/>
                 </VBox>
@@ -955,7 +955,7 @@
                       <FontIcon fx:id="activityIcon2" iconLiteral="fth-alert-triangle" iconSize="18" iconColor="#EF4444"/>
                     </StackPane>
                   </HBox>
-                  <Label fx:id="activityCount2" text="28" styleClass="metric-value"/>
+                  <Label fx:id="activityCount2" text="—" styleClass="metric-value"/>
                   <Label text="Threats Blocked" styleClass="metric-label"/>
                   <Label text="Blocked by protection" styleClass="breakdown-sub"/>
                 </VBox>
@@ -967,7 +967,7 @@
                       <FontIcon fx:id="activityIcon3" iconLiteral="fth-check" iconSize="18" iconColor="#10B981"/>
                     </StackPane>
                   </HBox>
-                  <Label fx:id="activityCount3" text="1,206" styleClass="metric-value"/>
+                  <Label fx:id="activityCount3" text="—" styleClass="metric-value"/>
                   <Label text="Access Decisions" styleClass="metric-label"/>
                   <Label text="Recorded decisions" styleClass="breakdown-sub"/>
                 </VBox>
@@ -1002,7 +1002,7 @@
 
                 <!-- Pagination Footer -->
                 <HBox alignment="CENTER_LEFT" style="-fx-padding: 12px 0 0 0;">
-                  <Label fx:id="activityPaginationLabel" text="Showing 1-5 of 1,284 events" styleClass="breakdown-sub"/>
+                  <Label fx:id="activityPaginationLabel" text="Waiting for backend event history" styleClass="breakdown-sub"/>
                   <Region HBox.hgrow="ALWAYS"/>
                   <HBox spacing="8" alignment="CENTER">
                     <Button text="&lt; Previous" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary" style="-fx-font-size: 11px; -fx-padding: 5px 10px;"/>
@@ -1058,8 +1058,8 @@
                       <FontIcon fx:id="insightIcon0" iconLiteral="fth-check-circle" iconSize="14" iconColor="#10B981"/>
                     </HBox>
                     <HBox alignment="BASELINE_LEFT" spacing="6">
-                      <Label fx:id="insightCount0" text="98.6%" styleClass="metric-value"/>
-                      <Label fx:id="insightTrend0" text="+0.4%" styleClass="metric-trend-up"/>
+                      <Label fx:id="insightCount0" text="—" styleClass="metric-value"/>
+                      <Label fx:id="insightTrend0" text="Unavailable" styleClass="metric-trend-up"/>
                     </HBox>
                     <Label text="Backend validated model metric" styleClass="breakdown-sub" style="-fx-font-size: 10px;"/>
                   </VBox>
@@ -1067,15 +1067,15 @@
                   <!-- Threats Identified -->
                   <VBox fx:id="insightCard1" GridPane.columnIndex="1" styleClass="metric-card, wd-insight-card">
                     <HBox alignment="CENTER_LEFT">
-                      <Label text="THREATS IDENTIFIED" styleClass="info-label" style="-fx-font-size: 10px;"/>
+                      <Label text="PHISHING PREDICTIONS" styleClass="info-label" style="-fx-font-size: 10px;"/>
                       <Region HBox.hgrow="ALWAYS"/>
                       <FontIcon fx:id="insightIcon1" iconLiteral="fth-shield" iconSize="14" iconColor="#EF4444"/>
                     </HBox>
                     <HBox alignment="BASELINE_LEFT" spacing="6">
-                      <Label fx:id="insightCount1" text="28" styleClass="metric-value"/>
-                      <Label fx:id="insightTrend1" text="â†‘ 5% wk" styleClass="metric-trend-red"/>
+                      <Label fx:id="insightCount1" text="—" styleClass="metric-value"/>
+                      <Label fx:id="insightTrend1" text="Unavailable" styleClass="metric-trend-red"/>
                     </HBox>
-                    <Label text="Malicious URLs detected &amp; mitigated" styleClass="breakdown-sub" style="-fx-font-size: 10px;"/>
+                    <Label text="URLs predicted as phishing by the backend" styleClass="breakdown-sub" style="-fx-font-size: 10px;"/>
                   </VBox>
 
                   <!-- False Positive Rate -->
@@ -1086,10 +1086,10 @@
                       <FontIcon fx:id="insightIcon2" iconLiteral="fth-sliders" iconSize="14" iconColor="#2563EB"/>
                     </HBox>
                     <HBox alignment="BASELINE_LEFT" spacing="6">
-                      <Label fx:id="insightCount2" text="1.4%" styleClass="metric-value"/>
-                      <Label fx:id="insightTrend2" text="-0.2%" styleClass="metric-trend-up"/>
+                      <Label fx:id="insightCount2" text="—" styleClass="metric-value"/>
+                      <Label fx:id="insightTrend2" text="Unavailable" styleClass="metric-trend-up"/>
                     </HBox>
-                    <Label text="Sub-2% benchmark across 30 days" styleClass="breakdown-sub" style="-fx-font-size: 10px;"/>
+                    <Label text="Not provided by the current backend API" styleClass="breakdown-sub" style="-fx-font-size: 10px;"/>
                   </VBox>
 
                   <!-- URLs Analyzed -->
@@ -1100,10 +1100,10 @@
                       <FontIcon fx:id="insightIcon3" iconLiteral="fth-target" iconSize="14" iconColor="#2563EB"/>
                     </HBox>
                     <HBox alignment="BASELINE_LEFT" spacing="6">
-                      <Label fx:id="insightCount3" text="1,248" styleClass="metric-value"/>
-                      <Label fx:id="insightTrend3" text="â†‘ 12% wk" styleClass="metric-trend-up" style="-fx-text-fill: #2563EB;"/>
+                      <Label fx:id="insightCount3" text="—" styleClass="metric-value"/>
+                      <Label fx:id="insightTrend3" text="Backend count" styleClass="metric-trend-up" style="-fx-text-fill: #2563EB;"/>
                     </HBox>
-                    <Label text="Total web requests inspected" styleClass="breakdown-sub" style="-fx-font-size: 10px;"/>
+                    <Label text="URL analyses recorded by the backend" styleClass="breakdown-sub" style="-fx-font-size: 10px;"/>
                   </VBox>
                 </GridPane>
               </VBox>
@@ -1129,9 +1129,9 @@
                       <HBox alignment="CENTER_LEFT">
                         <Label text="Suspicious domains" styleClass="feature-key" style="-fx-font-weight: 600;"/>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Label text="42 events (65%)" styleClass="metric-label" style="-fx-font-weight: 600;"/>
+                        <Label text="Not provided by the current backend API" styleClass="metric-label" style="-fx-font-weight: 600;"/>
                       </HBox>
-                      <ProgressBar progress="0.65" maxWidth="Infinity" styleClass="custom-progress-bar, bar-amber"/>
+                      <ProgressBar progress="0" maxWidth="Infinity" styleClass="custom-progress-bar, bar-amber"/>
                     </VBox>
 
                     <!-- Lookalike domains -->
@@ -1139,9 +1139,9 @@
                       <HBox alignment="CENTER_LEFT">
                         <Label text="Lookalike domains" styleClass="feature-key" style="-fx-font-weight: 600;"/>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Label text="28 events (48%)" styleClass="metric-label" style="-fx-font-weight: 600;"/>
+                        <Label text="Not provided by the current backend API" styleClass="metric-label" style="-fx-font-weight: 600;"/>
                       </HBox>
-                      <ProgressBar progress="0.48" maxWidth="Infinity" styleClass="custom-progress-bar, bar-red"/>
+                      <ProgressBar progress="0" maxWidth="Infinity" styleClass="custom-progress-bar, bar-red"/>
                     </VBox>
 
                     <!-- Excessive URL parameters -->
@@ -1149,9 +1149,9 @@
                       <HBox alignment="CENTER_LEFT">
                         <Label text="Excessive URL parameters" styleClass="feature-key" style="-fx-font-weight: 600;"/>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Label text="35 events (55%)" styleClass="metric-label" style="-fx-font-weight: 600;"/>
+                        <Label text="Not provided by the current backend API" styleClass="metric-label" style="-fx-font-weight: 600;"/>
                       </HBox>
-                      <ProgressBar progress="0.55" maxWidth="Infinity" styleClass="custom-progress-bar, bar-blue"/>
+                      <ProgressBar progress="0" maxWidth="Infinity" styleClass="custom-progress-bar, bar-blue"/>
                     </VBox>
 
                     <!-- IP-based URLs -->
@@ -1159,9 +1159,9 @@
                       <HBox alignment="CENTER_LEFT">
                         <Label text="IP-based URLs" styleClass="feature-key" style="-fx-font-weight: 600;"/>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Label text="19 events (32%)" styleClass="metric-label" style="-fx-font-weight: 600;"/>
+                        <Label text="Not provided by the current backend API" styleClass="metric-label" style="-fx-font-weight: 600;"/>
                       </HBox>
-                      <ProgressBar progress="0.32" maxWidth="Infinity" styleClass="custom-progress-bar, bar-red"/>
+                      <ProgressBar progress="0" maxWidth="Infinity" styleClass="custom-progress-bar, bar-red"/>
                     </VBox>
 
                     <!-- Shortened URLs -->
@@ -1169,16 +1169,16 @@
                       <HBox alignment="CENTER_LEFT">
                         <Label text="Shortened URLs" styleClass="feature-key" style="-fx-font-weight: 600;"/>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Label text="52 events (80%)" styleClass="metric-label" style="-fx-font-weight: 600;"/>
+                        <Label text="Not provided by the current backend API" styleClass="metric-label" style="-fx-font-weight: 600;"/>
                       </HBox>
-                      <ProgressBar progress="0.80" maxWidth="Infinity" styleClass="custom-progress-bar, bar-cyan"/>
+                      <ProgressBar progress="0" maxWidth="Infinity" styleClass="custom-progress-bar, bar-cyan"/>
                     </VBox>
                   </VBox>
 
                   <!-- Dominant Vector Card -->
                   <HBox alignment="CENTER_LEFT" spacing="10" styleClass="pill-badge, badge-live-shield" style="-fx-padding: 8px 14px;">
                     <FontIcon iconLiteral="fth-info" iconSize="14" iconColor="#2563EB"/>
-                    <Label text="Dominant Vector: Shortened Redirect Chains" styleClass="wd-dominant-vector-text" HBox.hgrow="ALWAYS"/>
+                    <Label text="Threat signals are not included in the current backend summary API" styleClass="wd-dominant-vector-text" HBox.hgrow="ALWAYS"/>
                     <Region HBox.hgrow="ALWAYS"/>
                     <Button text="Active Filter" styleClass="wd-btn, wd-chip, wd-btn--chip, wd-on" style="-fx-cursor: hand; -fx-padding: 2px 10px; -fx-font-size: 11px;"/>
                   </HBox>

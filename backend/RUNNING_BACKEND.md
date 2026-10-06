@@ -89,3 +89,15 @@ ai-watchdog.ml.base-url=http://127.0.0.1:8000
 ```
 
 If the ML API uses another URL, update that property before starting the backend.
+
+## Security event and monitor APIs
+
+- `GET /api/security-events` returns recent URL analyses.
+- `GET /api/security-events/risk/{riskLevel}` and `/decision/{decision}` filter URL analyses.
+- `GET /api/security-events/stats` returns URL analysis statistics.
+- `POST /api/monitor-events` assesses and stores a file/process metadata event.
+- `GET /api/monitor-events?limit=100` returns recent file/process assessments.
+
+URL and monitor records share the configured SQLite database path in `ai-watchdog.security.db-path`. File/process decisions are heuristic policy records; this backend does not enforce operating-system access controls.
+
+See [MONITORING.md](MONITORING.md) for event payloads and monitoring limitations.

@@ -48,23 +48,36 @@ public class RiskRadarView extends StackPane {
         }
     }
 
+    public static final LevelData LEVEL_SAFE = new LevelData(
+            0, "#10b981", "SAFE", "SAFE",
+            "Risk level supplied by the Spring Boot backend.", 2
+    );
     public static final LevelData LEVEL_LOW = new LevelData(
-            0, "#10b981", "STATUS NORMAL", "Low Risk",
-            "Your network browsing and real-time DNS queries are fully protected against known threat patterns.", 2
+            1, "#84cc16", "LOW_RISK", "LOW_RISK",
+            "Risk level supplied by the Spring Boot backend.", 3
     );
     public static final LevelData LEVEL_MED = new LevelData(
-            1, "#f59e0b", "STATUS WATCH", "Medium Risk",
-            "Some suspicious activity was detected. Review flagged URLs to keep your browsing safe.", 5
+            2, "#f59e0b", "SUSPICIOUS", "SUSPICIOUS",
+            "Risk level supplied by the Spring Boot backend.", 5
     );
     public static final LevelData LEVEL_HIGH = new LevelData(
-            2, "#ef4444", "STATUS ALERT", "High Risk",
-            "Multiple threats detected. Check the Threat Center and avoid unknown links right now.", 9
+            3, "#ef4444", "HIGH_RISK", "HIGH_RISK",
+            "Risk level supplied by the Spring Boot backend.", 9
+    );
+    public static final LevelData LEVEL_UNKNOWN = new LevelData(
+            4, "#64748b", "UNKNOWN", "UNKNOWN",
+            "Waiting for a risk level from the Spring Boot backend.", 1
     );
 
-    public static LevelData getLevelForScore(double score) {
-        if (score <= 30) return LEVEL_LOW;
-        if (score <= 60) return LEVEL_MED;
-        return LEVEL_HIGH;
+    public static LevelData getLevelForRisk(String riskLevel) {
+        if (riskLevel == null) return LEVEL_UNKNOWN;
+        return switch (riskLevel.trim().toUpperCase(java.util.Locale.ROOT)) {
+            case "SAFE" -> LEVEL_SAFE;
+            case "LOW_RISK" -> LEVEL_LOW;
+            case "SUSPICIOUS" -> LEVEL_MED;
+            case "HIGH_RISK" -> LEVEL_HIGH;
+            default -> LEVEL_UNKNOWN;
+        };
     }
 
     private static class Blip {
@@ -97,7 +110,7 @@ public class RiskRadarView extends StackPane {
 
     private double prevSweepAngle = 0.0;
     private long lastFrameNs = 0;
-    private LevelData currentLevel = LEVEL_LOW;
+    private LevelData currentLevel = LEVEL_UNKNOWN;
 
     private Consumer<LevelData> onLevelChanged;
     private Runnable onReplayRequested;
@@ -195,7 +208,6 @@ public class RiskRadarView extends StackPane {
             this.animFrom = this.currentScore;
             this.animTo = this.currentScore;
             this.animating = false;
-            updateLevel(getLevelForScore(this.currentScore));
             if (boundScoreLabel != null) {
                 boundScoreLabel.setText(String.valueOf(Math.round(this.currentScore)));
             }
@@ -214,8 +226,15 @@ public class RiskRadarView extends StackPane {
         startTimer();
     }
 
+    /** Updates the visualization with a backend score and its backend-assigned risk level. */
+    public void setAssessment(int score, String riskLevel, boolean animate) {
+        LevelData level = getLevelForRisk(riskLevel);
+        updateLevel(level);
+        setScore(score, animate);
+    }
+
     public void replay() {
-        setScore((int) Math.round(animTo), 0.0, 0, 2200);
+        setScore((int) Math.round(animTo), this.currentScore, 0, 2200);
         if (onReplayRequested != null) {
             onReplayRequested.run();
         }
@@ -277,8 +296,7 @@ public class RiskRadarView extends StackPane {
             }
         }
 
-        LevelData level = getLevelForScore(currentScore);
-        updateLevel(level);
+        LevelData level = currentLevel;
 
         if (boundScoreLabel != null) {
             boundScoreLabel.setText(String.valueOf(Math.round(currentScore)));

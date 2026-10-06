@@ -6,11 +6,13 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.prefs.Preferences;
 
 public class ThemeManager {
     public enum ThemeMode { LIGHT, DARK, SYSTEM }
     
-    private static ThemeMode currentMode = ThemeMode.LIGHT;
+    private static final Preferences PREFERENCES = Preferences.userNodeForPackage(ThemeManager.class);
+    private static ThemeMode currentMode = readSavedMode();
     private static Scene currentScene;
     
     public static void init(Scene scene) {
@@ -28,7 +30,9 @@ public class ThemeManager {
     }
     
     public static void applyTheme(ThemeMode mode) {
+        if (mode == null) return;
         currentMode = mode;
+        PREFERENCES.put("theme-mode", mode.name());
         boolean isDark = false;
         
         if (mode == ThemeMode.SYSTEM) {
@@ -57,6 +61,11 @@ public class ThemeManager {
     }
     
     public static ThemeMode getCurrentMode() { return currentMode; }
+
+    private static ThemeMode readSavedMode() {
+        try { return ThemeMode.valueOf(PREFERENCES.get("theme-mode", ThemeMode.LIGHT.name())); }
+        catch (IllegalArgumentException exception) { return ThemeMode.LIGHT; }
+    }
     
     private static boolean isSystemDarkMode() {
         try {

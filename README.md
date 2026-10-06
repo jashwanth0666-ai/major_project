@@ -1,140 +1,50 @@
-# AI-Driven Phishing Website Detection System
+# AI WatchDog
 
-A hybrid, industry-style final year project to detect phishing websites in real time using **Java + Python + React**.
+AI WatchDog is a local Windows security monitoring prototype with a JavaFX desktop UI, a Spring Boot application backend, and a Python FastAPI phishing URL model. The URL model uses the existing calibrated XGBoost artifact and threshold; this implementation does not retrain or replace it.
 
-## 📌 Project Overview
+## Components
 
-This system analyzes suspicious URLs and predicts whether a website is **Phishing** or **Legitimate** by combining secure backend services and ML inference.
+- `Frontend/`: JavaFX UI. It talks to Spring Boot over REST and does not access SQLite or FastAPI directly.
+- `backend/`: Spring Boot REST API, URL policy, event history, file/process engines, and SQLite persistence.
+- `api/` and `scripts/`: FastAPI inference service and validated model pipeline.
+- `browser-extension/`: optional Chromium extension source for active-tab URL analysis.
+- `data/phase4/`: calibrated model and its risk configuration.
 
-- **Spring Boot (Java)** handles authentication, business logic, API orchestration, and data management.
-- **Python FastAPI** service handles feature extraction and machine learning prediction.
-- **React + TypeScript + Tailwind CSS** provides an interactive dashboard for scans, reports, and analytics.
+File and process monitoring use metadata heuristics. The app records ALLOW/REVIEW/WARN/BLOCK policy results; it does not block file access or terminate processes. It is not antivirus, EDR, or a kernel monitor.
 
-The architecture is designed for collaboration, scalability, and production-like engineering practices.
+## Start on Windows
 
----
+Prerequisites: Python with dependencies from `requirements-api.txt`, Java 21 for Spring Boot, Java 17 or newer for JavaFX, and Maven for the desktop build.
 
-## 🎯 Goals
+Run `start-aiwatchdog.bat` from the repository root. It starts FastAPI, waits for model health, starts Spring Boot, waits for backend and ML health, then starts JavaFX. Each service has its own visible console; use Ctrl+C in each to stop it.
 
-- Detect phishing websites with high accuracy.
-- Provide low-latency prediction APIs for real-time checks.
-- Maintain modular services that can scale independently.
-- Follow industry workflow: branching strategy, PR reviews, CI checks.
+For manual startup, see [doc/RUNNING.md](doc/RUNNING.md) and [backend/RUNNING_BACKEND.md](backend/RUNNING_BACKEND.md). For monitor configuration, data handling, and limitations, see [backend/MONITORING.md](backend/MONITORING.md).
 
----
+To load the optional Chrome or Edge provider, follow [browser-extension/README.md](browser-extension/README.md).
 
-## 🧱 Technology Stack
+## Verification
 
-### Frontend
-- React.js
-- TypeScript
-- Tailwind CSS
+Backend tests:
 
-### Backend
-- Spring Boot (Java)
-- Spring Security + JWT
+```powershell
+cd backend
+.\mvnw.cmd test
+```
 
-### AI/ML Service
-- Python
-- FastAPI
-- Scikit-learn / XGBoost / LightGBM
-- (Optional) TensorFlow / Keras
+Desktop tests/build:
 
-### Data & Messaging
-- PostgreSQL
-- Redis
-- RabbitMQ
+```powershell
+cd Frontend
+mvn test
+```
 
-### Integrations
-- VirusTotal API
-- Google Safe Browsing API
+Python model feature parity test:
 
-### DevOps / Infra
-- Docker
-- Nginx
-- GitHub Actions (CI/CD)
-- AWS / Azure (future deployment)
+```powershell
+cd scripts
+..\.venv\Scripts\python.exe -m unittest test_phase5_feature_parity -v
+```
 
-### Observability (future scope)
-- Prometheus + Grafana
-- ELK Stack (Elasticsearch, Logstash, Kibana)
+For acceptance details, see the [implementation report](doc/AI_WatchDog_COMPLETE_IMPLEMENTATION_REPORT.md), [current system audit](doc/AI_WatchDog_Current_System_Audit.md), and [final acceptance report](doc/AI_WatchDog_FINAL_ACCEPTANCE_REPORT.md).
 
----
-
-## 🏗️ High-Level Architecture
-
-1. User submits URL from the React dashboard.
-2. Spring Boot API validates request, authenticates user, and orchestrates processing.
-3. Spring Boot sends URL/job to Python FastAPI service (direct call or via queue).
-4. Python service performs:
-   - URL/HTML/DNS/WHOIS/SSL feature extraction
-   - ML inference (phishing vs legitimate)
-5. Result is returned to Spring Boot.
-6. Spring Boot stores scan history in PostgreSQL, caches hot data in Redis, and returns response to frontend.
-7. Frontend renders result, confidence, and analytics/report views.
-
----
-
-## 🔐 Security Principles
-
-- JWT-based authentication and role-based authorization.
-- HTTPS-only communication in deployment.
-- Input validation and sanitization for all APIs.
-- Secret/config separation using environment variables.
-
----
-
-## 👥 Team Collaboration Model
-
-Recommended for 4 members:
-
-- **Member 1:** Spring Boot API + auth + integration lead
-- **Member 2:** React dashboard + UX + charts
-- **Member 3:** Python FastAPI + ML training/inference
-- **Member 4:** DevOps + Docker + CI/CD + monitoring
-
-Use issue-based work allocation and PR reviews for each feature.
-
----
-
-## 🌿 Branching Strategy
-
-- `main` → stable, release-ready code
-- `develop` → integration/testing branch
-- `feature/*` → individual tasks
-
-Examples:
-- `feature/react-dashboard`
-- `feature/spring-auth-jwt`
-- `feature/fastapi-ml-predict`
-- `feature/docker-compose-setup`
-
----
-
-## ✅ Definition of Done (DoD)
-
-A task is complete when:
-
-- Code is pushed to a feature branch.
-- PR is created with clear description.
-- At least one teammate review is completed.
-- CI checks pass.
-- Feature is tested locally.
-- Documentation is updated if needed.
-
----
-
-## 🚀 Initial Milestones
-
-1. Repository bootstrap: docs, branch rules, templates.
-2. Backend auth + basic URL scan API.
-3. Python ML microservice with baseline model.
-4. Frontend dashboard integration.
-5. Queue/caching integration and optimization.
-6. CI/CD pipeline and deployment draft.
-
----
-
-## 📄 License
-
-To be decided by team (recommended: MIT for academic collaboration).
+For JavaFX screen details and UI verification, see the [UI audit](doc/AI_WatchDog_UI_AUDIT.md) and [UI implementation report](doc/AI_WatchDog_UI_IMPLEMENTATION_REPORT.md).

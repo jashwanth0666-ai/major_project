@@ -9,7 +9,13 @@ public class PolicyEngineImpl implements PolicyEngine {
     public Decision evaluate(PolicyRequest request) {
         validateRequest(request);
 
-        return switch (RiskLevel.parse(request.riskLevel())) {
+        return evaluateRiskLevel(RiskLevel.parse(request.riskLevel()));
+    }
+
+    @Override
+    public Decision evaluateRiskLevel(RiskLevel riskLevel) {
+        if (riskLevel == null) throw new IllegalArgumentException("risk_level is required.");
+        return switch (riskLevel) {
             case SAFE -> Decision.ALLOW;
             case LOW_RISK -> Decision.REVIEW;
             case SUSPICIOUS -> Decision.WARN;

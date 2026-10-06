@@ -13,9 +13,15 @@ import org.springframework.stereotype.Service;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.regex.Pattern;
 
 @Service
 public class AnalysisService {
+
+    private static final Pattern SENSITIVE_PATH = Pattern.compile(
+            "(?i)(token|session|password|secret|credential|access[_-]?key|auth[_-]?code)");
+    private static final Pattern OPAQUE_PATH_SEGMENT = Pattern.compile("[A-Za-z0-9_-]{32,}");
 
     private static final Logger logger =
             LoggerFactory.getLogger(AnalysisService.class);
@@ -57,7 +63,7 @@ public class AnalysisService {
         SecurityEvent event = new SecurityEvent(
                 null,
                 null,
-                mlResult.url(),
+                auditUrl(url),
                 mlResult.phishing_probability(),
                 mlResult.risk_score(),
                 mlResult.risk_level(),
@@ -75,6 +81,22 @@ public class AnalysisService {
                 finalDecision.name(),
                 mlResult.threshold(),
                 mlResult.reasons());
+    }
+
+    private String auditUrl(String rawUrl) {
+        try {
+            URI parsed = new URI(rawUrl);
+            String path = parsed.getPath() == null ? "" : parsed.getPath();
+            boolean sensitive = Arrays.stream(path.split("/"))
+                    .anyMatch(segment -> SENSITIVE_PATH.matcher(segment).find()
+                            || OPAQUE_PATH_SEGMENT.matcher(segment).matches());
+            if (sensitive) path = "/";
+            return new URI(parsed.getScheme(), null, parsed.getHost(), parsed.getPort(),
+                    path, null, null).toASCIIString();
+        } catch (URISyntaxException | IllegalArgumentException exception) {
+            // Validation has already accepted the URL; fail closed for logging if normalization fails.
+            return "[redacted URL]";
+        }
     }
 
     private void validateUrl(String url) {

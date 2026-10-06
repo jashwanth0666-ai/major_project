@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "AI WatchDog URL Monitor",
+  "version": "1.0.0",
+  "description": "Analyzes sanitized active-tab URLs through the local AI WatchDog backend.",
+  "permissions": ["tabs"],
+  "host_permissions": ["http://localhost:8080/*", "http://127.0.0.1:8080/*"],
+  "background": {
+    "service_worker": "service-worker.js"
+  }
+}

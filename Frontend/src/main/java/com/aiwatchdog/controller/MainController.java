@@ -1,9 +1,14 @@
 package com.aiwatchdog.controller;
 
 import com.aiwatchdog.model.AnalyzeResponse;
+import com.aiwatchdog.model.MonitorEvent;
+import com.aiwatchdog.model.SecurityEvent;
+import com.aiwatchdog.model.SecurityEventStats;
+import com.aiwatchdog.model.ServiceHealth;
 import com.aiwatchdog.service.ApiService;
 import com.aiwatchdog.service.BrowserMonitorService;
-import com.aiwatchdog.service.URLFeatureExtractor;
+import com.aiwatchdog.service.FileSystemMonitorService;
+import com.aiwatchdog.service.ProcessMonitorService;
 import com.aiwatchdog.ui.scanner.ScanRadarView;
 import com.aiwatchdog.util.ThemeManager;
 import javafx.animation.*;
@@ -30,10 +35,18 @@ import javafx.util.Duration;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainController {
 
@@ -118,6 +131,7 @@ public class MainController {
     @FXML private Label dashStatusNormalLabel;
     @FXML private HBox dashLiveShieldBox;
     @FXML private FontIcon dashLiveShieldIcon;
+    @FXML private Label dashLiveShieldText;
 
     // Upgraded Dashboard Node Hooks (wd-)
     @FXML private VBox dashCardScanned, dashCardBlocked, dashCardReview, dashCardAllowed;
@@ -236,12 +250,21 @@ public class MainController {
     // =========================================================================
     private final ApiService apiService = new ApiService();
     private final BrowserMonitorService browser = new BrowserMonitorService();
-    private final URLFeatureExtractor featureExtractor = new URLFeatureExtractor();
+    private final ScheduledExecutorService backendRefresh = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread thread = new Thread(r, "aiwatchdog-backend-refresh");
+        thread.setDaemon(true);
+        return thread;
+    });
+    private final AtomicBoolean refreshInFlight = new AtomicBoolean();
+    private final AtomicBoolean monitorChanging = new AtomicBoolean();
+    private volatile FileSystemMonitorService fileMonitor;
+    private volatile ProcessMonitorService processMonitor;
+    private volatile boolean closed;
 
-    private int totalScanned = 1248;
-    private int totalBlocked = 28;
-    private int totalInReview = 14;
-    private int totalAllowed = 1206;
+    private int totalScanned;
+    private int totalBlocked;
+    private int totalInReview;
+    private int totalAllowed;
 
     private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm a");
     private final List<ActivityItem> activityLog = new ArrayList<>();
@@ -282,8 +305,8 @@ public class MainController {
     private boolean splashCompleted = false;
 
     // Record classes for UI logs
-    public record ActivityItem(String time, String event, String urlOrDesc, String riskLevel, String decision, String status) {}
-    public record ThreatItem(String url, String riskLevel, String decision, String time) {}
+    public record ActivityItem(String time, String event, String urlOrDesc, String riskLevel, String decision, String status, Instant instant) {}
+    public record ThreatItem(String url, String riskLevel, String decision, String time, Instant instant) {}
 
     // =========================================================================
     // Initialization
@@ -298,7 +321,21 @@ public class MainController {
         setupAnalyzingUpgrades();
         setupSidebarCollapsible();
         setupSecureAccessUpgrades();
-        updateRiskGauge(12, false);
+        if (dashLiveShieldBox != null) {
+            dashLiveShieldBox.setOnMouseClicked(event -> toggleLocalMonitoring());
+            dashLiveShieldBox.setCursor(javafx.scene.Cursor.HAND);
+            dashLiveShieldBox.setFocusTraversable(true);
+            dashLiveShieldBox.setAccessibleRole(javafx.scene.AccessibleRole.BUTTON);
+            dashLiveShieldBox.setAccessibleText("Toggle local file and process monitoring");
+            Tooltip.install(dashLiveShieldBox, new Tooltip("Click to start or stop local file and process monitoring"));
+            dashLiveShieldBox.setOnKeyPressed(event -> {
+                if (event.getCode() == javafx.scene.input.KeyCode.ENTER || event.getCode() == javafx.scene.input.KeyCode.SPACE) {
+                    toggleLocalMonitoring();
+                    event.consume();
+                }
+            });
+        }
+        updateRiskGauge(0, "UNKNOWN", false);
         startDashboardTelemetryAnimations();
         animateThreatBreakdown();
 
@@ -330,12 +367,20 @@ public class MainController {
             activityTimeFilter.setValue("Last 7 days");
         }
         if (activityEventFilter != null) {
-            activityEventFilter.getItems().addAll("All Events", "URL Scan", "Phishing Detection", "Security Check");
+            activityEventFilter.getItems().addAll("All Events", "URL Scan", "File Event", "Process Event");
             activityEventFilter.setValue("All Events");
+            activityEventFilter.setOnAction(event -> renderActivityTable(activitySearchInput == null ? "" : activitySearchInput.getText()));
         }
         if (activityStatusFilter != null) {
-            activityStatusFilter.getItems().addAll("All Status", "Completed", "Blocked", "Reviewed");
+            activityStatusFilter.getItems().addAll("All Status", "Allowed", "Blocked", "Reviewed", "Warn");
             activityStatusFilter.setValue("All Status");
+            activityStatusFilter.setOnAction(event -> renderActivityTable(activitySearchInput == null ? "" : activitySearchInput.getText()));
+        }
+        if (activityTimeFilter != null) {
+            activityTimeFilter.setOnAction(event -> renderActivityTable(activitySearchInput == null ? "" : activitySearchInput.getText()));
+        }
+        if (threatTimeFilter != null) {
+            threatTimeFilter.setOnAction(event -> renderThreatTable());
         }
         if (insightsTimeFilter != null) {
             insightsTimeFilter.getItems().addAll("Last 24 hours", "Last 7 days", "Last 30 days");
@@ -358,10 +403,10 @@ public class MainController {
             fontScalingCombo.setValue("Standard (100%)");
         }
 
-        // Seed initial Threat Center and Activity items from Stitch design
-        initSeedData();
+        // Populate Activity and Threat Center from Spring's persisted event APIs.
         renderThreatTable();
         renderActivityTable("");
+        backendRefresh.scheduleWithFixedDelay(this::refreshBackendSnapshot, 0, 15, TimeUnit.SECONDS);
 
         // Start 5-second automated intro sequence on Welcome / Starting Page
         if (welcomePage != null && appShell != null) {
@@ -375,21 +420,224 @@ public class MainController {
         }
     }
 
-    private void initSeedData() {
-        // Threat Center reference items from Stitch design
-        threatLog.add(new ThreatItem("http://malicious-site.net", "High Risk", "BLOCK", "10:24 AM"));
-        threatLog.add(new ThreatItem("https://login-paypal.com", "Suspicious", "WARN", "01:15 AM"));
-        threatLog.add(new ThreatItem("http://free-gift-card.com", "Potential Risk", "WARN", "Yesterday"));
-        threatLog.add(new ThreatItem("https://xecure-update.com", "Suspicious", "WARN", "Yesterday"));
-        threatLog.add(new ThreatItem("http://bit.ly/xyz", "High Risk", "BLOCK", "2 days ago"));
-        threatLog.add(new ThreatItem("https://legit-portal.org", "Safe", "ALLOW", "3 days ago"));
+    private void refreshBackendSnapshot() {
+        if (closed || !refreshInFlight.compareAndSet(false, true)) return;
+        try {
+            ServiceHealth health = apiService.getServiceHealth();
+            List<SecurityEvent> urlEvents = apiService.getRecentEvents();
+            List<MonitorEvent> monitorEvents = apiService.getRecentMonitorEvents();
+            SecurityEventStats stats = apiService.getSecurityEventStats();
+            Platform.runLater(() -> applyBackendSnapshot(health, urlEvents, monitorEvents, stats));
+        } catch (Exception error) {
+            Platform.runLater(() -> showBackendUnavailable(error));
+        } finally {
+            refreshInFlight.set(false);
+        }
+    }
 
-        // Activity Log reference items from Stitch design
-        activityLog.add(new ActivityItem("11:42 AM", "URL Scan", "https://www.google.com", "Safe", "ALLOW", "Completed"));
-        activityLog.add(new ActivityItem("11:28 AM", "Phishing Detection", "https://login-paypal.com", "High Risk", "BLOCK", "Blocked"));
-        activityLog.add(new ActivityItem("10:55 AM", "URL Scan", "https://payment-gateway.verify.net", "Suspicious", "WARN", "Reviewed"));
-        activityLog.add(new ActivityItem("09:15 AM", "URL Scan", "https://api.github.com/repos", "Low Risk", "ALLOW", "Completed"));
-        activityLog.add(new ActivityItem("Yesterday", "Security Check", "Browser protection initialized", "Safe", "ALLOW", "Completed"));
+    private void toggleLocalMonitoring() {
+        if (closed || !monitorChanging.compareAndSet(false, true)) return;
+        Thread worker = new Thread(() -> {
+            try {
+                FileSystemMonitorService currentFile = fileMonitor;
+                ProcessMonitorService currentProcess = processMonitor;
+                if ((currentFile != null && currentFile.isRunning()) || (currentProcess != null && currentProcess.isRunning())) {
+                    if (currentFile != null) currentFile.close();
+                    if (currentProcess != null) currentProcess.close();
+                    fileMonitor = null;
+                    processMonitor = null;
+                    Platform.runLater(() -> setMonitoringStatus(false, "Local monitoring stopped"));
+                    return;
+                }
+                ServiceHealth health = apiService.getServiceHealth();
+                if (!health.isBackendAvailable()) throw new IllegalStateException("Spring Boot is unavailable");
+                FileSystemMonitorService file = new FileSystemMonitorService(apiService, event -> onMonitorEvent());
+                ProcessMonitorService process = new ProcessMonitorService(apiService, event -> onMonitorEvent());
+                fileMonitor = file;
+                processMonitor = process;
+                int watchedDirectories = file.start();
+                process.start();
+                String detail = watchedDirectories > 0
+                        ? "Monitoring active · " + watchedDirectories + " folders"
+                        : "Process monitoring active · No configured folders available";
+                Platform.runLater(() -> setMonitoringStatus(true, detail));
+            } catch (Exception error) {
+                FileSystemMonitorService file = fileMonitor;
+                ProcessMonitorService process = processMonitor;
+                if (file != null) file.close();
+                if (process != null) process.close();
+                fileMonitor = null;
+                processMonitor = null;
+                Platform.runLater(() -> setMonitoringStatus(false,
+                        "Monitoring unavailable · " + valueOr(error.getMessage(), "Backend connection failed")));
+            } finally {
+                monitorChanging.set(false);
+            }
+        }, "aiwatchdog-monitor-control");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    private void onMonitorEvent() {
+        if (!closed) backendRefresh.schedule(this::refreshBackendSnapshot, 300, TimeUnit.MILLISECONDS);
+    }
+
+    private void setMonitoringStatus(boolean running, String message) {
+        if (dashLiveShieldBox != null) {
+            dashLiveShieldBox.setOpacity(running ? 1.0 : 0.78);
+            if (dashLiveShieldIcon != null) dashLiveShieldIcon.setIconColor(Color.web(running ? "#10B981" : "#64748B"));
+        }
+        if (dashLiveShieldText != null) dashLiveShieldText.setText(running ? "Live Shield Active" : "Live Shield Paused");
+        notifyUser(message);
+    }
+
+    private void applyBackendSnapshot(ServiceHealth health, List<SecurityEvent> urlEvents,
+                                      List<MonitorEvent> monitorEvents, SecurityEventStats stats) {
+        if (closed) return;
+        totalScanned = Math.toIntExact(Math.min(Integer.MAX_VALUE, stats.totalEvents()));
+        totalBlocked = Math.toIntExact(Math.min(Integer.MAX_VALUE, stats.blockCount()));
+        totalInReview = Math.toIntExact(Math.min(Integer.MAX_VALUE, stats.reviewCount() + stats.warnCount()));
+        totalAllowed = Math.toIntExact(Math.min(Integer.MAX_VALUE, stats.allowCount()));
+        setCount(dashScannedCount, totalScanned);
+        setCount(dashThreatsBlockedCount, totalBlocked);
+        setCount(dashInReviewCount, totalInReview);
+        setCount(dashAllowedCount, totalAllowed);
+        setCount(threatBlockedCount, totalBlocked);
+        setCount(threatInReviewCount, totalInReview);
+        setCount(threatHighRiskCount, stats.highRiskCount());
+        if (cardsHelper != null) {
+            cardsHelper.countUp(dashScannedCount, totalScanned);
+            cardsHelper.countUp(dashThreatsBlockedCount, totalBlocked);
+            cardsHelper.countUp(dashInReviewCount, totalInReview);
+            cardsHelper.countUp(dashAllowedCount, totalAllowed);
+        }
+        if (threatCardsHelper != null) {
+            threatCardsHelper.countUp(threatBlockedCount, totalBlocked);
+            threatCardsHelper.countUp(threatInReviewCount, totalInReview);
+            threatCardsHelper.countUp(threatHighRiskCount, toCount(stats.highRiskCount()));
+            threatCardsHelper.countUp(threatSafeCount, toCount(stats.safeCount() + stats.lowRiskCount()));
+        }
+        if (activityCardsHelper != null) {
+            activityCardsHelper.countUp(activityCount0, urlEvents.size() + monitorEvents.size());
+            activityCardsHelper.countUp(activityCount1, totalScanned);
+            activityCardsHelper.countUp(activityCount2, totalBlocked);
+            activityCardsHelper.countUp(activityCount3, totalAllowed);
+        }
+        if (insightCount0 != null) insightCount0.setText("—");
+        setCount(insightCount1, stats.phishingCount());
+        if (insightCount2 != null) insightCount2.setText("—");
+        setCount(insightCount3, totalScanned);
+        int totalRiskEvents = Math.max(1, (int) Math.min(Integer.MAX_VALUE, stats.totalEvents()));
+        updateBreakdown(dashSafeProgress, dashSafePercent, stats.safeCount(), totalRiskEvents);
+        updateBreakdown(dashSuspiciousProgress, dashSuspiciousPercent, stats.suspiciousCount(), totalRiskEvents);
+        updateBreakdown(dashPotentialProgress, dashPotentialPercent, stats.lowRiskCount(), totalRiskEvents);
+        updateBreakdown(dashHighRiskProgress, dashHighRiskPercent, stats.highRiskCount(), totalRiskEvents);
+        if (threatInsightsHelper != null) {
+            int threatCount = (int) Math.min(Integer.MAX_VALUE, stats.highRiskCount() + stats.suspiciousCount() + stats.lowRiskCount());
+            int divisor = Math.max(1, threatCount);
+            threatInsightsHelper.updateData(threatCount,
+                    (int) (stats.highRiskCount() * 100 / divisor),
+                    (int) (stats.suspiciousCount() * 100 / divisor),
+                    (int) (stats.lowRiskCount() * 100 / divisor));
+        }
+        urlEvents.stream().max(Comparator.comparing(event -> parseEventInstant(event.timestamp()))).ifPresentOrElse(
+                event -> {
+                    updateRiskGauge(event.riskScore(), event.riskLevel());
+                    if (dashRiskDescription != null) dashRiskDescription.setText("Risk score from the latest URL assessment returned by Spring Boot.");
+                },
+                () -> {
+                    updateRiskGauge(0, "UNKNOWN", false);
+                    if (dashRiskDescription != null) dashRiskDescription.setText("No URL assessment has been returned by Spring Boot yet.");
+                });
+        if (dashOperationalBadge != null) {
+            dashOperationalBadge.setText(health.isFullyAvailable() ? "SERVICES ONLINE" : "SERVICE UNAVAILABLE");
+        }
+        if (dashStatusNormalLabel != null) {
+            dashStatusNormalLabel.setText(health.isBackendAvailable()
+                    ? (health.isMlAvailable() ? "Spring Boot and ML service online" : "ML service unavailable")
+                    : "Spring Boot backend unavailable");
+        }
+
+        List<ActivityItem> recent = new ArrayList<>();
+        List<ThreatItem> threats = new ArrayList<>();
+        for (SecurityEvent event : urlEvents) {
+            String risk = valueOr(event.riskLevel(), "UNKNOWN");
+            String decision = valueOr(event.decision(), "UNKNOWN");
+            String time = formatEventTime(event.timestamp());
+            Instant instant = parseEventInstant(event.timestamp());
+            recent.add(new ActivityItem(time, "URL Scan", valueOr(event.url(), "URL unavailable"), risk,
+                    decision, statusForDecision(decision), instant));
+            if (!"ALLOW".equalsIgnoreCase(decision)) {
+                threats.add(new ThreatItem(valueOr(event.url(), "URL unavailable"), risk, decision, time, instant));
+            }
+        }
+        for (MonitorEvent event : monitorEvents) {
+            String risk = valueOr(event.riskLevel(), "UNKNOWN");
+            String decision = valueOr(event.decision(), "UNKNOWN");
+            String time = formatEventTime(event.timestamp());
+            String description = valueOr(event.resourceName(), "Resource unavailable");
+            Instant instant = parseEventInstant(event.timestamp());
+            String eventName = "FILE".equalsIgnoreCase(event.eventType()) ? "File Event"
+                    : "PROCESS".equalsIgnoreCase(event.eventType()) ? "Process Event" : valueOr(event.eventType(), "Monitor event");
+            recent.add(new ActivityItem(time, eventName, description, risk,
+                    decision, statusForDecision(decision), instant));
+            if (!"ALLOW".equalsIgnoreCase(decision)) {
+                threats.add(new ThreatItem(description, risk, decision, time, instant));
+            }
+        }
+        activityLog.clear();
+        activityLog.addAll(recent.stream().sorted(Comparator.comparing(ActivityItem::instant).reversed()).limit(100).toList());
+        threatLog.clear();
+        threatLog.addAll(threats.stream().sorted(Comparator.comparing(ThreatItem::instant).reversed()).limit(100).toList());
+        renderActivityTable(activitySearchInput == null ? "" : activitySearchInput.getText());
+        renderThreatTable();
+    }
+
+    private void showBackendUnavailable(Exception error) {
+        if (closed) return;
+        if (dashOperationalBadge != null) dashOperationalBadge.setText("BACKEND UNAVAILABLE");
+        if (dashStatusNormalLabel != null) dashStatusNormalLabel.setText("Unable to load security data from Spring Boot");
+    }
+
+    private static void setCount(Label label, long value) {
+        if (label != null) label.setText(String.format(Locale.ROOT, "%,d", value));
+    }
+
+    private static int toCount(long value) {
+        return (int) Math.max(0, Math.min(Integer.MAX_VALUE, value));
+    }
+
+    private static void updateBreakdown(ProgressBar bar, Label label, long count, int total) {
+        double fraction = Math.max(0, Math.min(1, (double) count / total));
+        if (bar != null) bar.setProgress(fraction);
+        if (label != null) label.setText(String.format(Locale.ROOT, "%d%%", Math.round(fraction * 100)));
+    }
+
+    private static Instant parseEventInstant(String value) {
+        try { return Instant.parse(value); } catch (RuntimeException ignored) { return Instant.EPOCH; }
+    }
+
+    private static String valueOr(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
+    }
+
+    private static String formatEventTime(String value) {
+        try {
+            return DateTimeFormatter.ofPattern("MMM d, hh:mm a", Locale.ROOT)
+                    .withZone(ZoneId.systemDefault()).format(Instant.parse(value));
+        } catch (RuntimeException ignored) {
+            return valueOr(value, "Time unavailable");
+        }
+    }
+
+    private static String statusForDecision(String decision) {
+        return switch (decision.toUpperCase(Locale.ROOT)) {
+            case "ALLOW" -> "Allowed";
+            case "BLOCK" -> "Blocked";
+            case "REVIEW" -> "Reviewed";
+            case "WARN" -> "Warn";
+            default -> decision;
+        };
     }
 
     // =========================================================================
@@ -766,7 +1014,7 @@ public class MainController {
         if (riskRadarView != null) {
             riskRadarView.replay();
         } else {
-            updateRiskGauge(12, true);
+            updateRiskGauge(0, "UNKNOWN", true);
             animateThreatBreakdown();
         }
         if (cardsHelper != null) {
@@ -1068,39 +1316,30 @@ public class MainController {
         currentScanTask = new Task<>() {
             @Override
             protected AnalyzeResponse call() throws Exception {
-                // Poll for backend response without blocking JavaFX Application Thread
-                while (!isCancelled()) {
-                    try {
-                        AnalyzeResponse resp = apiService.analyzeUrl(targetUrl);
-                        if (resp != null) {
-                            return resp;
-                        }
-                    } catch (Exception ex) {
-                        // Backend is currently unavailable during frontend testing.
-                        // Do NOT switch to error page; keep animation looping on analyzing screen.
-                    }
-                    try {
-                        Thread.sleep(1500);
-                    } catch (InterruptedException ie) {
-                        if (isCancelled()) break;
-                    }
-                }
-                return null;
+                return apiService.analyzeUrl(targetUrl);
             }
         };
 
         currentScanTask.setOnSucceeded(e -> {
             if (currentScanTask == null || currentScanTask.isCancelled()) return;
             AnalyzeResponse response = currentScanTask.getValue();
-            if (response != null) {
-                backendResultRef.set(response);
-                wdScanComplete();
-            }
+            backendResultRef.set(response);
+            wdScanComplete();
         });
 
         currentScanTask.setOnFailed(e -> {
             if (currentScanTask == null || currentScanTask.isCancelled()) return;
-            System.err.println("Background scan task error: " + currentScanTask.getException());
+            scanFailureMessage = currentScanTask.getException() == null
+                    ? "The Spring Boot analysis request failed."
+                    : currentScanTask.getException().getMessage();
+            if (scanErrorUrl != null) scanErrorUrl.setText("Target URL: " + targetUrl);
+            if (scanErrorMessage != null) scanErrorMessage.setText(valueOr(scanFailureMessage,
+                    "Unable to connect to the Spring Boot analysis API."));
+            stopScanningAnimation();
+            if (pageStack != null && scanErrorPage != null) {
+                pageStack.getChildren().forEach(child -> child.setVisible(child == scanErrorPage));
+                scanErrorPage.toFront();
+            }
         });
 
         Thread th = new Thread(currentScanTask);
@@ -1389,15 +1628,15 @@ public class MainController {
         }
 
         String url = result.url();
-        String decision = result.decision() != null ? result.decision().toUpperCase() : "ALLOW";
-        String prediction = result.prediction() != null ? result.prediction().toUpperCase() : "BENIGN";
+        String decision = valueOr(result.decision(), "UNKNOWN").toUpperCase(Locale.ROOT);
+        String prediction = valueOr(result.prediction(), "UNKNOWN").toUpperCase(Locale.ROOT);
         int score = result.riskScore();
-        String riskLevel = result.riskLevel() != null ? result.riskLevel().toUpperCase() : "LOW_RISK";
+        String riskLevel = valueOr(result.riskLevel(), "UNKNOWN").toUpperCase(Locale.ROOT);
         double prob = result.phishingProbability();
 
         // 1. Result Hero Box (SAFE / PHISHING / SUSPICIOUS)
         if (resultHeroBox != null) {
-            if ("BLOCK".equals(decision) || "PHISHING".equals(prediction)) {
+            if ("HIGH_RISK".equals(riskLevel)) {
                 if (resultIconContainer != null) {
                     resultIconContainer.setStyle("-fx-background-color: #EF4444; -fx-background-radius: 12px; -fx-alignment: center;");
                 }
@@ -1406,12 +1645,12 @@ public class MainController {
                     resultHeroIcon.setIconColor(Color.web("#FFFFFF"));
                 }
                 if (resultTitle != null) {
-                    resultTitle.setText("PHISHING");
+                    resultTitle.setText(prediction);
                     resultTitle.getStyleClass().removeAll("result-title-text", "result-title-warn");
                     resultTitle.getStyleClass().add("result-title-danger");
                 }
                 if (resultSubtitle != null) {
-                    resultSubtitle.setText("High-risk threat detected. Unsafe to visit.");
+                    resultSubtitle.setText("Risk: " + riskLevel + " · Policy decision: " + decision);
                     resultSubtitle.getStyleClass().removeAll("result-sub-text", "result-sub-warn");
                     resultSubtitle.getStyleClass().add("result-sub-danger");
                 }
@@ -1424,11 +1663,11 @@ public class MainController {
                     resultBannerIcon.setIconColor(Color.web("#EF4444"));
                 }
                 if (resultBannerText != null) {
-                    resultBannerText.setText("⚠ Phishing threat detected. Website access has been blocked.");
+                    resultBannerText.setText("Prediction: " + prediction + " · Risk: " + riskLevel + " · Decision: " + decision);
                     resultBannerText.getStyleClass().removeAll("banner-text-safe");
                     resultBannerText.getStyleClass().add("banner-text-danger");
                 }
-            } else if ("WARN".equals(decision) || "REVIEW".equals(decision) || "SUSPICIOUS".equals(prediction)) {
+            } else if ("SUSPICIOUS".equals(riskLevel) || "LOW_RISK".equals(riskLevel)) {
                 if (resultIconContainer != null) {
                     resultIconContainer.setStyle("-fx-background-color: #F59E0B; -fx-background-radius: 12px; -fx-alignment: center;");
                 }
@@ -1437,12 +1676,12 @@ public class MainController {
                     resultHeroIcon.setIconColor(Color.web("#FFFFFF"));
                 }
                 if (resultTitle != null) {
-                    resultTitle.setText("SUSPICIOUS");
+                    resultTitle.setText(prediction);
                     resultTitle.getStyleClass().removeAll("result-title-text", "result-title-danger");
                     resultTitle.getStyleClass().add("result-title-warn");
                 }
                 if (resultSubtitle != null) {
-                    resultSubtitle.setText("Suspicious indicators detected. Proceed with caution.");
+                    resultSubtitle.setText("Risk: " + riskLevel + " · Policy decision: " + decision);
                     resultSubtitle.getStyleClass().removeAll("result-sub-text", "result-sub-danger");
                     resultSubtitle.getStyleClass().add("result-sub-warn");
                 }
@@ -1455,7 +1694,7 @@ public class MainController {
                     resultBannerIcon.setIconColor(Color.web("#F59E0B"));
                 }
                 if (resultBannerText != null) {
-                    resultBannerText.setText("⚠ Caution: This site exhibits suspicious structural characteristics.");
+                    resultBannerText.setText("Prediction: " + prediction + " · Risk: " + riskLevel + " · Decision: " + decision);
                     resultBannerText.getStyleClass().removeAll("banner-text-safe");
                     resultBannerText.getStyleClass().add("banner-text-danger");
                 }
@@ -1468,12 +1707,12 @@ public class MainController {
                     resultHeroIcon.setIconColor(Color.web("#FFFFFF"));
                 }
                 if (resultTitle != null) {
-                    resultTitle.setText("SAFE");
+                    resultTitle.setText(prediction);
                     resultTitle.getStyleClass().removeAll("result-title-danger", "result-title-warn");
                     resultTitle.getStyleClass().add("result-title-text");
                 }
                 if (resultSubtitle != null) {
-                    resultSubtitle.setText("This website is safe to visit.");
+                    resultSubtitle.setText("Risk: " + riskLevel + " · Policy decision: " + decision);
                     resultSubtitle.getStyleClass().removeAll("result-sub-danger", "result-sub-warn");
                     resultSubtitle.getStyleClass().add("result-sub-text");
                 }
@@ -1486,7 +1725,7 @@ public class MainController {
                     resultBannerIcon.setIconColor(Color.web("#059669"));
                 }
                 if (resultBannerText != null) {
-                    resultBannerText.setText("✓ This website appears safe. You can proceed with confidence.");
+                    resultBannerText.setText("Prediction: " + prediction + " · Risk: " + riskLevel + " · Decision: " + decision);
                     resultBannerText.getStyleClass().removeAll("banner-text-danger");
                     resultBannerText.getStyleClass().add("banner-text-safe");
                 }
@@ -1494,7 +1733,7 @@ public class MainController {
         }
 
         // 2. Score Gauge (Dashboard and Result Screen)
-        updateRiskGauge(score);
+        updateRiskGauge(score, riskLevel);
 
         // 3. Metadata fields
         if (resultUrl != null) resultUrl.setText(url);
@@ -1504,13 +1743,15 @@ public class MainController {
         }
         if (resultDecision != null) {
             resultDecision.setText(decision);
-            resultDecision.setStyle("BLOCK".equals(decision) ? "-fx-font-weight: 700; -fx-text-fill: #EF4444;" : ("WARN".equals(decision) ? "-fx-font-weight: 700; -fx-text-fill: #F59E0B;" : "-fx-font-weight: 700; -fx-text-fill: #10B981;"));
+            resultDecision.setStyle("BLOCK".equals(decision) ? "-fx-font-weight: 700; -fx-text-fill: #EF4444;"
+                    : (("WARN".equals(decision) || "REVIEW".equals(decision))
+                    ? "-fx-font-weight: 700; -fx-text-fill: #F59E0B;"
+                    : "-fx-font-weight: 700; -fx-text-fill: #10B981;"));
         }
         if (resultConfidence != null) {
-            double conf = ("BENIGN".equalsIgnoreCase(prediction)) ? (1.0 - prob) * 100.0 : prob * 100.0;
-            if (conf < 50.0) conf = 100.0 - conf;
-            resultConfidence.setText(String.format("%.1f%%", Math.max(85.0, Math.min(99.9, conf))));
+            resultConfidence.setText(String.format(Locale.ROOT, "%.2f%%", prob * 100.0));
         }
+        if (resultScorePill != null) resultScorePill.setText(riskLevel);
 
         // 4. Why this result? (Backend reasons)
         if (reasonsListContainer != null) {
@@ -1520,7 +1761,7 @@ public class MainController {
                 for (String r : reasons) {
                     HBox row = new HBox(8);
                     row.setAlignment(Pos.CENTER_LEFT);
-                    boolean isRisk = "BLOCK".equals(decision) || "WARN".equals(decision);
+                    boolean isRisk = "HIGH_RISK".equals(riskLevel) || "SUSPICIOUS".equals(riskLevel);
                     FontIcon icon = new FontIcon(isRisk ? "fth-alert-triangle" : "fth-check");
                     icon.setIconSize(14);
                     icon.setIconColor(isRisk ? Color.web("#EF4444") : Color.web("#10B981"));
@@ -1530,83 +1771,24 @@ public class MainController {
                     reasonsListContainer.getChildren().add(row);
                 }
             } else {
-                String[] defaultReasons = "BLOCK".equals(decision)
-                        ? new String[]{"Suspicious lexical pattern matched", "Abnormal URL structure detected", "Domain reputation low", "Potential credential harvesting indicator"}
-                        : new String[]{"No suspicious keywords detected", "Valid SSL certificate", "Domain age is long", "No abnormal URL structure", "Reputation is trusted"};
-                for (String r : defaultReasons) {
-                    HBox row = new HBox(8);
-                    row.setAlignment(Pos.CENTER_LEFT);
-                    boolean isRisk = "BLOCK".equals(decision);
-                    FontIcon icon = new FontIcon(isRisk ? "fth-alert-triangle" : "fth-check");
-                    icon.setIconSize(14);
-                    icon.setIconColor(isRisk ? Color.web("#EF4444") : Color.web("#10B981"));
-                    Label label = new Label(r);
-                    label.getStyleClass().add("feature-key");
-                    row.getChildren().addAll(icon, label);
-                    reasonsListContainer.getChildren().add(row);
-                }
+                Label noReasons = new Label("No assessment details were returned by the backend.");
+                noReasons.getStyleClass().add("feature-key");
+                reasonsListContainer.getChildren().add(noReasons);
             }
         }
 
-        // 5. Extracted Features
-        if (featUrlLength != null) featUrlLength.setText(String.valueOf(url.length()));
-        if (featHasHttps != null) featHasHttps.setText(url.toLowerCase().startsWith("https://") ? "Yes" : "No");
-        if (featDotCount != null) featDotCount.setText(String.valueOf(Math.max(1, url.split("\\.").length - 1)));
-        if (featDomainAge != null) {
-            featDomainAge.setText(url.contains("google") || url.contains("microsoft") ? "5845 days" : ("BLOCK".equals(decision) ? "4 days" : "1200 days"));
-        }
-        if (featKeywords != null) {
-            boolean hasKw = url.toLowerCase().matches(".*(login|verify|account|security|update|bank|password|confirm).*");
-            featKeywords.setText(hasKw ? "2" : "0");
-        }
-        if (featIpUsed != null) {
-            boolean ipUsed = url.matches(".*\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}.*");
-            featIpUsed.setText(ipUsed ? "Yes" : "No");
-        }
+        // These model features are not part of the Spring response contract.
+        if (featUrlLength != null) featUrlLength.setText("—");
+        if (featHasHttps != null) featHasHttps.setText("—");
+        if (featDotCount != null) featDotCount.setText("—");
+        if (featDomainAge != null) featDomainAge.setText("—");
+        if (featKeywords != null) featKeywords.setText("—");
+        if (featIpUsed != null) featIpUsed.setText("—");
 
         // 6. Risk Level Scale highlighting
         updateRiskLevelScale(riskLevel, decision);
 
-        // 7. Update Dashboard & Activity Stats
-        totalScanned++;
-        if ("BLOCK".equals(decision)) totalBlocked++;
-        else if ("WARN".equals(decision)) totalInReview++;
-        else totalAllowed++;
-
-        if (dashScannedCount != null) {
-            if (cardsHelper != null) cardsHelper.countUp(dashScannedCount, totalScanned);
-            else dashScannedCount.setText(String.format("%,d", totalScanned));
-        }
-        if (dashThreatsBlockedCount != null) {
-            if (cardsHelper != null) cardsHelper.countUp(dashThreatsBlockedCount, totalBlocked);
-            else dashThreatsBlockedCount.setText(String.valueOf(totalBlocked));
-        }
-        if (dashInReviewCount != null) {
-            if (cardsHelper != null) cardsHelper.countUp(dashInReviewCount, totalInReview);
-            else dashInReviewCount.setText(String.valueOf(totalInReview));
-        }
-        if (dashAllowedCount != null) {
-            if (cardsHelper != null) cardsHelper.countUp(dashAllowedCount, totalAllowed);
-            else dashAllowedCount.setText(String.format("%,d", totalAllowed));
-        }
-        if (threatBlockedCount != null) {
-            if (threatCardsHelper != null) threatCardsHelper.countUp(threatBlockedCount, totalBlocked);
-            else threatBlockedCount.setText(String.valueOf(totalBlocked));
-        }
-
-        // Prepend to Activity & Threat Center
-        String nowTime = LocalTime.now().format(timeFormatter);
-        String eventType = "BLOCK".equals(decision) ? "Phishing Detection" : "URL Scan";
-        String status = "BLOCK".equals(decision) ? "Blocked" : ("WARN".equals(decision) ? "Reviewed" : "Completed");
-        String displayRisk = "BLOCK".equals(decision) ? "High Risk" : ("WARN".equals(decision) ? "Suspicious" : "Safe");
-
-        activityLog.add(0, new ActivityItem(nowTime, eventType, url, displayRisk, decision, status));
-        renderActivityTable("");
-
-        if (!"ALLOW".equals(decision)) {
-            threatLog.add(0, new ThreatItem(url, displayRisk, decision, nowTime));
-            renderThreatTable();
-        }
+        backendRefresh.schedule(this::refreshBackendSnapshot, 350, TimeUnit.MILLISECONDS);
     }
 
     // =========================================================================
@@ -1628,25 +1810,25 @@ public class MainController {
         if (dashCardScanned != null) {
             cardsHelper.registerCard(new com.aiwatchdog.ui.dashboard.DashboardCardsHelper.CardItem(
                     dashCardScanned, dashScannedTile, dashScannedIcon, dashScannedTrend,
-                    dashScannedCount, dashScannedLine, 1248, "wd-ic-blue", "wd-ic-blue-hover", "#3B6DF0"
+                    dashScannedCount, dashScannedLine, 0, "wd-ic-blue", "wd-ic-blue-hover", "#3B6DF0"
             ));
         }
         if (dashCardBlocked != null) {
             cardsHelper.registerCard(new com.aiwatchdog.ui.dashboard.DashboardCardsHelper.CardItem(
                     dashCardBlocked, dashBlockedTile, dashBlockedIcon, dashBlockedTrend,
-                    dashThreatsBlockedCount, dashBlockedLine, 28, "wd-ic-red", "wd-ic-red-hover", "#EF4444"
+                    dashThreatsBlockedCount, dashBlockedLine, 0, "wd-ic-red", "wd-ic-red-hover", "#EF4444"
             ));
         }
         if (dashCardReview != null) {
             cardsHelper.registerCard(new com.aiwatchdog.ui.dashboard.DashboardCardsHelper.CardItem(
                     dashCardReview, dashReviewTile, dashReviewIcon, dashReviewTrend,
-                    dashInReviewCount, dashReviewLine, 14, "wd-ic-amber", "wd-ic-amber-hover", "#F59E0B"
+                    dashInReviewCount, dashReviewLine, 0, "wd-ic-amber", "wd-ic-amber-hover", "#F59E0B"
             ));
         }
         if (dashCardAllowed != null) {
             cardsHelper.registerCard(new com.aiwatchdog.ui.dashboard.DashboardCardsHelper.CardItem(
                     dashCardAllowed, dashAllowedTile, dashAllowedIcon, dashAllowedTrend,
-                    dashAllowedCount, dashAllowedLine, 1206, "wd-ic-green", "wd-ic-green-hover", "#10B981"
+                    dashAllowedCount, dashAllowedLine, 0, "wd-ic-green", "wd-ic-green-hover", "#10B981"
             ));
         }
         cardsHelper.setupAll();
@@ -1689,25 +1871,25 @@ public class MainController {
         if (threatCard0 != null) {
             threatCardsHelper.registerCard(new com.aiwatchdog.ui.dashboard.DashboardCardsHelper.CardItem(
                     threatCard0, threatTile0, threatIcon0, threatTrend0,
-                    threatBlockedCount, null, 28, "icon-red-bg", "wd-tile-red-hover", "#EF4444"
+                    threatBlockedCount, null, 0, "icon-red-bg", "wd-tile-red-hover", "#EF4444"
             ));
         }
         if (threatCard1 != null) {
             threatCardsHelper.registerCard(new com.aiwatchdog.ui.dashboard.DashboardCardsHelper.CardItem(
                     threatCard1, threatTile1, threatIcon1, threatTrend1,
-                    threatInReviewCount, null, 14, "icon-amber-bg", "wd-tile-amber-hover", "#F59E0B"
+                    threatInReviewCount, null, 0, "icon-amber-bg", "wd-tile-amber-hover", "#F59E0B"
             ));
         }
         if (threatCard2 != null) {
             threatCardsHelper.registerCard(new com.aiwatchdog.ui.dashboard.DashboardCardsHelper.CardItem(
                     threatCard2, threatTile2, threatIcon2, threatTrend2,
-                    threatHighRiskCount, null, 8, "icon-blue-bg", "wd-tile-blue-hover", "#3B82F6"
+                    threatHighRiskCount, null, 0, "icon-blue-bg", "wd-tile-blue-hover", "#3B82F6"
             ));
         }
         if (threatCard3 != null) {
             threatCardsHelper.registerCard(new com.aiwatchdog.ui.dashboard.DashboardCardsHelper.CardItem(
                     threatCard3, threatTile3, threatIcon3, threatTrend3,
-                    threatSafeCount, null, 1207, "icon-green-bg", "wd-tile-green-hover", "#16C784"
+                    threatSafeCount, null, 0, "icon-green-bg", "wd-tile-green-hover", "#16C784"
             ));
         }
         threatCardsHelper.setupAll();
@@ -1738,25 +1920,25 @@ public class MainController {
         if (activityCard0 != null) {
             activityCardsHelper.registerCard(new com.aiwatchdog.ui.dashboard.DashboardCardsHelper.CardItem(
                     activityCard0, activityTile0, activityIcon0, null,
-                    activityCount0, null, 1284, "icon-blue-bg", "wd-tile-blue-hover", "#2563EB"
+                    activityCount0, null, 0, "icon-blue-bg", "wd-tile-blue-hover", "#2563EB"
             ));
         }
         if (activityCard1 != null) {
             activityCardsHelper.registerCard(new com.aiwatchdog.ui.dashboard.DashboardCardsHelper.CardItem(
                     activityCard1, activityTile1, activityIcon1, null,
-                    activityCount1, null, 1248, "icon-blue-bg", "wd-tile-blue-hover", "#2563EB"
+                    activityCount1, null, 0, "icon-blue-bg", "wd-tile-blue-hover", "#2563EB"
             ));
         }
         if (activityCard2 != null) {
             activityCardsHelper.registerCard(new com.aiwatchdog.ui.dashboard.DashboardCardsHelper.CardItem(
                     activityCard2, activityTile2, activityIcon2, null,
-                    activityCount2, null, 28, "icon-red-bg", "wd-tile-red-hover", "#EF4444"
+                    activityCount2, null, 0, "icon-red-bg", "wd-tile-red-hover", "#EF4444"
             ));
         }
         if (activityCard3 != null) {
             activityCardsHelper.registerCard(new com.aiwatchdog.ui.dashboard.DashboardCardsHelper.CardItem(
                     activityCard3, activityTile3, activityIcon3, null,
-                    activityCount3, null, 1206, "icon-green-bg", "wd-tile-green-hover", "#10B981"
+                    activityCount3, null, 0, "icon-green-bg", "wd-tile-green-hover", "#10B981"
             ));
         }
         activityCardsHelper.setupAll();
@@ -1780,25 +1962,25 @@ public class MainController {
         if (insightCard0 != null) {
             insightsCardsHelper.registerCard(new com.aiwatchdog.ui.dashboard.DashboardCardsHelper.CardItem(
                     insightCard0, null, insightIcon0, insightTrend0,
-                    insightCount0, null, 0, 98.6, "%", null, null, "#10B981"
+                    insightCount0, null, 0, 0.0, "%", null, null, "#10B981"
             ));
         }
         if (insightCard1 != null) {
             insightsCardsHelper.registerCard(new com.aiwatchdog.ui.dashboard.DashboardCardsHelper.CardItem(
                     insightCard1, null, insightIcon1, insightTrend1,
-                    insightCount1, null, 28, 0.0, null, null, null, "#EF4444"
+                    insightCount1, null, 0, 0.0, null, null, null, "#EF4444"
             ));
         }
         if (insightCard2 != null) {
             insightsCardsHelper.registerCard(new com.aiwatchdog.ui.dashboard.DashboardCardsHelper.CardItem(
                     insightCard2, null, insightIcon2, insightTrend2,
-                    insightCount2, null, 0, 1.4, "%", null, null, "#2563EB"
+                    insightCount2, null, 0, 0.0, "%", null, null, "#2563EB"
             ));
         }
         if (insightCard3 != null) {
             insightsCardsHelper.registerCard(new com.aiwatchdog.ui.dashboard.DashboardCardsHelper.CardItem(
                     insightCard3, null, insightIcon3, insightTrend3,
-                    insightCount3, null, 1248, 0.0, null, null, null, "#2563EB"
+                    insightCount3, null, 0, 0.0, null, null, null, "#2563EB"
             ));
         }
         insightsCardsHelper.setupAll();
@@ -1835,17 +2017,26 @@ public class MainController {
     }
 
     public void updateRiskGauge(int score) {
-        updateRiskGauge(score, true);
+        updateRiskGauge(score, "UNKNOWN", true);
     }
 
     public void updateRiskGauge(int score, boolean animate) {
+        updateRiskGauge(score, "UNKNOWN", animate);
+    }
+
+    public void updateRiskGauge(int score, String riskLevel) {
+        updateRiskGauge(score, riskLevel, true);
+    }
+
+    private void updateRiskGauge(int score, String riskLevel, boolean animate) {
         int clampedScore = Math.max(0, Math.min(100, score));
         double targetArcLength = - (clampedScore / 100.0) * 360.0;
-        String strokeColor = clampedScore >= 70 ? "#EF4444" : (clampedScore >= 40 ? "#F59E0B" : "#10B981");
+        String normalizedRisk = valueOr(riskLevel, "UNKNOWN").toUpperCase(Locale.ROOT);
+        String strokeColor = colorForRiskLevel(normalizedRisk);
 
         // 1. Target Lock Radar (if active)
         if (riskRadarView != null) {
-            riskRadarView.setScore(clampedScore, animate);
+            riskRadarView.setAssessment(clampedScore, normalizedRisk, animate);
         }
 
         if (!animate && cardsHelper != null) {
@@ -1874,7 +2065,7 @@ public class MainController {
         }
 
         // 4. Update status labels and score pill
-        applyRadarLevel(com.aiwatchdog.ui.dashboard.RiskRadarView.getLevelForScore(clampedScore));
+        applyRadarLevel(com.aiwatchdog.ui.dashboard.RiskRadarView.getLevelForRisk(normalizedRisk));
 
         // 5. Result Screen Gauge (if loaded)
         if (resultScoreNumber != null) {
@@ -1885,15 +2076,26 @@ public class MainController {
             resultScoreArc.setStyle("-fx-stroke: " + strokeColor + ";");
         }
         if (resultScorePill != null) {
-            resultScorePill.getStyleClass().removeAll("badge-safe", "badge-suspicious", "badge-high-risk");
-            if (clampedScore >= 70) {
-                resultScorePill.getStyleClass().add("badge-high-risk");
-            } else if (clampedScore >= 40) {
-                resultScorePill.getStyleClass().add("badge-suspicious");
-            } else {
-                resultScorePill.getStyleClass().add("badge-safe");
-            }
+            resultScorePill.getStyleClass().removeAll("badge-safe", "badge-low-risk", "badge-suspicious", "badge-high-risk");
+            String riskClass = switch (normalizedRisk) {
+                case "SAFE" -> "badge-safe";
+                case "LOW_RISK" -> "badge-low-risk";
+                case "SUSPICIOUS" -> "badge-suspicious";
+                case "HIGH_RISK" -> "badge-high-risk";
+                default -> null;
+            };
+            if (riskClass != null) resultScorePill.getStyleClass().add(riskClass);
         }
+    }
+
+    private static String colorForRiskLevel(String riskLevel) {
+        return switch (riskLevel) {
+            case "SAFE" -> "#10B981";
+            case "LOW_RISK" -> "#84CC16";
+            case "SUSPICIOUS" -> "#F59E0B";
+            case "HIGH_RISK" -> "#EF4444";
+            default -> "#64748B";
+        };
     }
 
     private void applyRadarLevel(com.aiwatchdog.ui.dashboard.RiskRadarView.LevelData level) {
@@ -1901,8 +2103,8 @@ public class MainController {
         if (dashStatusNormalLabel != null) {
             dashStatusNormalLabel.setText("● " + level.status);
             dashStatusNormalLabel.getStyleClass().removeAll("wd-status-low", "wd-status-med", "wd-status-high");
-            if (level.id == 0) dashStatusNormalLabel.getStyleClass().add("wd-status-low");
-            else if (level.id == 1) dashStatusNormalLabel.getStyleClass().add("wd-status-med");
+            if (level.id <= 1) dashStatusNormalLabel.getStyleClass().add("wd-status-low");
+            else if (level.id == 2) dashStatusNormalLabel.getStyleClass().add("wd-status-med");
             else dashStatusNormalLabel.getStyleClass().add("wd-status-high");
         }
         if (dashRiskLevelTitle != null) {
@@ -1912,13 +2114,14 @@ public class MainController {
             dashRiskDescription.setText(level.desc);
         }
         if (dashScorePill != null) {
+            dashScorePill.setText("RISK LEVEL · " + level.title);
             dashScorePill.getStyleClass().removeAll("badge-safe", "badge-suspicious", "badge-high-risk",
                     "wd-rchip-low", "wd-rchip-med", "wd-rchip-high");
-            if (level.id == 0) {
+            if (level.id == 0 || level.id == 1) {
                 dashScorePill.getStyleClass().addAll("badge-safe", "wd-rchip-low");
-            } else if (level.id == 1) {
+            } else if (level.id == 2) {
                 dashScorePill.getStyleClass().addAll("badge-suspicious", "wd-rchip-med");
-            } else {
+            } else if (level.id == 3) {
                 dashScorePill.getStyleClass().addAll("badge-high-risk", "wd-rchip-high");
             }
         }
@@ -2012,11 +2215,11 @@ public class MainController {
             }
         }
 
-        if ("BLOCK".equals(decision) || "HIGH_RISK".equals(riskLevel) || "PHISHING".equals(riskLevel)) {
+        if ("HIGH_RISK".equals(riskLevel)) {
             if (riskLevelHighBadge != null) {
                 riskLevelHighBadge.setStyle("-fx-padding: 4px 8px; -fx-background-color: #FEF2F2; -fx-border-color: #FECACA; -fx-border-width: 1px; -fx-background-radius: 20px; -fx-border-radius: 20px;");
             }
-        } else if ("WARN".equals(decision) || "SUSPICIOUS".equals(riskLevel)) {
+        } else if ("SUSPICIOUS".equals(riskLevel)) {
             if (riskLevelSuspiciousBadge != null) {
                 riskLevelSuspiciousBadge.setStyle("-fx-padding: 4px 8px; -fx-background-color: #FFFBEB; -fx-border-color: #FDE68A; -fx-border-width: 1px; -fx-background-radius: 20px; -fx-border-radius: 20px;");
             }
@@ -2034,9 +2237,12 @@ public class MainController {
         if (threatTableContainer == null) return;
         threatTableContainer.getChildren().clear();
 
-        int limit = Math.min(7, threatLog.size());
+        String timeSelection = threatTimeFilter == null ? null : threatTimeFilter.getValue();
+        List<ThreatItem> filteredThreats = threatLog.stream()
+                .filter(item -> matchesSelectedTime(item.instant(), timeSelection)).toList();
+        int limit = Math.min(7, filteredThreats.size());
         for (int i = 0; i < limit; i++) {
-            ThreatItem item = threatLog.get(i);
+            ThreatItem item = filteredThreats.get(i);
             HBox row = new HBox(8);
             row.getStyleClass().add("table-row-item");
             row.setAlignment(Pos.CENTER_LEFT);
@@ -2047,13 +2253,13 @@ public class MainController {
             urlBox.setPrefWidth(260);
             Color dotColor;
             String badgeClass;
-            if ("High Risk".equalsIgnoreCase(item.riskLevel)) {
+            if ("High Risk".equalsIgnoreCase(item.riskLevel) || "HIGH_RISK".equalsIgnoreCase(item.riskLevel)) {
                 dotColor = Color.web("#EF4444");
                 badgeClass = "badge-high-risk";
-            } else if ("Potential Risk".equalsIgnoreCase(item.riskLevel)) {
+            } else if ("Potential Risk".equalsIgnoreCase(item.riskLevel) || "LOW_RISK".equalsIgnoreCase(item.riskLevel)) {
                 dotColor = Color.web("#F59E0B");
                 badgeClass = "badge-potential-risk";
-            } else if ("Suspicious".equalsIgnoreCase(item.riskLevel)) {
+            } else if ("Suspicious".equalsIgnoreCase(item.riskLevel) || "SUSPICIOUS".equalsIgnoreCase(item.riskLevel)) {
                 dotColor = Color.web("#3B82F6");
                 badgeClass = "badge-suspicious";
             } else {
@@ -2078,7 +2284,7 @@ public class MainController {
             decLabel.setPrefWidth(100);
             if ("BLOCK".equalsIgnoreCase(item.decision)) {
                 decLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: 700; -fx-text-fill: #EF4444;");
-            } else if ("WARN".equalsIgnoreCase(item.decision)) {
+            } else if ("WARN".equalsIgnoreCase(item.decision) || "REVIEW".equalsIgnoreCase(item.decision)) {
                 decLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: 700; -fx-text-fill: #F59E0B;");
             } else {
                 decLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: 700; -fx-text-fill: #16C784;");
@@ -2099,12 +2305,22 @@ public class MainController {
         activityTableContainer.getChildren().clear();
 
         String q = filterQuery == null ? "" : filterQuery.toLowerCase().trim();
+        String eventFilter = activityEventFilter == null ? null : activityEventFilter.getValue();
+        String statusFilter = activityStatusFilter == null ? null : activityStatusFilter.getValue();
+        String timeFilter = activityTimeFilter == null ? null : activityTimeFilter.getValue();
         int count = 0;
+        int matched = 0;
         for (ActivityItem item : activityLog) {
-            if (!q.isEmpty() && !item.urlOrDesc.toLowerCase().contains(q) && !item.event.toLowerCase().contains(q)) {
+            String searchText = (item.urlOrDesc + " " + item.event + " " + item.riskLevel + " " + item.decision + " " + item.status)
+                    .toLowerCase(Locale.ROOT);
+            if (!q.isEmpty() && !searchText.contains(q)) {
                 continue;
             }
-            if (count >= 10) break;
+            if (eventFilter != null && !eventFilter.startsWith("All") && !eventFilter.equalsIgnoreCase(item.event)) continue;
+            if (statusFilter != null && !statusFilter.startsWith("All") && !statusFilter.equalsIgnoreCase(item.status)) continue;
+            if (!matchesSelectedTime(item.instant(), timeFilter)) continue;
+            matched++;
+            if (count >= 10) continue;
             count++;
 
             HBox row = new HBox(8);
@@ -2120,7 +2336,9 @@ public class MainController {
             HBox eventBox = new HBox(8);
             eventBox.setAlignment(Pos.CENTER_LEFT);
             eventBox.setPrefWidth(160);
-            Circle dot = new Circle(4, "High Risk".equals(item.riskLevel) ? Color.web("#EF4444") : ("Suspicious".equals(item.riskLevel) ? Color.web("#F59E0B") : Color.web("#3B82F6")));
+              boolean highRisk = "High Risk".equalsIgnoreCase(item.riskLevel) || "HIGH_RISK".equalsIgnoreCase(item.riskLevel);
+              boolean suspicious = "Suspicious".equalsIgnoreCase(item.riskLevel) || "SUSPICIOUS".equalsIgnoreCase(item.riskLevel);
+              Circle dot = new Circle(4, highRisk ? Color.web("#EF4444") : (suspicious ? Color.web("#F59E0B") : Color.web("#3B82F6")));
             Label eventLabel = new Label(item.event);
             eventLabel.getStyleClass().add("url-table-text");
             eventBox.getChildren().addAll(dot, eventLabel);
@@ -2136,18 +2354,20 @@ public class MainController {
             riskBox.setPrefWidth(110);
             Label riskBadge = new Label(item.riskLevel);
             riskBadge.getStyleClass().add("pill-badge");
-            if ("High Risk".equals(item.riskLevel)) riskBadge.getStyleClass().add("badge-high-risk");
-            else if ("Suspicious".equals(item.riskLevel)) riskBadge.getStyleClass().add("badge-suspicious");
-            else if ("Low Risk".equals(item.riskLevel)) riskBadge.getStyleClass().add("badge-low-risk");
+              if ("High Risk".equalsIgnoreCase(item.riskLevel) || "HIGH_RISK".equalsIgnoreCase(item.riskLevel)) riskBadge.getStyleClass().add("badge-high-risk");
+              else if ("Suspicious".equalsIgnoreCase(item.riskLevel) || "SUSPICIOUS".equalsIgnoreCase(item.riskLevel)) riskBadge.getStyleClass().add("badge-suspicious");
+              else if ("Low Risk".equalsIgnoreCase(item.riskLevel) || "LOW_RISK".equalsIgnoreCase(item.riskLevel)) riskBadge.getStyleClass().add("badge-low-risk");
             else riskBadge.getStyleClass().add("badge-safe");
             riskBox.getChildren().add(riskBadge);
 
             // Decision
             Label decLabel = new Label(item.decision);
             decLabel.setPrefWidth(90);
-            decLabel.setStyle("BLOCK".equals(item.decision)
+              decLabel.setStyle("BLOCK".equalsIgnoreCase(item.decision)
                     ? "-fx-font-size: 12px; -fx-font-weight: 700; -fx-text-fill: #EF4444;"
-                    : ("WARN".equals(item.decision) ? "-fx-font-size: 12px; -fx-font-weight: 700; -fx-text-fill: #F59E0B;" : "-fx-font-size: 12px; -fx-font-weight: 700; -fx-text-fill: #10B981;"));
+                      : (("WARN".equalsIgnoreCase(item.decision) || "REVIEW".equalsIgnoreCase(item.decision))
+                      ? "-fx-font-size: 12px; -fx-font-weight: 700; -fx-text-fill: #F59E0B;"
+                      : "-fx-font-size: 12px; -fx-font-weight: 700; -fx-text-fill: #10B981;"));
 
             // Status
             Label statusLabel = new Label(item.status);
@@ -2159,8 +2379,19 @@ public class MainController {
         }
 
         if (activityPaginationLabel != null) {
-            activityPaginationLabel.setText("Showing 1-" + count + " of " + (1284 + activityLog.size() - 5) + " events");
+            activityPaginationLabel.setText("Showing " + (count == 0 ? 0 : 1) + "-" + count + " of " + matched + " matching events");
         }
+    }
+
+    private static boolean matchesSelectedTime(Instant instant, String selection) {
+        if (selection == null || selection.startsWith("All") || instant == null) return true;
+        long days = switch (selection) {
+            case "Last 24 hours" -> 1;
+            case "Last 7 days" -> 7;
+            case "Last 30 days" -> 30;
+            default -> Long.MAX_VALUE;
+        };
+        return days == Long.MAX_VALUE || !instant.isBefore(Instant.now().minusSeconds(days * 24 * 60 * 60));
     }
 
     @FXML
@@ -2195,5 +2426,21 @@ public class MainController {
         } else {
             navigateScanner();
         }
+    }
+
+    public void close() {
+        closed = true;
+        backendRefresh.shutdownNow();
+        stopScanningAnimation();
+        if (splashMasterTimeline != null) splashMasterTimeline.stop();
+        if (gaugeTimeline != null) gaugeTimeline.stop();
+        if (breakdownTimeline != null) breakdownTimeline.stop();
+        if (cardsHelper != null) cardsHelper.stopAllAnimations();
+        if (riskRadarView != null) riskRadarView.stopTimer();
+        secureAccessGlobeAnimations.forEach(Animation::stop);
+        FileSystemMonitorService file = fileMonitor;
+        ProcessMonitorService process = processMonitor;
+        if (file != null) file.close();
+        if (process != null) process.close();
     }
 }

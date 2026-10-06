@@ -45,16 +45,16 @@ public class ThreatInsightsDonutHelper {
     private final HBox legendInfo;
     private final Label legendInfoPct;
 
-    // Target metrics matching the Threat Insights design
-    private int targetTotal = 45;
-    private int targetHighPct = 40;
-    private int targetSuspPct = 35;
-    private int targetInfoPct = 25;
+    // Data is supplied by Spring event statistics after the view loads.
+    private int targetTotal;
+    private int targetHighPct;
+    private int targetSuspPct;
+    private int targetInfoPct;
 
     // Target arc sweep angles (clockwise negative degrees in JavaFX coordinates)
-    private static final double HIGH_TARGET_LEN = -144.0;
-    private static final double SUSP_TARGET_LEN = -126.0;
-    private static final double INFO_TARGET_LEN = -90.0;
+    private double highTargetLen() { return -360.0 * targetHighPct / 100.0; }
+    private double suspiciousTargetLen() { return -360.0 * targetSuspPct / 100.0; }
+    private double infoTargetLen() { return -360.0 * targetInfoPct / 100.0; }
 
     // Animation controllers
     private Timeline entranceTimeline;
@@ -126,19 +126,22 @@ public class ThreatInsightsDonutHelper {
         stopAllAnimations();
 
         if (arcHigh != null) {
-            arcHigh.setLength(HIGH_TARGET_LEN);
+            arcHigh.setStartAngle(90.0);
+            arcHigh.setLength(highTargetLen());
             arcHigh.setStrokeWidth(14.0);
             arcHigh.setOpacity(1.0);
             arcHigh.setEffect(null);
         }
         if (arcSuspicious != null) {
-            arcSuspicious.setLength(SUSP_TARGET_LEN);
+            arcSuspicious.setStartAngle(90.0 + highTargetLen());
+            arcSuspicious.setLength(suspiciousTargetLen());
             arcSuspicious.setStrokeWidth(14.0);
             arcSuspicious.setOpacity(1.0);
             arcSuspicious.setEffect(null);
         }
         if (arcInfo != null) {
-            arcInfo.setLength(INFO_TARGET_LEN);
+            arcInfo.setStartAngle(90.0 + highTargetLen() + suspiciousTargetLen());
+            arcInfo.setLength(infoTargetLen());
             arcInfo.setStrokeWidth(14.0);
             arcInfo.setOpacity(1.0);
             arcInfo.setEffect(null);
@@ -344,17 +347,17 @@ public class ThreatInsightsDonutHelper {
             // Arc 1: High Risk (0 to 650ms)
             double pHigh = Math.min(1.0, (double) t / 650.0);
             double easeHigh = 1.0 - Math.pow(1.0 - pHigh, 3.0);
-            double lenHigh = HIGH_TARGET_LEN * easeHigh;
+            double lenHigh = highTargetLen() * easeHigh;
 
             // Arc 2: Suspicious (200ms to 850ms)
             double pSusp = Math.max(0.0, Math.min(1.0, (t - 200.0) / 650.0));
             double easeSusp = 1.0 - Math.pow(1.0 - pSusp, 3.0);
-            double lenSusp = SUSP_TARGET_LEN * easeSusp;
+            double lenSusp = suspiciousTargetLen() * easeSusp;
 
             // Arc 3: Info (400ms to 1050ms)
             double pInfo = Math.max(0.0, Math.min(1.0, (t - 400.0) / 650.0));
             double easeInfo = 1.0 - Math.pow(1.0 - pInfo, 3.0);
-            double lenInfo = INFO_TARGET_LEN * easeInfo;
+            double lenInfo = infoTargetLen() * easeInfo;
 
             // Center count-up: 50ms to 1000ms
             double pCount = Math.max(0.0, Math.min(1.0, (t - 50.0) / 950.0));
@@ -382,9 +385,9 @@ public class ThreatInsightsDonutHelper {
             int pct3 = (int) Math.round(targetInfoPct * easeLeg3);
 
             entranceTimeline.getKeyFrames().add(new KeyFrame(Duration.millis(t), evt -> {
-                if (arcHigh != null) arcHigh.setLength(lenHigh);
-                if (arcSuspicious != null) arcSuspicious.setLength(lenSusp);
-                if (arcInfo != null) arcInfo.setLength(lenInfo);
+                if (arcHigh != null) { arcHigh.setStartAngle(90.0); arcHigh.setLength(lenHigh); }
+                if (arcSuspicious != null) { arcSuspicious.setStartAngle(90.0 + lenHigh); arcSuspicious.setLength(lenSusp); }
+                if (arcInfo != null) { arcInfo.setStartAngle(90.0 + lenHigh + lenSusp); arcInfo.setLength(lenInfo); }
 
                 if (totalCountLabel != null) totalCountLabel.setText(String.valueOf(countVal));
                 if (totalSubLabel != null) {
@@ -495,11 +498,15 @@ public class ThreatInsightsDonutHelper {
      * Updates target metrics if live telemetry changes, smoothly triggering the counters.
      */
     public void updateData(int total, int highPct, int suspPct, int infoPct) {
-        this.targetTotal = total;
-        this.targetHighPct = highPct;
-        this.targetSuspPct = suspPct;
-        this.targetInfoPct = infoPct;
+        this.targetTotal = Math.max(0, total);
+        int normalizedTotal = Math.max(0, highPct) + Math.max(0, suspPct) + Math.max(0, infoPct);
+        this.targetHighPct = normalizedTotal == 0 ? 0 : Math.max(0, highPct) * 100 / normalizedTotal;
+        this.targetSuspPct = normalizedTotal == 0 ? 0 : Math.max(0, suspPct) * 100 / normalizedTotal;
+        this.targetInfoPct = Math.max(0, 100 - this.targetHighPct - this.targetSuspPct);
         if (!isAnimating && !isHovered) {
+            if (arcHigh != null) { arcHigh.setStartAngle(90.0); arcHigh.setLength(highTargetLen()); }
+            if (arcSuspicious != null) { arcSuspicious.setStartAngle(90.0 + highTargetLen()); arcSuspicious.setLength(suspiciousTargetLen()); }
+            if (arcInfo != null) { arcInfo.setStartAngle(90.0 + highTargetLen() + suspiciousTargetLen()); arcInfo.setLength(infoTargetLen()); }
             if (totalCountLabel != null) totalCountLabel.setText(String.valueOf(targetTotal));
             if (legendHighPct != null) legendHighPct.setText(targetHighPct + "%");
             if (legendSuspPct != null) legendSuspPct.setText(targetSuspPct + "%");
