@@ -20,4 +20,9 @@ P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\servi
 P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\service\PhishingDetectionEngine.java
 P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\service\ProcessMonitorService.java
 P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\service\URLFeatureExtractor.java
+P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\ui\dashboard\DashboardCardsHelper.java
+P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\ui\dashboard\RiskRadarView.java
+P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\ui\scanner\ScanRadarView.java
+P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\ui\threatcenter\ThreatInsightsDonutHelper.java
+P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\ui\WdButtonFx.java
 P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\util\ThemeManager.java
