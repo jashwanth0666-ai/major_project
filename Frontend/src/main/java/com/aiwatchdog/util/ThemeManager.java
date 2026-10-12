@@ -48,13 +48,23 @@ public class ThemeManager {
                 if (!currentScene.getStylesheets().toString().contains("app-dark.css")) {
                     currentScene.getStylesheets().add(ThemeManager.class.getResource("/css/app-dark.css").toExternalForm());
                 }
+                if (!currentScene.getStylesheets().toString().contains("wd-dark-buttons-fx.css")) {
+                    currentScene.getStylesheets().add(ThemeManager.class.getResource("/css/wd-dark-buttons-fx.css").toExternalForm());
+                }
+                if (currentScene.getRoot() != null && !currentScene.getRoot().getStyleClass().contains("dark")) {
+                    currentScene.getRoot().getStyleClass().add("dark");
+                }
             }
         } else {
             Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
             if (currentScene != null) {
-                currentScene.getStylesheets().removeIf(css -> css.contains("app-dark.css"));
+                currentScene.getStylesheets().removeIf(css -> css.contains("app-dark.css") || css.contains("wd-dark-buttons-fx.css"));
                 if (!currentScene.getStylesheets().toString().contains("app-light.css")) {
                     currentScene.getStylesheets().add(ThemeManager.class.getResource("/css/app-light.css").toExternalForm());
+                }
+                if (currentScene.getRoot() != null) {
+                    currentScene.getRoot().getStyleClass().remove("dark");
+                    currentScene.getRoot().getStylesheets().removeIf(css -> css.contains("app-dark.css") || css.contains("wd-dark-buttons-fx.css"));
                 }
             }
         }

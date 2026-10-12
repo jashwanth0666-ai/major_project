@@ -72,6 +72,7 @@ public class DashboardCardsHelper {
     }
 
     private final List<Animation> runningAnimations = new ArrayList<>();
+    private final List<Animation> entranceAnimations = new ArrayList<>();
     private final List<CardItem> cards = new ArrayList<>();
 
     public void registerCard(CardItem card) {
@@ -99,26 +100,33 @@ public class DashboardCardsHelper {
      * Staggered entrance animation for cards (0, 80, 160, 240 ms).
      */
     public void playEntranceAnimation() {
+        for (Animation a : entranceAnimations) {
+            a.stop();
+        }
+        entranceAnimations.clear();
+
         for (int i = 0; i < cards.size(); i++) {
             CardItem item = cards.get(i);
             Pane card = item.cardPane;
+            if (card == null) continue;
             int delayMs = i * 80;
 
             card.setOpacity(0.0);
             card.setTranslateY(12.0);
 
-            FadeTransition ft = new FadeTransition(Duration.millis(550), card);
+            FadeTransition ft = new FadeTransition(Duration.millis(450), card);
             ft.setFromValue(0.0);
             ft.setToValue(1.0);
             ft.setInterpolator(Interpolator.EASE_BOTH);
 
-            TranslateTransition tt = new TranslateTransition(Duration.millis(550), card);
+            TranslateTransition tt = new TranslateTransition(Duration.millis(450), card);
             tt.setFromY(12.0);
             tt.setToY(0.0);
             tt.setInterpolator(Interpolator.EASE_OUT);
 
             ParallelTransition pt = new ParallelTransition(ft, tt);
             pt.setDelay(Duration.millis(delayMs));
+            entranceAnimations.add(pt);
             pt.play();
 
             // Count-up staggered by 100ms
@@ -186,8 +194,28 @@ public class DashboardCardsHelper {
 
         if (card == null) return;
 
-        TranslateTransition lift = new TranslateTransition(Duration.millis(250), card);
-        TranslateTransition drop = new TranslateTransition(Duration.millis(250), card);
+        // Auto-discover existing .wd-ln child or inject one dynamically
+        if (line == null) {
+            for (Node child : card.getChildren()) {
+                if (child instanceof Region && child.getStyleClass().contains("wd-ln")) {
+                    line = (Region) child;
+                    break;
+                }
+            }
+            if (line == null) {
+                line = new Region();
+                line.getStyleClass().add("wd-ln");
+                String lineClass = resolveLineClass(item.baseIconColor);
+                if (lineClass != null) {
+                    line.getStyleClass().add(lineClass);
+                }
+                line.setMouseTransparent(true);
+                card.getChildren().add(line);
+            }
+        }
+
+        TranslateTransition hoverTt = new TranslateTransition(Duration.millis(160), card);
+        hoverTt.setInterpolator(Interpolator.EASE_OUT);
 
         final Scale lineScale;
         final Timeline drawLine;
@@ -199,6 +227,7 @@ public class DashboardCardsHelper {
             line.setMinHeight(3.0);
             line.setMaxHeight(3.0);
             line.setMaxWidth(Double.MAX_VALUE);
+            line.setMouseTransparent(true);
 
             lineScale = new Scale(0.0, 1.0, 0.0, 0.0);
             line.getTransforms().add(lineScale);
@@ -211,61 +240,77 @@ public class DashboardCardsHelper {
             retractLine = null;
         }
 
-        card.setOnMouseEntered(e -> {
-            card.getStyleClass().add("wd-card-hover");
-            lift.stop();
-            lift.setFromY(card.getTranslateY());
-            lift.setToY(-3.0);
-            lift.play();
+        final Region finalLine = line;
 
-            if (tile != null && item.baseTileStyle != null && item.hoverTileStyle != null) {
-                tile.getStyleClass().remove(item.baseTileStyle);
-                if (!tile.getStyleClass().contains(item.hoverTileStyle)) {
-                    tile.getStyleClass().add(item.hoverTileStyle);
+        card.hoverProperty().addListener((obs, oldVal, hovered) -> {
+            hoverTt.stop();
+            if (hovered) {
+                if (!card.getStyleClass().contains("wd-card-hover")) {
+                    card.getStyleClass().add("wd-card-hover");
+                }
+                hoverTt.setToY(-2.5);
+                hoverTt.play();
+
+                if (tile != null && item.baseTileStyle != null && item.hoverTileStyle != null) {
+                    tile.getStyleClass().remove(item.baseTileStyle);
+                    if (!tile.getStyleClass().contains(item.hoverTileStyle)) {
+                        tile.getStyleClass().add(item.hoverTileStyle);
+                    }
+                }
+                if (icon != null && item.hoverTileStyle != null) {
+                    icon.setIconColor(Color.WHITE);
+                }
+
+                if (finalLine != null && drawLine != null && retractLine != null && lineScale != null) {
+                    retractLine.stop();
+                    drawLine.stop();
+                    drawLine.getKeyFrames().setAll(
+                            new KeyFrame(Duration.ZERO, new KeyValue(lineScale.xProperty(), lineScale.getX())),
+                            new KeyFrame(Duration.millis(450), new KeyValue(lineScale.xProperty(), 1.0, Interpolator.EASE_OUT))
+                    );
+                    drawLine.play();
+                }
+            } else {
+                card.getStyleClass().remove("wd-card-hover");
+                hoverTt.setToY(0.0);
+                hoverTt.play();
+
+                if (tile != null && item.baseTileStyle != null && item.hoverTileStyle != null) {
+                    tile.getStyleClass().remove(item.hoverTileStyle);
+                    if (!tile.getStyleClass().contains(item.baseTileStyle)) {
+                        tile.getStyleClass().add(item.baseTileStyle);
+                    }
+                }
+                if (icon != null && item.baseIconColor != null) {
+                    icon.setIconColor(Color.web(item.baseIconColor));
+                }
+
+                if (finalLine != null && drawLine != null && retractLine != null && lineScale != null) {
+                    drawLine.stop();
+                    retractLine.stop();
+                    retractLine.getKeyFrames().setAll(
+                            new KeyFrame(Duration.ZERO, new KeyValue(lineScale.xProperty(), lineScale.getX())),
+                            new KeyFrame(Duration.millis(250), new KeyValue(lineScale.xProperty(), 0.0, Interpolator.EASE_OUT))
+                    );
+                    retractLine.play();
                 }
             }
-            if (icon != null && item.hoverTileStyle != null) {
-                icon.setIconColor(Color.WHITE);
-            }
-
-            if (line != null && drawLine != null && retractLine != null && lineScale != null) {
-                retractLine.stop();
-                drawLine.stop();
-                drawLine.getKeyFrames().setAll(
-                        new KeyFrame(Duration.ZERO, new KeyValue(lineScale.xProperty(), lineScale.getX())),
-                        new KeyFrame(Duration.millis(450), new KeyValue(lineScale.xProperty(), 1.0, Interpolator.EASE_OUT))
-                );
-                drawLine.play();
-            }
         });
+    }
 
-        card.setOnMouseExited(e -> {
-            card.getStyleClass().remove("wd-card-hover");
-            drop.stop();
-            drop.setFromY(card.getTranslateY());
-            drop.setToY(0.0);
-            drop.play();
-
-            if (tile != null && item.baseTileStyle != null && item.hoverTileStyle != null) {
-                tile.getStyleClass().remove(item.hoverTileStyle);
-                if (!tile.getStyleClass().contains(item.baseTileStyle)) {
-                    tile.getStyleClass().add(item.baseTileStyle);
-                }
-            }
-            if (icon != null && item.baseIconColor != null) {
-                icon.setIconColor(Color.web(item.baseIconColor));
-            }
-
-            if (line != null && drawLine != null && retractLine != null && lineScale != null) {
-                drawLine.stop();
-                retractLine.stop();
-                retractLine.getKeyFrames().setAll(
-                        new KeyFrame(Duration.ZERO, new KeyValue(lineScale.xProperty(), lineScale.getX())),
-                        new KeyFrame(Duration.millis(250), new KeyValue(lineScale.xProperty(), 0.0, Interpolator.EASE_OUT))
-                );
-                retractLine.play();
-            }
-        });
+    public static String resolveLineClass(String hexOrColor) {
+        if (hexOrColor == null) return "wd-ln-blue";
+        String lower = hexOrColor.toLowerCase(Locale.ROOT);
+        if (lower.contains("red") || lower.contains("ef4444") || lower.contains("d93636")) {
+            return "wd-ln-red";
+        }
+        if (lower.contains("amber") || lower.contains("f59e0b") || lower.contains("c27803") || lower.contains("orange")) {
+            return "wd-ln-amber";
+        }
+        if (lower.contains("green") || lower.contains("10b981") || lower.contains("16c784") || lower.contains("0b8f65")) {
+            return "wd-ln-green";
+        }
+        return "wd-ln-blue";
     }
 
     private void setupIconAnimation(FontIcon icon, int index) {
@@ -277,7 +322,7 @@ public class DashboardCardsHelper {
             // Slow, serene rotation (12 seconds per full turn) as in security overview
             setupGlobeRotation(icon);
         } else {
-            // Gentle, slow popup (scale up to 1.08 with 2800ms-3400ms cycle, no vibrate)
+            // Gentle, slow popup (scale up to 1.03 with 2800ms-3400ms cycle, perfectly cached & stabilized)
             long cycle = 2800 + ((index % 4) * 200L);
             setupSlowPopup(icon, cycle);
         }
@@ -313,11 +358,26 @@ public class DashboardCardsHelper {
     }
 
     private void setupSlowPopup(Node node, long cycleMs) {
+        if (node instanceof javafx.scene.text.Text) {
+            ((javafx.scene.text.Text) node).setBoundsType(javafx.scene.text.TextBoundsType.VISUAL);
+        }
+        node.setCache(true);
+        node.setCacheHint(javafx.scene.CacheHint.SCALE);
+        if (node.getParent() instanceof javafx.scene.layout.Region) {
+            ((javafx.scene.layout.Region) node.getParent()).setSnapToPixel(false);
+        } else {
+            node.parentProperty().addListener((obs, oldP, newP) -> {
+                if (newP instanceof javafx.scene.layout.Region) {
+                    ((javafx.scene.layout.Region) newP).setSnapToPixel(false);
+                }
+            });
+        }
+
         ScaleTransition st = new ScaleTransition(Duration.millis(cycleMs), node);
         st.setFromX(1.0);
         st.setFromY(1.0);
-        st.setToX(1.08);
-        st.setToY(1.08);
+        st.setToX(1.03);
+        st.setToY(1.03);
         st.setAutoReverse(true);
         st.setCycleCount(Animation.INDEFINITE);
         st.setInterpolator(Interpolator.EASE_BOTH);
@@ -331,6 +391,9 @@ public class DashboardCardsHelper {
 
     public void stopAllAnimations() {
         for (Animation a : runningAnimations) {
+            a.stop();
+        }
+        for (Animation a : entranceAnimations) {
             a.stop();
         }
     }

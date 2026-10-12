@@ -78,10 +78,28 @@
     -fx-max-width: Infinity;
 }
 
-.nav-btn:hover {
+.nav-btn:hover,
+.button.wd-nav:hover,
+.wd-btn.wd-nav:hover,
+.wd-nav:hover {
     -fx-background-color: #141414;
     -fx-text-fill: #FFFFFF;
     -fx-icon-color: #FFFFFF;
+}
+
+.nav-btn:pressed,
+.button.wd-nav:pressed,
+.wd-btn.wd-nav:pressed,
+.wd-nav:pressed {
+    -fx-background-color: #1e1e1e;
+}
+
+.nav-btn:focused,
+.button.wd-nav:focused,
+.wd-btn.wd-nav:focused,
+.wd-nav:focused {
+    -fx-border-color: #383838;
+    -fx-border-width: 1px;
 }
 
 .nav-btn-active {
@@ -236,6 +254,7 @@
     -fx-padding: 16px 18px;
     -fx-spacing: 6px;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.60), 6, 0, 0, 1);
+    -fx-cursor: hand;
 }
 
 .metric-icon-circle {
@@ -1035,10 +1054,11 @@
 }
 
 /* ==========================================================================
-   Splash / Starting Page (Dark Mode Adaptation)
+   Splash / Starting Page (Same clean, light animation in Dark Mode)
+   Colors: navy #06214f, blue #1e7bff, cyan #00b4ff, background #eef6ff
    ========================================================================== */
 .welcome-page-new {
-    -fx-background-color: #061021;
+    -fx-background-color: #eef6ff;
     -fx-background-image: url("../images/background.png");
     -fx-background-size: cover;
     -fx-background-position: center center;
@@ -1048,24 +1068,24 @@
 .welcome-title-new {
     -fx-font-size: 34px;
     -fx-font-weight: 900;
-    -fx-text-fill: #FFFFFF;
+    -fx-text-fill: #06214f;
     -fx-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Inter', Roboto, sans-serif;
     -fx-letter-spacing: 0.05em;
-    -fx-effect: dropshadow(gaussian, rgba(0, 150, 255, 0.4), 10, 0, 0, 2);
+    -fx-effect: dropshadow(gaussian, rgba(6, 33, 79, 0.15), 10, 0.2, 0, 2);
 }
 
 .welcome-subtitle-new {
     -fx-font-size: 13px;
     -fx-font-weight: 700;
-    -fx-text-fill: #60A5FA;
+    -fx-text-fill: #1e7bff;
     -fx-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Inter', Roboto, sans-serif;
     -fx-letter-spacing: 0.14em;
 }
 
 .splash-glow-circle {
-    -fx-fill: rgba(59, 130, 246, 0.16);
+    -fx-fill: rgba(30, 123, 255, 0.15);
     -fx-stroke: transparent;
-    -fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.45), 36, 0.35, 0, 0);
+    -fx-effect: dropshadow(gaussian, rgba(0, 180, 255, 0.45), 36, 0.35, 0, 0);
 }
 
 .splash-progress-bar {
@@ -1075,16 +1095,16 @@
 }
 
 .splash-progress-bar > .track {
-    -fx-background-color: rgba(59, 130, 246, 0.2);
+    -fx-background-color: rgba(30, 123, 255, 0.15);
     -fx-background-radius: 4px;
     -fx-border-color: transparent;
 }
 
 .splash-progress-bar > .bar {
-    -fx-background-color: linear-gradient(to right, #2563EB, #38BDF8);
+    -fx-background-color: linear-gradient(to right, #1e7bff, #00b4ff);
     -fx-background-radius: 4px;
     -fx-background-insets: 0;
-    -fx-effect: dropshadow(gaussian, rgba(56, 189, 248, 0.6), 6, 0.3, 0, 0);
+    -fx-effect: dropshadow(gaussian, rgba(0, 180, 255, 0.5), 6, 0.3, 0, 0);
 }
 
 .get-started-button {
@@ -1177,6 +1197,8 @@
     -fx-text-fill: #FFFFFF;
     -fx-font-size: 32px;
     -fx-font-weight: 700;
+    -fx-min-height: 42px;
+    -fx-pref-height: 42px;
 }
 
 .wd-sb {
@@ -1188,6 +1210,7 @@
     -fx-pref-height: 3px;
     -fx-min-height: 3px;
     -fx-max-height: 3px;
+    -fx-background-radius: 0 0 12px 12px;
 }
 
 .wd-ln-blue { -fx-background-color: #3b6df0; }
@@ -1723,4 +1746,231 @@
     -fx-text-fill: #10B981;
     -fx-min-width: 39px;
 }
+
+/* ==========================================================================
+   AI WatchDog: Dark-Mode Buttons (Black fill, white text & icons)
+   ========================================================================== */
+.button.wd-dbtn,
+.wd-dbtn,
+.button.wd-secondary,
+.button.wd-btn--secondary,
+.wd-btn.wd-secondary,
+.wd-secondary,
+.button.wd-chip,
+.button.wd-btn--chip,
+.wd-btn.wd-chip,
+.wd-chip,
+.button.wd-icon,
+.button.wd-btn--icon,
+.wd-btn.wd-icon,
+.wd-icon,
+.button.wd-warn-soft,
+.button.wd-btn--warn-soft,
+.wd-btn.wd-warn-soft,
+.wd-warn-soft,
+.button.wd-danger-soft,
+.button.wd-btn--danger-soft,
+.wd-btn.wd-danger-soft,
+.wd-danger-soft,
+.button.wd-tonal,
+.button.wd-btn--tonal,
+.wd-btn.wd-tonal,
+.wd-tonal,
+.settings-subnav-btn,
+.button.settings-subnav-btn,
+.icon-btn-round {
+    -fx-background-color: #000000;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #30343f;
+    -fx-border-width: 1px;
+    -fx-border-style: solid;
+    -fx-cursor: hand;
+    -fx-effect: null;
+}
+
+.button.wd-dbtn .text,
+.wd-dbtn .text,
+.button.wd-secondary .text,
+.button.wd-chip .text,
+.button.wd-icon .text,
+.button.wd-warn-soft .text,
+.button.wd-danger-soft .text,
+.button.wd-tonal .text,
+.settings-subnav-btn .text {
+    -fx-fill: #ffffff;
+}
+
+.button.wd-dbtn FontIcon,
+.button.wd-dbtn .ikonli-font-icon,
+.wd-dbtn FontIcon,
+.wd-dbtn .ikonli-font-icon,
+.button.wd-secondary FontIcon,
+.button.wd-secondary .ikonli-font-icon,
+.button.wd-chip FontIcon,
+.button.wd-chip .ikonli-font-icon,
+.button.wd-icon FontIcon,
+.button.wd-icon .ikonli-font-icon,
+.button.wd-warn-soft FontIcon,
+.button.wd-warn-soft .ikonli-font-icon,
+.button.wd-danger-soft FontIcon,
+.button.wd-danger-soft .ikonli-font-icon,
+.button.wd-tonal FontIcon,
+.button.wd-tonal .ikonli-font-icon,
+.settings-subnav-btn FontIcon,
+.settings-subnav-btn .ikonli-font-icon,
+.icon-btn-round FontIcon,
+.icon-btn-round .ikonli-font-icon {
+    -fx-icon-color: #ffffff;
+    -fx-fill: #ffffff;
+}
+
+.button.wd-dbtn .wd-burger-bar,
+.wd-dbtn .wd-burger-bar,
+.button.wd-burger .wd-burger-bar,
+.wd-burger .wd-burger-bar {
+    -fx-background-color: #ffffff;
+}
+
+/* Hover state */
+.button.wd-dbtn:hover,
+.wd-dbtn:hover,
+.button.wd-secondary:hover,
+.button.wd-chip:hover,
+.button.wd-icon:hover,
+.button.wd-warn-soft:hover,
+.button.wd-danger-soft:hover,
+.button.wd-tonal:hover,
+.settings-subnav-btn:hover,
+.icon-btn-round:hover {
+    -fx-background-color: #12151c;
+    -fx-border-color: #5b6475;
+    -fx-text-fill: #ffffff;
+    -fx-translate-y: -1;
+}
+
+.button.wd-dbtn:hover .text,
+.button.wd-secondary:hover .text,
+.button.wd-chip:hover .text,
+.settings-subnav-btn:hover .text {
+    -fx-fill: #ffffff;
+}
+
+.button.wd-dbtn:hover FontIcon,
+.button.wd-dbtn:hover .ikonli-font-icon,
+.button.wd-secondary:hover FontIcon,
+.button.wd-chip:hover FontIcon,
+.button.wd-icon:hover FontIcon,
+.settings-subnav-btn:hover FontIcon,
+.icon-btn-round:hover FontIcon {
+    -fx-icon-color: #ffffff;
+    -fx-fill: #ffffff;
+}
+
+/* Pressed state */
+.button.wd-dbtn:pressed,
+.wd-dbtn:pressed,
+.button.wd-secondary:pressed,
+.button.wd-chip:pressed,
+.button.wd-icon:pressed,
+.button.wd-warn-soft:pressed,
+.button.wd-danger-soft:pressed,
+.button.wd-tonal:pressed,
+.settings-subnav-btn:pressed,
+.icon-btn-round:pressed {
+    -fx-background-color: #000000;
+    -fx-border-color: #30343f;
+    -fx-translate-y: 0;
+    -fx-scale-x: 0.97;
+    -fx-scale-y: 0.97;
+}
+
+/* Selected / Active State (Active tab, Active sidebar, Active chip) */
+.button.wd-dbtn.wd-on,
+.wd-dbtn.wd-on,
+.button.wd-nav.wd-on,
+.button.wd-nav.nav-btn-active,
+.wd-nav.wd-on,
+.wd-nav.nav-btn-active,
+.button.wd-chip.wd-on,
+.button.wd-chip.settings-subnav-btn-active,
+.settings-subnav-btn-active,
+.button.settings-subnav-btn-active {
+    -fx-background-color: #000000;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #3b82f6;
+    -fx-border-width: 1px;
+    -fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.35), 18, 0, 0, 0);
+}
+
+.button.wd-dbtn.wd-on .text,
+.button.wd-nav.wd-on .text,
+.button.wd-nav.nav-btn-active .text,
+.settings-subnav-btn-active .text {
+    -fx-fill: #ffffff;
+}
+
+.button.wd-dbtn.wd-on FontIcon,
+.button.wd-nav.wd-on FontIcon,
+.button.wd-nav.nav-btn-active FontIcon,
+.settings-subnav-btn-active FontIcon {
+    -fx-icon-color: #ffffff;
+    -fx-fill: #ffffff;
+}
+
+.button.wd-dbtn.wd-on:hover,
+.button.wd-nav.wd-on:hover,
+.button.wd-nav.nav-btn-active:hover,
+.button.wd-chip.wd-on:hover,
+.settings-subnav-btn-active:hover {
+    -fx-background-color: #0a0d14;
+    -fx-border-color: #60a5fa;
+    -fx-text-fill: #ffffff;
+}
+
+/* Reset / Cancel style */
+.button.wd-dbtn--reset,
+.wd-dbtn--reset,
+.button.wd-warn-soft {
+    -fx-background-color: #000000;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #30343f;
+}
+
+.button.wd-dbtn--reset:hover,
+.wd-dbtn--reset:hover,
+.button.wd-warn-soft:hover {
+    -fx-background-color: #14110a;
+    -fx-border-color: #fbbf24;
+    -fx-text-fill: #ffffff;
+}
+
+/* Round modifier */
+.wd-dbtn--round,
+.icon-btn-round,
+.wd-btn--bell {
+    -fx-background-radius: 50%;
+    -fx-border-radius: 50%;
+}
+
+/* Disabled */
+.button.wd-dbtn:disabled,
+.wd-dbtn:disabled,
+.button.wd-secondary:disabled,
+.button.wd-chip:disabled {
+    -fx-background-color: #0a0a0c;
+    -fx-text-fill: #6b7280;
+    -fx-border-color: #1f2229;
+    -fx-effect: null;
+    -fx-cursor: not-allowed;
+    -fx-translate-y: 0;
+    -fx-scale-x: 1;
+    -fx-scale-y: 1;
+}
+
+.button.wd-dbtn:disabled FontIcon,
+.button.wd-secondary:disabled FontIcon {
+    -fx-icon-color: #6b7280;
+    -fx-fill: #6b7280;
+}
+
 
