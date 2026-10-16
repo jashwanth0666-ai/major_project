@@ -1,0 +1,218 @@
+/* ==========================================================================
+   AI WatchDog: Dark-Mode Buttons System (Native JavaFX)
+   wd-dark-buttons-fx.css
+   Black fill, white text/icons, grey border in Dark Mode ONLY.
+   Light mode is completely untouched.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Base Dark Button (.wd-dbtn)
+   -------------------------------------------------------------------------- */
+.root.dark .button.wd-dbtn,
+.dark .button.wd-dbtn,
+.root.dark .wd-dbtn,
+.dark .wd-dbtn {
+    -fx-background-color: #000000;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #30343f;
+    -fx-border-width: 1px;
+    -fx-border-style: solid;
+    -fx-cursor: hand;
+    -fx-effect: null;
+}
+
+/* Text and FontIcon in dark buttons */
+.root.dark .button.wd-dbtn .text,
+.dark .button.wd-dbtn .text {
+    -fx-fill: #ffffff;
+}
+
+.root.dark .button.wd-dbtn FontIcon,
+.root.dark .button.wd-dbtn .ikonli-font-icon,
+.dark .button.wd-dbtn FontIcon,
+.dark .button.wd-dbtn .ikonli-font-icon,
+.root.dark .wd-dbtn FontIcon,
+.root.dark .wd-dbtn .ikonli-font-icon,
+.dark .wd-dbtn FontIcon,
+.dark .wd-dbtn .ikonli-font-icon {
+    -fx-icon-color: #ffffff;
+    -fx-fill: #ffffff;
+}
+
+/* Hamburger bars inside dark button */
+.root.dark .button.wd-dbtn .wd-burger-bar,
+.dark .button.wd-dbtn .wd-burger-bar,
+.root.dark .wd-burger .wd-burger-bar,
+.dark .wd-burger .wd-burger-bar {
+    -fx-background-color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   2. Hover State
+   -------------------------------------------------------------------------- */
+.root.dark .button.wd-dbtn:hover,
+.dark .button.wd-dbtn:hover,
+.root.dark .wd-dbtn:hover,
+.dark .wd-dbtn:hover {
+    -fx-background-color: #12151c;
+    -fx-border-color: #5b6475;
+    -fx-text-fill: #ffffff;
+    -fx-translate-y: -1;
+}
+
+.root.dark .button.wd-dbtn:hover .text,
+.dark .button.wd-dbtn:hover .text {
+    -fx-fill: #ffffff;
+}
+
+.root.dark .button.wd-dbtn:hover FontIcon,
+.root.dark .button.wd-dbtn:hover .ikonli-font-icon,
+.dark .button.wd-dbtn:hover FontIcon,
+.dark .button.wd-dbtn:hover .ikonli-font-icon,
+.root.dark .wd-dbtn:hover FontIcon,
+.dark .wd-dbtn:hover FontIcon {
+    -fx-icon-color: #ffffff;
+    -fx-fill: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   3. Pressed State
+   -------------------------------------------------------------------------- */
+.root.dark .button.wd-dbtn:pressed,
+.dark .button.wd-dbtn:pressed,
+.root.dark .wd-dbtn:pressed,
+.dark .wd-dbtn:pressed {
+    -fx-background-color: #000000;
+    -fx-border-color: #30343f;
+    -fx-translate-y: 0;
+    -fx-scale-x: 0.97;
+    -fx-scale-y: 0.97;
+}
+
+/* --------------------------------------------------------------------------
+   4. Selected / Active State (Active Tab, Active Sidebar, Selected Chip)
+   -------------------------------------------------------------------------- */
+.root.dark .button.wd-dbtn.wd-on,
+.dark .button.wd-dbtn.wd-on,
+.root.dark .button.wd-dbtn.nav-btn-active,
+.dark .button.wd-dbtn.nav-btn-active,
+.root.dark .button.wd-dbtn.settings-subnav-btn-active,
+.dark .button.wd-dbtn.settings-subnav-btn-active,
+.root.dark .wd-dbtn.wd-on,
+.dark .wd-dbtn.wd-on,
+.root.dark .wd-dbtn.nav-btn-active,
+.dark .wd-dbtn.nav-btn-active,
+.root.dark .wd-dbtn.settings-subnav-btn-active,
+.dark .wd-dbtn.settings-subnav-btn-active {
+    -fx-background-color: #000000;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #3b82f6;
+    -fx-border-width: 1px;
+    -fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.35), 18, 0, 0, 0);
+}
+
+.root.dark .button.wd-dbtn.wd-on .text,
+.dark .button.wd-dbtn.wd-on .text {
+    -fx-fill: #ffffff;
+}
+
+.root.dark .button.wd-dbtn.wd-on FontIcon,
+.dark .button.wd-dbtn.wd-on FontIcon,
+.root.dark .button.wd-dbtn.nav-btn-active FontIcon,
+.dark .button.wd-dbtn.nav-btn-active FontIcon,
+.root.dark .wd-dbtn.wd-on FontIcon,
+.dark .wd-dbtn.wd-on FontIcon {
+    -fx-icon-color: #ffffff;
+    -fx-fill: #ffffff;
+}
+
+.root.dark .button.wd-dbtn.wd-on:hover,
+.dark .button.wd-dbtn.wd-on:hover,
+.root.dark .button.wd-dbtn.nav-btn-active:hover,
+.dark .button.wd-dbtn.nav-btn-active:hover,
+.root.dark .button.wd-dbtn.settings-subnav-btn-active:hover,
+.dark .button.wd-dbtn.settings-subnav-btn-active:hover,
+.root.dark .wd-dbtn.wd-on:hover,
+.dark .wd-dbtn.wd-on:hover,
+.root.dark .wd-dbtn.nav-btn-active:hover,
+.dark .wd-dbtn.nav-btn-active:hover,
+.root.dark .wd-dbtn.settings-subnav-btn-active:hover,
+.dark .wd-dbtn.settings-subnav-btn-active:hover {
+    -fx-background-color: #0a0d14;
+    -fx-border-color: #60a5fa;
+    -fx-text-fill: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   5. Reset / Cancel Style Modifier (.wd-dbtn--reset)
+   -------------------------------------------------------------------------- */
+.root.dark .button.wd-dbtn.wd-dbtn--reset,
+.dark .button.wd-dbtn.wd-dbtn--reset,
+.root.dark .wd-dbtn.wd-dbtn--reset,
+.dark .wd-dbtn.wd-dbtn--reset {
+    -fx-background-color: #000000;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #30343f;
+}
+
+.root.dark .button.wd-dbtn.wd-dbtn--reset:hover,
+.dark .button.wd-dbtn.wd-dbtn--reset:hover,
+.root.dark .wd-dbtn.wd-dbtn--reset:hover,
+.dark .wd-dbtn.wd-dbtn--reset:hover {
+    -fx-background-color: #14110a;
+    -fx-border-color: #fbbf24;
+    -fx-text-fill: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   6. Circular Buttons (.wd-dbtn--round)
+   -------------------------------------------------------------------------- */
+.root.dark .wd-dbtn.wd-dbtn--round,
+.dark .wd-dbtn.wd-dbtn--round {
+    -fx-background-radius: 50%;
+    -fx-border-radius: 50%;
+}
+
+/* --------------------------------------------------------------------------
+   7. Disabled State
+   -------------------------------------------------------------------------- */
+.root.dark .button.wd-dbtn:disabled,
+.dark .button.wd-dbtn:disabled,
+.root.dark .wd-dbtn:disabled,
+.dark .wd-dbtn:disabled {
+    -fx-background-color: #0a0a0c;
+    -fx-text-fill: #6b7280;
+    -fx-border-color: #1f2229;
+    -fx-effect: null;
+    -fx-cursor: not-allowed;
+    -fx-translate-y: 0;
+    -fx-scale-x: 1;
+    -fx-scale-y: 1;
+}
+
+.root.dark .button.wd-dbtn:disabled FontIcon,
+.dark .button.wd-dbtn:disabled FontIcon {
+    -fx-icon-color: #6b7280;
+    -fx-fill: #6b7280;
+}
+
+/* --------------------------------------------------------------------------
+   8. Ghost Buttons in Dark Mode
+   -------------------------------------------------------------------------- */
+.root.dark .button.wd-ghost,
+.dark .button.wd-ghost,
+.root.dark .wd-ghost,
+.dark .wd-ghost {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: #94a3b8;
+}
+
+.root.dark .button.wd-ghost:hover,
+.dark .button.wd-ghost:hover,
+.root.dark .wd-ghost:hover,
+.dark .wd-ghost:hover {
+    -fx-background-color: #12151c;
+    -fx-border-color: #30343f;
+    -fx-text-fill: #ffffff;
+}

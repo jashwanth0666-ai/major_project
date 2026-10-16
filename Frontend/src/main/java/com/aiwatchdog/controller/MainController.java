@@ -76,6 +76,8 @@ public class MainController {
     @FXML private Button navActivityBtn;
     @FXML private Button navInsightsBtn;
     @FXML private Button navSettingsBtn;
+    private final List<ButtonBase> navItems = new ArrayList<>();
+    private ButtonBase currentActiveNav;
 
     // Top Bar & Hamburger Controls
     @FXML private Button hamburgerBtn;
@@ -313,6 +315,16 @@ public class MainController {
     // =========================================================================
     @FXML
     public void initialize() {
+        // Initialize sidebar navigation items list & set initial active state to Dashboard
+        navItems.clear();
+        for (ButtonBase btn : new ButtonBase[]{
+                navDashboardBtn, navScannerBtn, navSecureAccessBtn,
+                navThreatCenterBtn, navActivityBtn, navInsightsBtn, navSettingsBtn
+        }) {
+            if (btn != null) navItems.add(btn);
+        }
+        setActiveNav(navDashboardBtn);
+
         // Setup Dashboard Upgrades (Target Lock Radar, Stat Cards & Helpers)
         setupDashboardUpgrades();
         setupThreatCenterUpgrades();
@@ -498,19 +510,20 @@ public class MainController {
         totalBlocked = Math.toIntExact(Math.min(Integer.MAX_VALUE, stats.blockCount()));
         totalInReview = Math.toIntExact(Math.min(Integer.MAX_VALUE, stats.reviewCount() + stats.warnCount()));
         totalAllowed = Math.toIntExact(Math.min(Integer.MAX_VALUE, stats.allowCount()));
-        setCount(dashScannedCount, totalScanned);
-        setCount(dashThreatsBlockedCount, totalBlocked);
-        setCount(dashInReviewCount, totalInReview);
-        setCount(dashAllowedCount, totalAllowed);
-        setCount(threatBlockedCount, totalBlocked);
-        setCount(threatInReviewCount, totalInReview);
-        setCount(threatHighRiskCount, stats.highRiskCount());
         if (cardsHelper != null) {
             cardsHelper.countUp(dashScannedCount, totalScanned);
             cardsHelper.countUp(dashThreatsBlockedCount, totalBlocked);
             cardsHelper.countUp(dashInReviewCount, totalInReview);
             cardsHelper.countUp(dashAllowedCount, totalAllowed);
+        } else {
+            setCount(dashScannedCount, totalScanned);
+            setCount(dashThreatsBlockedCount, totalBlocked);
+            setCount(dashInReviewCount, totalInReview);
+            setCount(dashAllowedCount, totalAllowed);
         }
+        setCount(threatBlockedCount, totalBlocked);
+        setCount(threatInReviewCount, totalInReview);
+        setCount(threatHighRiskCount, stats.highRiskCount());
         if (threatCardsHelper != null) {
             threatCardsHelper.countUp(threatBlockedCount, totalBlocked);
             threatCardsHelper.countUp(threatInReviewCount, totalInReview);
@@ -523,10 +536,15 @@ public class MainController {
             activityCardsHelper.countUp(activityCount2, totalBlocked);
             activityCardsHelper.countUp(activityCount3, totalAllowed);
         }
-        if (insightCount0 != null) insightCount0.setText("—");
-        setCount(insightCount1, stats.phishingCount());
-        if (insightCount2 != null) insightCount2.setText("—");
-        setCount(insightCount3, totalScanned);
+        if (insightCount0 != null) insightCount0.setText("N/A");
+        if (insightCount2 != null) insightCount2.setText("N/A");
+        if (insightsCardsHelper != null) {
+            insightsCardsHelper.countUp(insightCount1, toCount(stats.phishingCount()));
+            insightsCardsHelper.countUp(insightCount3, totalScanned);
+        } else {
+            setCount(insightCount1, stats.phishingCount());
+            setCount(insightCount3, totalScanned);
+        }
         int totalRiskEvents = Math.max(1, (int) Math.min(Integer.MAX_VALUE, stats.totalEvents()));
         updateBreakdown(dashSafeProgress, dashSafePercent, stats.safeCount(), totalRiskEvents);
         updateBreakdown(dashSuspiciousProgress, dashSuspiciousPercent, stats.suspiciousCount(), totalRiskEvents);
@@ -595,8 +613,12 @@ public class MainController {
 
     private void showBackendUnavailable(Exception error) {
         if (closed) return;
-        if (dashOperationalBadge != null) dashOperationalBadge.setText("BACKEND UNAVAILABLE");
-        if (dashStatusNormalLabel != null) dashStatusNormalLabel.setText("Unable to load security data from Spring Boot");
+        if (dashOperationalBadge != null && !"BACKEND UNAVAILABLE".equals(dashOperationalBadge.getText())) {
+            dashOperationalBadge.setText("BACKEND UNAVAILABLE");
+        }
+        if (dashStatusNormalLabel != null && !"Unable to load security data from Spring Boot".equals(dashStatusNormalLabel.getText())) {
+            dashStatusNormalLabel.setText("Unable to load security data from Spring Boot");
+        }
     }
 
     private static void setCount(Label label, long value) {
@@ -1037,16 +1059,32 @@ public class MainController {
     }
     @FXML public void navigateSettings() { selectNav(navSettingsBtn, settingsPage); }
 
-    private void selectNav(Button activeBtn, ScrollPane targetPage) {
-        Button[] buttons = {navDashboardBtn, navScannerBtn, navSecureAccessBtn, navThreatCenterBtn, navActivityBtn, navInsightsBtn, navSettingsBtn};
-        for (Button b : buttons) {
-            if (b != null) {
-                b.getStyleClass().remove("nav-btn-active");
+    private void setActiveNav(ButtonBase target) {
+        if (target == null && !navItems.isEmpty()) {
+            target = navItems.get(0);
+        }
+        currentActiveNav = target;
+        for (ButtonBase item : navItems) {
+            item.getStyleClass().removeIf(c -> "nav-btn-active".equals(c) || "wd-on".equals(c));
+            if (item instanceof ToggleButton t) {
+                t.setSelected(false);
             }
         }
-        if (activeBtn != null && !activeBtn.getStyleClass().contains("nav-btn-active")) {
-            activeBtn.getStyleClass().add("nav-btn-active");
+        if (target != null) {
+            if (!target.getStyleClass().contains("nav-btn-active")) {
+                target.getStyleClass().add("nav-btn-active");
+            }
+            if (!target.getStyleClass().contains("wd-on")) {
+                target.getStyleClass().add("wd-on");
+            }
+            if (target instanceof ToggleButton t) {
+                t.setSelected(true);
+            }
         }
+    }
+
+    private void selectNav(Button activeBtn, ScrollPane targetPage) {
+        setActiveNav(activeBtn);
 
         if (pageStack != null && targetPage != null) {
             pageStack.getChildren().forEach(child -> child.setVisible(child == targetPage));
@@ -1065,12 +1103,20 @@ public class MainController {
     @FXML public void selectSettingsSubAbout() { selectSettingsSub(setSubAbout, settingsAboutPane); }
 
     private void selectSettingsSub(Button targetBtn, VBox targetPane) {
+        setActiveNav(navSettingsBtn);
         Button[] subs = {setSubGeneral, setSubProtection, setSubNotifications, setSubAppearance, setSubPrivacy, setSubAbout};
         for (Button b : subs) {
-            if (b != null) b.getStyleClass().remove("settings-subnav-btn-active");
+            if (b != null) {
+                b.getStyleClass().removeIf(c -> "settings-subnav-btn-active".equals(c) || "wd-on".equals(c));
+            }
         }
-        if (targetBtn != null && !targetBtn.getStyleClass().contains("settings-subnav-btn-active")) {
-            targetBtn.getStyleClass().add("settings-subnav-btn-active");
+        if (targetBtn != null) {
+            if (!targetBtn.getStyleClass().contains("settings-subnav-btn-active")) {
+                targetBtn.getStyleClass().add("settings-subnav-btn-active");
+            }
+            if (!targetBtn.getStyleClass().contains("wd-on")) {
+                targetBtn.getStyleClass().add("wd-on");
+            }
         }
 
         VBox[] panes = {settingsGeneralPane, settingsProtectionPane, settingsNotificationsPane, settingsAppearancePane, settingsPrivacyPane, settingsAboutPane};
@@ -1112,6 +1158,7 @@ public class MainController {
         }
         ThemeManager.applyTheme(ThemeManager.ThemeMode.LIGHT);
         updateThemeUI(ThemeManager.ThemeMode.LIGHT);
+        setActiveNav(currentActiveNav != null ? currentActiveNav : navDashboardBtn);
         notifyUser("Light Theme activated.");
     }
 
@@ -1122,6 +1169,7 @@ public class MainController {
         }
         ThemeManager.applyTheme(ThemeManager.ThemeMode.DARK);
         updateThemeUI(ThemeManager.ThemeMode.DARK);
+        setActiveNav(currentActiveNav != null ? currentActiveNav : navDashboardBtn);
         notifyUser("Dark Theme activated.");
     }
 
@@ -1132,6 +1180,7 @@ public class MainController {
         }
         ThemeManager.applyTheme(ThemeManager.ThemeMode.SYSTEM);
         updateThemeUI(ThemeManager.ThemeMode.SYSTEM);
+        setActiveNav(currentActiveNav != null ? currentActiveNav : navDashboardBtn);
         notifyUser("System Theme activated.");
     }
 
@@ -1306,6 +1355,7 @@ public class MainController {
             pageStack.getChildren().forEach(child -> child.setVisible(child == analyzingPage));
             analyzingPage.toFront();
         }
+        setActiveNav(navScannerBtn);
 
         if (analyzingUrlText != null) analyzingUrlText.setText(targetUrl);
 
@@ -1340,6 +1390,7 @@ public class MainController {
                 pageStack.getChildren().forEach(child -> child.setVisible(child == scanErrorPage));
                 scanErrorPage.toFront();
             }
+            setActiveNav(navScannerBtn);
         });
 
         Thread th = new Thread(currentScanTask);
@@ -1626,6 +1677,7 @@ public class MainController {
             pageStack.getChildren().forEach(child -> child.setVisible(child == resultPage));
             resultPage.toFront();
         }
+        setActiveNav(navScannerBtn);
 
         String url = result.url();
         String decision = valueOr(result.decision(), "UNKNOWN").toUpperCase(Locale.ROOT);
@@ -1838,9 +1890,13 @@ public class MainController {
                 if (!isVis) {
                     if (riskRadarView != null) riskRadarView.stopTimer();
                     if (cardsHelper != null) cardsHelper.stopAllAnimations();
+                    if (operationalBadgePulse != null) operationalBadgePulse.pause();
+                    if (liveShieldPulse != null) liveShieldPulse.pause();
                 } else {
                     if (riskRadarView != null) riskRadarView.startTimer();
                     if (cardsHelper != null) cardsHelper.resumeAllAnimations();
+                    if (operationalBadgePulse != null) operationalBadgePulse.play();
+                    if (liveShieldPulse != null) liveShieldPulse.play();
                 }
             });
         }
@@ -1883,13 +1939,13 @@ public class MainController {
         if (threatCard2 != null) {
             threatCardsHelper.registerCard(new com.aiwatchdog.ui.dashboard.DashboardCardsHelper.CardItem(
                     threatCard2, threatTile2, threatIcon2, threatTrend2,
-                    threatHighRiskCount, null, 0, "icon-blue-bg", "wd-tile-blue-hover", "#3B82F6"
+                    threatHighRiskCount, null, 0, "icon-blue-bg", "wd-tile-blue-hover", "#3B6DF0"
             ));
         }
         if (threatCard3 != null) {
             threatCardsHelper.registerCard(new com.aiwatchdog.ui.dashboard.DashboardCardsHelper.CardItem(
                     threatCard3, threatTile3, threatIcon3, threatTrend3,
-                    threatSafeCount, null, 0, "icon-green-bg", "wd-tile-green-hover", "#16C784"
+                    threatSafeCount, null, 0, "icon-green-bg", "wd-tile-green-hover", "#10B981"
             ));
         }
         threatCardsHelper.setupAll();
@@ -1920,13 +1976,13 @@ public class MainController {
         if (activityCard0 != null) {
             activityCardsHelper.registerCard(new com.aiwatchdog.ui.dashboard.DashboardCardsHelper.CardItem(
                     activityCard0, activityTile0, activityIcon0, null,
-                    activityCount0, null, 0, "icon-blue-bg", "wd-tile-blue-hover", "#2563EB"
+                    activityCount0, null, 0, "icon-blue-bg", "wd-tile-blue-hover", "#3B6DF0"
             ));
         }
         if (activityCard1 != null) {
             activityCardsHelper.registerCard(new com.aiwatchdog.ui.dashboard.DashboardCardsHelper.CardItem(
                     activityCard1, activityTile1, activityIcon1, null,
-                    activityCount1, null, 0, "icon-blue-bg", "wd-tile-blue-hover", "#2563EB"
+                    activityCount1, null, 0, "icon-blue-bg", "wd-tile-blue-hover", "#3B6DF0"
             ));
         }
         if (activityCard2 != null) {
@@ -1974,13 +2030,13 @@ public class MainController {
         if (insightCard2 != null) {
             insightsCardsHelper.registerCard(new com.aiwatchdog.ui.dashboard.DashboardCardsHelper.CardItem(
                     insightCard2, null, insightIcon2, insightTrend2,
-                    insightCount2, null, 0, 0.0, "%", null, null, "#2563EB"
+                    insightCount2, null, 0, 0.0, "%", null, null, "#10B981"
             ));
         }
         if (insightCard3 != null) {
             insightsCardsHelper.registerCard(new com.aiwatchdog.ui.dashboard.DashboardCardsHelper.CardItem(
                     insightCard3, null, insightIcon3, insightTrend3,
-                    insightCount3, null, 0, 0.0, null, null, null, "#2563EB"
+                    insightCount3, null, 0, 0.0, null, null, null, "#3B6DF0"
             ));
         }
         insightsCardsHelper.setupAll();
@@ -2135,26 +2191,32 @@ public class MainController {
     public void startDashboardTelemetryAnimations() {
         // 1. "All Systems Operational" gentle heartbeat breathing
         if (dashOperationalBadge != null) {
-            if (operationalBadgePulse != null) operationalBadgePulse.stop();
-            operationalBadgePulse = new FadeTransition(Duration.millis(1600), dashOperationalBadge);
-            operationalBadgePulse.setFromValue(1.0);
-            operationalBadgePulse.setToValue(0.68);
-            operationalBadgePulse.setAutoReverse(true);
-            operationalBadgePulse.setCycleCount(Animation.INDEFINITE);
-            operationalBadgePulse.play();
+            if (operationalBadgePulse == null) {
+                operationalBadgePulse = new FadeTransition(Duration.millis(2000), dashOperationalBadge);
+                operationalBadgePulse.setFromValue(1.0);
+                operationalBadgePulse.setToValue(0.72);
+                operationalBadgePulse.setInterpolator(Interpolator.EASE_BOTH);
+                operationalBadgePulse.setAutoReverse(true);
+                operationalBadgePulse.setCycleCount(Animation.INDEFINITE);
+            }
+            operationalBadgePulse.playFromStart();
         }
 
         // 2. "Live Shield Active" gentle breathing scale
         if (dashLiveShieldBox != null) {
-            if (liveShieldPulse != null) liveShieldPulse.stop();
-            liveShieldPulse = new ScaleTransition(Duration.millis(1800), dashLiveShieldBox);
-            liveShieldPulse.setFromX(1.0);
-            liveShieldPulse.setFromY(1.0);
-            liveShieldPulse.setToX(1.035);
-            liveShieldPulse.setToY(1.035);
-            liveShieldPulse.setAutoReverse(true);
-            liveShieldPulse.setCycleCount(Animation.INDEFINITE);
-            liveShieldPulse.play();
+            dashLiveShieldBox.setCache(true);
+            dashLiveShieldBox.setCacheHint(javafx.scene.CacheHint.SCALE);
+            if (liveShieldPulse == null) {
+                liveShieldPulse = new ScaleTransition(Duration.millis(2200), dashLiveShieldBox);
+                liveShieldPulse.setFromX(1.0);
+                liveShieldPulse.setFromY(1.0);
+                liveShieldPulse.setToX(1.02);
+                liveShieldPulse.setToY(1.02);
+                liveShieldPulse.setInterpolator(Interpolator.EASE_BOTH);
+                liveShieldPulse.setAutoReverse(true);
+                liveShieldPulse.setCycleCount(Animation.INDEFINITE);
+            }
+            liveShieldPulse.playFromStart();
         }
     }
 
@@ -2437,6 +2499,8 @@ public class MainController {
         if (breakdownTimeline != null) breakdownTimeline.stop();
         if (cardsHelper != null) cardsHelper.stopAllAnimations();
         if (riskRadarView != null) riskRadarView.stopTimer();
+        if (operationalBadgePulse != null) operationalBadgePulse.stop();
+        if (liveShieldPulse != null) liveShieldPulse.stop();
         secureAccessGlobeAnimations.forEach(Animation::stop);
         FileSystemMonitorService file = fileMonitor;
         ProcessMonitorService process = processMonitor;

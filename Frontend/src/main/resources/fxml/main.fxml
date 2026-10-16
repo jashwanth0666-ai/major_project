@@ -59,25 +59,25 @@
         <!-- Navigation Menu -->
         <ScrollPane fx:id="sidebarNavScroll" fitToWidth="true" vbarPolicy="AS_NEEDED" hbarPolicy="NEVER" VBox.vgrow="ALWAYS" styleClass="wd-sidebar-scroll, wd-scroll">
           <VBox fx:id="navMenuBox" spacing="4" styleClass="nav-menu">
-            <Button fx:id="navDashboardBtn" text="Dashboard" onAction="#navigateDashboard" styleClass="nav-btn, nav-btn-active, wd-nav, wd-on">
+            <Button fx:id="navDashboardBtn" text="Dashboard" onAction="#navigateDashboard" styleClass="nav-btn, nav-btn-active, wd-nav, wd-on, wd-dbtn">
               <graphic><FontIcon iconLiteral="fth-grid" iconSize="17"/></graphic>
             </Button>
-            <Button fx:id="navScannerBtn" text="URL Scanner" onAction="#navigateScanner" styleClass="nav-btn, wd-nav">
+            <Button fx:id="navScannerBtn" text="URL Scanner" onAction="#navigateScanner" styleClass="nav-btn, wd-nav, wd-dbtn">
               <graphic><FontIcon iconLiteral="fth-search" iconSize="17"/></graphic>
             </Button>
-            <Button fx:id="navSecureAccessBtn" text="Secure Access" onAction="#navigateSecureAccess" styleClass="nav-btn, wd-nav">
+            <Button fx:id="navSecureAccessBtn" text="Secure Access" onAction="#navigateSecureAccess" styleClass="nav-btn, wd-nav, wd-dbtn">
               <graphic><FontIcon iconLiteral="fth-shield" iconSize="17"/></graphic>
             </Button>
-            <Button fx:id="navThreatCenterBtn" text="Threat Center" onAction="#navigateThreatCenter" styleClass="nav-btn, wd-nav">
+            <Button fx:id="navThreatCenterBtn" text="Threat Center" onAction="#navigateThreatCenter" styleClass="nav-btn, wd-nav, wd-dbtn">
               <graphic><FontIcon iconLiteral="fth-alert-triangle" iconSize="17"/></graphic>
             </Button>
-            <Button fx:id="navActivityBtn" text="Activity" onAction="#navigateActivity" styleClass="nav-btn, wd-nav">
+            <Button fx:id="navActivityBtn" text="Activity" onAction="#navigateActivity" styleClass="nav-btn, wd-nav, wd-dbtn">
               <graphic><FontIcon iconLiteral="fth-user" iconSize="17"/></graphic>
             </Button>
-            <Button fx:id="navInsightsBtn" text="AI Insights" onAction="#navigateInsights" styleClass="nav-btn, wd-nav">
+            <Button fx:id="navInsightsBtn" text="AI Insights" onAction="#navigateInsights" styleClass="nav-btn, wd-nav, wd-dbtn">
               <graphic><FontIcon iconLiteral="fth-zap" iconSize="17"/></graphic>
             </Button>
-            <Button fx:id="navSettingsBtn" text="Settings" onAction="#navigateSettings" styleClass="nav-btn, wd-nav">
+            <Button fx:id="navSettingsBtn" text="Settings" onAction="#navigateSettings" styleClass="nav-btn, wd-nav, wd-dbtn">
               <graphic><FontIcon iconLiteral="fth-settings" iconSize="17"/></graphic>
             </Button>
           </VBox>
@@ -107,7 +107,7 @@
         <!-- Top Bar -->
         <HBox alignment="CENTER_LEFT" spacing="16" styleClass="topbar">
           <!-- Hamburger Toggle Button -->
-          <Button fx:id="hamburgerBtn" onAction="#toggleSidebar" styleClass="wd-burger, wd-btn, wd-btn--icon, wd-icon, wd-btn--static" minWidth="38" minHeight="38" prefWidth="38" prefHeight="38" maxWidth="38" maxHeight="38">
+          <Button fx:id="hamburgerBtn" onAction="#toggleSidebar" styleClass="wd-burger, wd-btn, wd-btn--icon, wd-icon, wd-btn--static, wd-dbtn" minWidth="38" minHeight="38" prefWidth="38" prefHeight="38" maxWidth="38" maxHeight="38">
             <graphic>
               <StackPane alignment="CENTER" prefWidth="18" prefHeight="14" maxWidth="18" maxHeight="14">
                 <Region fx:id="hamburgerBarTop" styleClass="wd-burger-bar" translateY="-5" prefWidth="18" prefHeight="2" maxWidth="18" maxHeight="2"/>
@@ -126,7 +126,7 @@
           <Region HBox.hgrow="ALWAYS"/>
 
           <!-- Notification Bell -->
-          <StackPane styleClass="icon-btn-round, wd-btn--icon, wd-icon, wd-btn--round, wd-btn--bell, wd-btn--static">
+          <StackPane styleClass="icon-btn-round, wd-btn--icon, wd-icon, wd-btn--round, wd-btn--bell, wd-btn--static, wd-dbtn, wd-dbtn--round">
             <FontIcon iconLiteral="fth-bell" iconSize="16" iconColor="#64748B"/>
             <Circle radius="4" fill="#EF4444" translateX="6" translateY="-6"/>
           </StackPane>
@@ -166,13 +166,10 @@
                       <FontIcon fx:id="dashScannedIcon" iconLiteral="fth-globe" iconSize="20" iconColor="#3B6DF0"/>
                     </StackPane>
                     <Region HBox.hgrow="ALWAYS"/>
-                    <HBox alignment="CENTER" spacing="2">
-                      <Label fx:id="dashScannedTrend" text="â†‘" styleClass="wd-tr-blue" style="-fx-font-weight: 700;"/>
-                      <Label text="—" styleClass="wd-tr-blue"/>
-                    </HBox>
+                    <Label fx:id="dashScannedTrend" visible="false" managed="false"/>
                   </HBox>
                   <Label text="URLs Scanned" styleClass="wd-lb" style="-fx-padding: 16px 0 0 0;"/>
-                  <Label fx:id="dashScannedCount" text="—" styleClass="wd-nm"/>
+                  <Label fx:id="dashScannedCount" text="0" styleClass="wd-nm"/>
                   <Label text="Backend total" styleClass="wd-sb" style="-fx-padding: 6px 0 0 0;"/>
                   <Region fx:id="dashScannedLine" styleClass="wd-ln, wd-ln-blue"/>
                 </VBox>
@@ -184,13 +181,10 @@
                       <FontIcon fx:id="dashBlockedIcon" iconLiteral="fth-alert-triangle" iconSize="20" iconColor="#EF4444"/>
                     </StackPane>
                     <Region HBox.hgrow="ALWAYS"/>
-                    <HBox alignment="CENTER" spacing="2">
-                      <Label fx:id="dashBlockedTrend" text="â†‘" styleClass="wd-tr-red" style="-fx-font-weight: 700;"/>
-                      <Label text="—" styleClass="wd-tr-red"/>
-                    </HBox>
+                    <Label fx:id="dashBlockedTrend" visible="false" managed="false"/>
                   </HBox>
                   <Label text="Threats Blocked" styleClass="wd-lb" style="-fx-padding: 16px 0 0 0;"/>
-                  <Label fx:id="dashThreatsBlockedCount" text="—" styleClass="wd-nm"/>
+                  <Label fx:id="dashThreatsBlockedCount" text="0" styleClass="wd-nm"/>
                   <Label text="Backend total" styleClass="wd-sb" style="-fx-padding: 6px 0 0 0;"/>
                   <Region fx:id="dashBlockedLine" styleClass="wd-ln, wd-ln-red"/>
                 </VBox>
@@ -202,13 +196,10 @@
                       <FontIcon fx:id="dashReviewIcon" iconLiteral="fth-target" iconSize="20" iconColor="#F59E0B"/>
                     </StackPane>
                     <Region HBox.hgrow="ALWAYS"/>
-                    <HBox alignment="CENTER" spacing="2">
-                      <Label fx:id="dashReviewTrend" text="â†‘" styleClass="wd-tr-amber" style="-fx-font-weight: 700;"/>
-                      <Label text="—" styleClass="wd-tr-amber"/>
-                    </HBox>
+                    <Label fx:id="dashReviewTrend" visible="false" managed="false"/>
                   </HBox>
                   <Label text="In Review" styleClass="wd-lb" style="-fx-padding: 16px 0 0 0;"/>
-                  <Label fx:id="dashInReviewCount" text="—" styleClass="wd-nm"/>
+                  <Label fx:id="dashInReviewCount" text="0" styleClass="wd-nm"/>
                   <Label text="Backend total" styleClass="wd-sb" style="-fx-padding: 6px 0 0 0;"/>
                   <Region fx:id="dashReviewLine" styleClass="wd-ln, wd-ln-amber"/>
                 </VBox>
@@ -220,13 +211,10 @@
                       <FontIcon fx:id="dashAllowedIcon" iconLiteral="fth-check" iconSize="20" iconColor="#10B981"/>
                     </StackPane>
                     <Region HBox.hgrow="ALWAYS"/>
-                    <HBox alignment="CENTER" spacing="2">
-                      <Label fx:id="dashAllowedTrend" text="â†‘" styleClass="wd-tr-green" style="-fx-font-weight: 700;"/>
-                      <Label text="—" styleClass="wd-tr-green"/>
-                    </HBox>
+                    <Label fx:id="dashAllowedTrend" visible="false" managed="false"/>
                   </HBox>
                   <Label text="Allowed URLs" styleClass="wd-lb" style="-fx-padding: 16px 0 0 0;"/>
-                  <Label fx:id="dashAllowedCount" text="—" styleClass="wd-nm"/>
+                  <Label fx:id="dashAllowedCount" text="0" styleClass="wd-nm"/>
                   <Label text="Backend total" styleClass="wd-sb" style="-fx-padding: 6px 0 0 0;"/>
                   <Region fx:id="dashAllowedLine" styleClass="wd-ln, wd-ln-green"/>
                 </VBox>
@@ -362,13 +350,13 @@
                 <VBox spacing="10">
                   <Label text="Quick Test Presets" styleClass="table-header-label"/>
                   <HBox spacing="12">
-                    <Button text="Clean Target (Google)" onAction="#simulateSafe" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary">
+                    <Button text="Clean Target (Google)" onAction="#simulateSafe" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary, wd-dbtn">
                       <graphic><FontIcon iconLiteral="fth-check-circle" iconSize="14" iconColor="#10B981"/></graphic>
                     </Button>
-                    <Button text="Suspicious Target (PayPal Verify)" onAction="#simulateSuspicious" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary">
+                    <Button text="Suspicious Target (PayPal Verify)" onAction="#simulateSuspicious" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary, wd-dbtn">
                       <graphic><FontIcon iconLiteral="fth-alert-triangle" iconSize="14" iconColor="#F59E0B"/></graphic>
                     </Button>
-                    <Button text="Malicious Exploit (Phishing)" onAction="#simulatePhishing" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary">
+                    <Button text="Malicious Exploit (Phishing)" onAction="#simulatePhishing" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary, wd-dbtn">
                       <graphic><FontIcon iconLiteral="fth-alert-octagon" iconSize="14" iconColor="#EF4444"/></graphic>
                     </Button>
                   </HBox>
@@ -384,9 +372,9 @@
             <VBox spacing="20" style="-fx-padding: 0 28px 28px 28px;">
               <!-- Top Navigation and Actions -->
               <HBox alignment="CENTER_LEFT">
-                <Button text="â† Back to Dashboard" onAction="#backToDashboard" styleClass="wd-btn, wd-ghost, wd-btn--ghost, wd-btn--back" style="-fx-cursor: hand; -fx-padding: 4px 8px;"/>
+                <Button text="â†  Back to Dashboard" onAction="#backToDashboard" styleClass="wd-btn, wd-ghost, wd-btn--ghost, wd-btn--back" style="-fx-cursor: hand; -fx-padding: 4px 8px;"/>
                 <Region HBox.hgrow="ALWAYS"/>
-                <Button text="Retry Analysis" onAction="#retryLastScan" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary, wd-btn--spin" style="-fx-font-size: 12px; -fx-padding: 4px 12px;">
+                <Button text="Retry Analysis" onAction="#retryLastScan" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary, wd-btn--spin, wd-dbtn" style="-fx-font-size: 12px; -fx-padding: 4px 12px;">
                   <graphic><FontIcon iconLiteral="fth-refresh-cw" iconSize="13" iconColor="#2563EB"/></graphic>
                 </Button>
               </HBox>
@@ -539,7 +527,7 @@
                 </VBox>
                 <Region HBox.hgrow="ALWAYS"/>
                 <HBox spacing="10">
-                  <Button text="Scan Another URL" onAction="#scanAnotherUrl" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary">
+                  <Button text="Scan Another URL" onAction="#scanAnotherUrl" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary, wd-dbtn">
                     <graphic><FontIcon iconLiteral="fth-refresh-cw" iconSize="14" styleClass="stitch-btn-icon"/></graphic>
                   </Button>
                   <Button text="+ Back to Dashboard" onAction="#backToDashboard" styleClass="stitch-btn-primary, wd-btn, wd-primary, wd-btn--primary"/>
@@ -725,7 +713,7 @@
                   <Label fx:id="scanErrorMessage" text="Unable to connect to the security analysis backend at http://localhost:8080/api/v1/analyze. Please ensure the Spring Boot backend service is running." styleClass="page-header-subtitle" wrapText="true" maxWidth="560" style="-fx-text-alignment: center;"/>
                 </VBox>
                 <HBox spacing="12" alignment="CENTER">
-                  <Button text="Back to Scanner" onAction="#navigateScanner" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary"/>
+                  <Button text="Back to Scanner" onAction="#navigateScanner" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary, wd-dbtn"/>
                   <Button text="Retry Analysis" onAction="#retryLastScan" styleClass="stitch-btn-primary, wd-btn, wd-primary, wd-btn--primary, wd-btn--spin">
                     <graphic><FontIcon iconLiteral="fth-refresh-cw" iconSize="14" iconColor="#FFFFFF"/></graphic>
                   </Button>
@@ -768,9 +756,10 @@
                       <FontIcon fx:id="threatIcon0" iconLiteral="fth-alert-triangle" iconSize="18" iconColor="#EF4444"/>
                     </StackPane>
                   </HBox>
-                  <Label fx:id="threatBlockedCount" text="—" styleClass="metric-value"/>
+                  <Label fx:id="threatBlockedCount" text="0" styleClass="metric-value"/>
                   <Label text="High Risk Threats" styleClass="metric-label"/>
                   <Label fx:id="threatTrend0" text="No trend data" styleClass="metric-trend-red"/>
+                  <Region styleClass="wd-ln, wd-ln-red"/>
                 </VBox>
 
                 <!-- Potential Risk (In Review) -->
@@ -780,33 +769,36 @@
                       <FontIcon fx:id="threatIcon1" iconLiteral="fth-target" iconSize="18" iconColor="#F59E0B"/>
                     </StackPane>
                   </HBox>
-                  <Label fx:id="threatInReviewCount" text="—" styleClass="metric-value"/>
+                  <Label fx:id="threatInReviewCount" text="0" styleClass="metric-value"/>
                   <Label text="Potential Risk" styleClass="metric-label"/>
                   <Label fx:id="threatTrend1" text="No trend data" styleClass="metric-trend-amber"/>
+                  <Region styleClass="wd-ln, wd-ln-amber"/>
                 </VBox>
 
                 <!-- Suspicious Links -->
                 <VBox fx:id="threatCard2" GridPane.columnIndex="2" styleClass="metric-card">
                   <HBox alignment="CENTER_LEFT">
                     <StackPane fx:id="threatTile2" styleClass="metric-icon-circle, icon-blue-bg">
-                      <FontIcon fx:id="threatIcon2" iconLiteral="fth-alert-circle" iconSize="18" iconColor="#3B82F6"/>
+                      <FontIcon fx:id="threatIcon2" iconLiteral="fth-alert-circle" iconSize="18" iconColor="#3B6DF0"/>
                     </StackPane>
                   </HBox>
-                  <Label fx:id="threatHighRiskCount" text="—" styleClass="metric-value"/>
+                  <Label fx:id="threatHighRiskCount" text="0" styleClass="metric-value"/>
                   <Label text="Suspicious Links" styleClass="metric-label"/>
                   <Label fx:id="threatTrend2" text="No trend data" styleClass="metric-trend-amber"/>
+                  <Region styleClass="wd-ln, wd-ln-blue"/>
                 </VBox>
 
                 <!-- Safe / Allowed -->
                 <VBox fx:id="threatCard3" GridPane.columnIndex="3" styleClass="metric-card">
                   <HBox alignment="CENTER_LEFT">
                     <StackPane fx:id="threatTile3" styleClass="metric-icon-circle, icon-green-bg">
-                      <FontIcon fx:id="threatIcon3" iconLiteral="fth-check-circle" iconSize="18" iconColor="#16C784"/>
+                      <FontIcon fx:id="threatIcon3" iconLiteral="fth-check-circle" iconSize="18" iconColor="#10B981"/>
                     </StackPane>
                   </HBox>
-                  <Label fx:id="threatSafeCount" text="—" styleClass="metric-value"/>
+                  <Label fx:id="threatSafeCount" text="0" styleClass="metric-value"/>
                   <Label text="Safe / Allowed" styleClass="metric-label"/>
                   <Label fx:id="threatTrend3" text="No trend data" styleClass="metric-trend-up"/>
+                  <Region styleClass="wd-ln, wd-ln-green"/>
                 </VBox>
               </GridPane>
 
@@ -928,24 +920,26 @@
                 <VBox fx:id="activityCard0" GridPane.columnIndex="0" styleClass="metric-card">
                   <HBox alignment="CENTER_LEFT">
                     <StackPane fx:id="activityTile0" styleClass="metric-icon-circle, icon-blue-bg">
-                      <FontIcon fx:id="activityIcon0" iconLiteral="fth-file-text" iconSize="18" iconColor="#2563EB"/>
+                      <FontIcon fx:id="activityIcon0" iconLiteral="fth-file-text" iconSize="18" iconColor="#3B6DF0"/>
                     </StackPane>
                   </HBox>
-                  <Label fx:id="activityCount0" text="—" styleClass="metric-value"/>
+                  <Label fx:id="activityCount0" text="0" styleClass="metric-value"/>
                   <Label text="Total Events" styleClass="metric-label"/>
                   <Label text="All recorded events" styleClass="breakdown-sub"/>
+                  <Region styleClass="wd-ln, wd-ln-blue"/>
                 </VBox>
 
                 <!-- URLs Scanned -->
                 <VBox fx:id="activityCard1" GridPane.columnIndex="1" styleClass="metric-card">
                   <HBox alignment="CENTER_LEFT">
                     <StackPane fx:id="activityTile1" styleClass="metric-icon-circle, icon-blue-bg">
-                      <FontIcon fx:id="activityIcon1" iconLiteral="fth-globe" iconSize="18" iconColor="#2563EB"/>
+                      <FontIcon fx:id="activityIcon1" iconLiteral="fth-globe" iconSize="18" iconColor="#3B6DF0"/>
                     </StackPane>
                   </HBox>
-                  <Label fx:id="activityCount1" text="—" styleClass="metric-value"/>
+                  <Label fx:id="activityCount1" text="0" styleClass="metric-value"/>
                   <Label text="URLs Scanned" styleClass="metric-label"/>
                   <Label text="Recent URL analyses" styleClass="breakdown-sub"/>
+                  <Region styleClass="wd-ln, wd-ln-blue"/>
                 </VBox>
 
                 <!-- Threats Blocked -->
@@ -955,9 +949,10 @@
                       <FontIcon fx:id="activityIcon2" iconLiteral="fth-alert-triangle" iconSize="18" iconColor="#EF4444"/>
                     </StackPane>
                   </HBox>
-                  <Label fx:id="activityCount2" text="—" styleClass="metric-value"/>
+                  <Label fx:id="activityCount2" text="0" styleClass="metric-value"/>
                   <Label text="Threats Blocked" styleClass="metric-label"/>
                   <Label text="Blocked by protection" styleClass="breakdown-sub"/>
+                  <Region styleClass="wd-ln, wd-ln-red"/>
                 </VBox>
 
                 <!-- Access Decisions -->
@@ -967,9 +962,10 @@
                       <FontIcon fx:id="activityIcon3" iconLiteral="fth-check" iconSize="18" iconColor="#10B981"/>
                     </StackPane>
                   </HBox>
-                  <Label fx:id="activityCount3" text="—" styleClass="metric-value"/>
+                  <Label fx:id="activityCount3" text="0" styleClass="metric-value"/>
                   <Label text="Access Decisions" styleClass="metric-label"/>
                   <Label text="Recorded decisions" styleClass="breakdown-sub"/>
+                  <Region styleClass="wd-ln, wd-ln-green"/>
                 </VBox>
               </GridPane>
 
@@ -1005,9 +1001,9 @@
                   <Label fx:id="activityPaginationLabel" text="Waiting for backend event history" styleClass="breakdown-sub"/>
                   <Region HBox.hgrow="ALWAYS"/>
                   <HBox spacing="8" alignment="CENTER">
-                    <Button text="&lt; Previous" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary" style="-fx-font-size: 11px; -fx-padding: 5px 10px;"/>
+                    <Button text="&lt; Previous" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary, wd-dbtn" style="-fx-font-size: 11px; -fx-padding: 5px 10px;"/>
                     <Label text="Page 1 of 257" styleClass="metric-label" style="-fx-font-weight: 600;"/>
-                    <Button text="Next &gt;" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary" style="-fx-font-size: 11px; -fx-padding: 5px 10px;"/>
+                    <Button text="Next &gt;" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary, wd-dbtn" style="-fx-font-size: 11px; -fx-padding: 5px 10px;"/>
                   </HBox>
                 </HBox>
               </VBox>
@@ -1058,10 +1054,11 @@
                       <FontIcon fx:id="insightIcon0" iconLiteral="fth-check-circle" iconSize="14" iconColor="#10B981"/>
                     </HBox>
                     <HBox alignment="BASELINE_LEFT" spacing="6">
-                      <Label fx:id="insightCount0" text="—" styleClass="metric-value"/>
+                      <Label fx:id="insightCount0" text="N/A" styleClass="metric-value"/>
                       <Label fx:id="insightTrend0" text="Unavailable" styleClass="metric-trend-up"/>
                     </HBox>
                     <Label text="Backend validated model metric" styleClass="breakdown-sub" style="-fx-font-size: 10px;"/>
+                    <Region styleClass="wd-ln, wd-ln-green"/>
                   </VBox>
 
                   <!-- Threats Identified -->
@@ -1072,10 +1069,11 @@
                       <FontIcon fx:id="insightIcon1" iconLiteral="fth-shield" iconSize="14" iconColor="#EF4444"/>
                     </HBox>
                     <HBox alignment="BASELINE_LEFT" spacing="6">
-                      <Label fx:id="insightCount1" text="—" styleClass="metric-value"/>
+                      <Label fx:id="insightCount1" text="0" styleClass="metric-value"/>
                       <Label fx:id="insightTrend1" text="Unavailable" styleClass="metric-trend-red"/>
                     </HBox>
                     <Label text="URLs predicted as phishing by the backend" styleClass="breakdown-sub" style="-fx-font-size: 10px;"/>
+                    <Region styleClass="wd-ln, wd-ln-red"/>
                   </VBox>
 
                   <!-- False Positive Rate -->
@@ -1083,13 +1081,14 @@
                     <HBox alignment="CENTER_LEFT">
                       <Label text="FALSE POSITIVE RATE" styleClass="info-label" style="-fx-font-size: 10px;"/>
                       <Region HBox.hgrow="ALWAYS"/>
-                      <FontIcon fx:id="insightIcon2" iconLiteral="fth-sliders" iconSize="14" iconColor="#2563EB"/>
+                      <FontIcon fx:id="insightIcon2" iconLiteral="fth-sliders" iconSize="14" iconColor="#10B981"/>
                     </HBox>
                     <HBox alignment="BASELINE_LEFT" spacing="6">
-                      <Label fx:id="insightCount2" text="—" styleClass="metric-value"/>
+                      <Label fx:id="insightCount2" text="N/A" styleClass="metric-value"/>
                       <Label fx:id="insightTrend2" text="Unavailable" styleClass="metric-trend-up"/>
                     </HBox>
                     <Label text="Not provided by the current backend API" styleClass="breakdown-sub" style="-fx-font-size: 10px;"/>
+                    <Region styleClass="wd-ln, wd-ln-green"/>
                   </VBox>
 
                   <!-- URLs Analyzed -->
@@ -1097,13 +1096,14 @@
                     <HBox alignment="CENTER_LEFT">
                       <Label text="URLS ANALYZED" styleClass="info-label" style="-fx-font-size: 10px;"/>
                       <Region HBox.hgrow="ALWAYS"/>
-                      <FontIcon fx:id="insightIcon3" iconLiteral="fth-target" iconSize="14" iconColor="#2563EB"/>
+                      <FontIcon fx:id="insightIcon3" iconLiteral="fth-target" iconSize="14" iconColor="#3B6DF0"/>
                     </HBox>
                     <HBox alignment="BASELINE_LEFT" spacing="6">
-                      <Label fx:id="insightCount3" text="—" styleClass="metric-value"/>
-                      <Label fx:id="insightTrend3" text="Backend count" styleClass="metric-trend-up" style="-fx-text-fill: #2563EB;"/>
+                      <Label fx:id="insightCount3" text="0" styleClass="metric-value"/>
+                      <Label fx:id="insightTrend3" text="Backend count" styleClass="metric-trend-up" style="-fx-text-fill: #3B6DF0;"/>
                     </HBox>
                     <Label text="URL analyses recorded by the backend" styleClass="breakdown-sub" style="-fx-font-size: 10px;"/>
+                    <Region styleClass="wd-ln, wd-ln-blue"/>
                   </VBox>
                 </GridPane>
               </VBox>
@@ -1180,7 +1180,7 @@
                     <FontIcon iconLiteral="fth-info" iconSize="14" iconColor="#2563EB"/>
                     <Label text="Threat signals are not included in the current backend summary API" styleClass="wd-dominant-vector-text" HBox.hgrow="ALWAYS"/>
                     <Region HBox.hgrow="ALWAYS"/>
-                    <Button text="Active Filter" styleClass="wd-btn, wd-chip, wd-btn--chip, wd-on" style="-fx-cursor: hand; -fx-padding: 2px 10px; -fx-font-size: 11px;"/>
+                    <Button text="Active Filter" styleClass="wd-btn, wd-chip, wd-btn--chip, wd-on, wd-dbtn" style="-fx-cursor: hand; -fx-padding: 2px 10px; -fx-font-size: 11px;"/>
                   </HBox>
                 </VBox>
 
@@ -1202,7 +1202,7 @@
                         <Label text="Review suspicious domains before opening them" styleClass="wd-rec-title"/>
                         <Label text="3 flagged domains await verification" styleClass="breakdown-sub" style="-fx-font-size: 10px;"/>
                       </VBox>
-                      <Button text="Review" onAction="#navigateThreatCenter" styleClass="stitch-btn-secondary, wd-btn, wd-tonal, wd-btn--tonal" style="-fx-font-size: 11px; -fx-padding: 4px 10px;"/>
+                      <Button text="Review" onAction="#navigateThreatCenter" styleClass="stitch-btn-secondary, wd-btn, wd-tonal, wd-btn--tonal, wd-dbtn" style="-fx-font-size: 11px; -fx-padding: 4px 10px;"/>
                     </HBox>
 
                     <!-- Rec 2 -->
@@ -1214,7 +1214,7 @@
                         <Label text="Enable URL protection for every browsing session" styleClass="wd-rec-title"/>
                         <Label text="Active defense covers real-time HTTP/HTTPS traffic" styleClass="breakdown-sub" style="-fx-font-size: 10px;"/>
                       </VBox>
-                      <Button text="Configure" onAction="#navigateSettings" styleClass="stitch-btn-secondary, wd-btn, wd-tonal, wd-btn--tonal" style="-fx-font-size: 11px; -fx-padding: 4px 10px;"/>
+                      <Button text="Configure" onAction="#navigateSettings" styleClass="stitch-btn-secondary, wd-btn, wd-tonal, wd-btn--tonal, wd-dbtn" style="-fx-font-size: 11px; -fx-padding: 4px 10px;"/>
                     </HBox>
 
                     <!-- Rec 3 -->
@@ -1226,7 +1226,7 @@
                         <Label text="Pay attention to high-risk login pages and shortened links" styleClass="wd-rec-title"/>
                         <Label text="Spoofed authentication endpoints detected" styleClass="breakdown-sub" style="-fx-font-size: 10px;"/>
                       </VBox>
-                      <Button text="Details" onAction="#navigateThreatCenter" styleClass="stitch-btn-secondary, wd-btn, wd-tonal, wd-btn--tonal" style="-fx-font-size: 11px; -fx-padding: 4px 10px;"/>
+                      <Button text="Details" onAction="#navigateThreatCenter" styleClass="stitch-btn-secondary, wd-btn, wd-tonal, wd-btn--tonal, wd-dbtn" style="-fx-font-size: 11px; -fx-padding: 4px 10px;"/>
                     </HBox>
                   </VBox>
 
@@ -1319,22 +1319,22 @@
                 <HBox spacing="24">
                   <!-- Left Settings Sub-menu -->
                   <VBox spacing="4" prefWidth="200" minWidth="200" styleClass="wd-settings-sidebar-divider">
-                    <Button fx:id="setSubGeneral" text="General" onAction="#selectSettingsSubGeneral" styleClass="settings-subnav-btn, settings-subnav-btn-active, wd-btn, wd-chip, wd-btn--chip, wd-on">
+                    <Button fx:id="setSubGeneral" text="General" onAction="#selectSettingsSubGeneral" styleClass="settings-subnav-btn, settings-subnav-btn-active, wd-btn, wd-chip, wd-btn--chip, wd-on, wd-dbtn">
                       <graphic><FontIcon iconLiteral="fth-settings" iconSize="15"/></graphic>
                     </Button>
-                    <Button fx:id="setSubProtection" text="Protection" onAction="#selectSettingsSubProtection" styleClass="settings-subnav-btn, wd-btn, wd-chip, wd-btn--chip">
+                    <Button fx:id="setSubProtection" text="Protection" onAction="#selectSettingsSubProtection" styleClass="settings-subnav-btn, wd-btn, wd-chip, wd-btn--chip, wd-dbtn">
                       <graphic><FontIcon iconLiteral="fth-shield" iconSize="15"/></graphic>
                     </Button>
-                    <Button fx:id="setSubNotifications" text="Notifications" onAction="#selectSettingsSubNotifications" styleClass="settings-subnav-btn, wd-btn, wd-chip, wd-btn--chip">
+                    <Button fx:id="setSubNotifications" text="Notifications" onAction="#selectSettingsSubNotifications" styleClass="settings-subnav-btn, wd-btn, wd-chip, wd-btn--chip, wd-dbtn">
                       <graphic><FontIcon iconLiteral="fth-bell" iconSize="15"/></graphic>
                     </Button>
-                    <Button fx:id="setSubAppearance" text="Appearance" onAction="#selectSettingsSubAppearance" styleClass="settings-subnav-btn, wd-btn, wd-chip, wd-btn--chip">
+                    <Button fx:id="setSubAppearance" text="Appearance" onAction="#selectSettingsSubAppearance" styleClass="settings-subnav-btn, wd-btn, wd-chip, wd-btn--chip, wd-dbtn">
                       <graphic><FontIcon iconLiteral="fth-eye" iconSize="15"/></graphic>
                     </Button>
-                    <Button fx:id="setSubPrivacy" text="Privacy &amp; Data" onAction="#selectSettingsSubPrivacy" styleClass="settings-subnav-btn, wd-btn, wd-chip, wd-btn--chip">
+                    <Button fx:id="setSubPrivacy" text="Privacy &amp; Data" onAction="#selectSettingsSubPrivacy" styleClass="settings-subnav-btn, wd-btn, wd-chip, wd-btn--chip, wd-dbtn">
                       <graphic><FontIcon iconLiteral="fth-lock" iconSize="15"/></graphic>
                     </Button>
-                    <Button fx:id="setSubAbout" text="About" onAction="#selectSettingsSubAbout" styleClass="settings-subnav-btn, wd-btn, wd-chip, wd-btn--chip">
+                    <Button fx:id="setSubAbout" text="About" onAction="#selectSettingsSubAbout" styleClass="settings-subnav-btn, wd-btn, wd-chip, wd-btn--chip, wd-dbtn">
                       <graphic><FontIcon iconLiteral="fth-info" iconSize="15"/></graphic>
                     </Button>
                   </VBox>
@@ -1645,7 +1645,7 @@
                           <Label text="Local Cache &amp; Storage" styleClass="feature-val"/>
                           <Label text="Cached neural model weights and scan thumbnails occupy 14.2 MB." styleClass="breakdown-sub"/>
                         </VBox>
-                        <Button text="Clear History &amp; Cache" onAction="#clearScanHistory" styleClass="stitch-btn-secondary, wd-btn, wd-danger-soft, wd-btn--danger-soft"/>
+                        <Button text="Clear History &amp; Cache" onAction="#clearScanHistory" styleClass="stitch-btn-secondary, wd-btn, wd-danger-soft, wd-btn--danger-soft, wd-dbtn"/>
                       </HBox>
 
                       <!-- Export Audit Logs -->
@@ -1654,7 +1654,7 @@
                           <Label text="Export Audit Telemetry" styleClass="feature-val"/>
                           <Label text="Download your local scanning activity as a structured JSON/CSV report." styleClass="breakdown-sub"/>
                         </VBox>
-                        <Button text="Export Logs" onAction="#exportAuditLogs" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary"/>
+                        <Button text="Export Logs" onAction="#exportAuditLogs" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary, wd-dbtn"/>
                       </HBox>
                     </VBox>
 
@@ -1705,7 +1705,7 @@
                         <Button text="Check for Updates" onAction="#checkForUpdates" styleClass="stitch-btn-primary, wd-btn, wd-primary, wd-btn--primary">
                           <graphic><FontIcon iconLiteral="fth-refresh-cw" iconSize="14" iconColor="#FFFFFF"/></graphic>
                         </Button>
-                        <Button text="View License" onAction="#viewLicense" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary">
+                        <Button text="View License" onAction="#viewLicense" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary, wd-dbtn">
                           <graphic><FontIcon iconLiteral="fth-file-text" iconSize="14"/></graphic>
                         </Button>
                       </HBox>
@@ -1766,7 +1766,7 @@
                   <Label text="Settings synchronized &amp; operational." styleClass="wd-sync-label"/>
                 </HBox>
                 <Region HBox.hgrow="ALWAYS"/>
-                <Button text="Reset to Default" onAction="#resetSettingsToDefault" styleClass="stitch-btn-secondary, wd-btn, wd-warn-soft, wd-btn--warn-soft"/>
+                <Button text="Reset to Default" onAction="#resetSettingsToDefault" styleClass="stitch-btn-secondary, wd-btn, wd-warn-soft, wd-btn--warn-soft, wd-dbtn, wd-dbtn--reset"/>
                 <Button text="Save Changes" onAction="#saveSettings" styleClass="stitch-btn-primary, wd-btn, wd-primary, wd-btn--primary"/>
               </HBox>
             </VBox>
