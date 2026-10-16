@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<VBox fx:id="fileShieldRoot" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.aiwatchdog.controller.FileShieldController" spacing="20"
+      styleClass="file-shield-view">
+  <padding><Insets top="0" right="28" bottom="28" left="28"/></padding>
+  <HBox alignment="CENTER_LEFT" spacing="18">
+    <VBox spacing="4">
+      <Label text="File Shield Scanner" styleClass="page-header-title"/>
+      <Label text="Inspect file identity and reputation; quarantine and restore require explicit confirmation." styleClass="page-header-subtitle"/>
+    </VBox>
+    <Region HBox.hgrow="ALWAYS"/>
+    <HBox alignment="CENTER" spacing="7" styleClass="file-shield-local-tag">
+      <FontIcon iconLiteral="fth-hard-drive" iconSize="13" styleClass="file-shield-local-icon"/>
+      <Label text="LOCAL SCAN" styleClass="file-shield-local-label"/>
+    </HBox>
+  </HBox>
+
+  <VBox spacing="15" styleClass="file-shield-workspace">
+    <HBox alignment="CENTER_LEFT" spacing="12">
+      <Button fx:id="scanFileButton" text="Scan Single File" onAction="#chooseAndScanFile"
+              styleClass="stitch-btn-analyze-green, wd-btn, wd-primary, wd-btn--primary">
+        <graphic><FontIcon iconLiteral="fth-file" iconSize="15" iconColor="#FFFFFF"/></graphic>
+      </Button>
+      <Button fx:id="scanDirectoryButton" text="Scan Directory" onAction="#chooseAndScanDirectory"
+              styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary">
+        <graphic><FontIcon iconLiteral="fth-folder" iconSize="15" iconColor="#176F6B"/></graphic>
+      </Button>
+      <Button fx:id="assessFileButton" text="Unified Assessment" onAction="#chooseAndAssessFile"
+              styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary">
+        <graphic><FontIcon iconLiteral="fth-shield" iconSize="15" iconColor="#176F6B"/></graphic>
+      </Button>
+      <Region HBox.hgrow="ALWAYS"/>
+      <ProgressIndicator fx:id="scanProgress" prefWidth="25" prefHeight="25" maxWidth="25" maxHeight="25"/>
+      <Label fx:id="scanStatusLabel" text="Ready to scan" styleClass="file-shield-status"/>
+    </HBox>
+    <Label text="Choose a file or folder from an approved scan location. Scanning never executes files; only an explicitly confirmed quarantine or restore changes a file's location."
+           styleClass="page-header-subtitle" wrapText="true"/>
+  </VBox>
+
+  <VBox spacing="10" VBox.vgrow="ALWAYS" styleClass="file-shield-results">
+    <HBox alignment="CENTER_LEFT" spacing="10">
+      <Label text="Scan results" styleClass="wd-section-title"/>
+      <Region HBox.hgrow="ALWAYS"/>
+      <Label fx:id="scanSummaryLabel" text="No scans yet" styleClass="file-shield-summary" wrapText="true"/>
+    </HBox>
+    <Label fx:id="scanErrorLabel" text="" styleClass="file-shield-error" wrapText="true"/>
+    <Label fx:id="assessmentSummaryLabel" text="" styleClass="file-shield-summary" wrapText="true"/>
+    <TableView fx:id="resultsTable" VBox.vgrow="ALWAYS" minHeight="260">
+      <columns>
+        <TableColumn fx:id="fileColumn" text="File / Path" prefWidth="260" minWidth="160"/>
+        <TableColumn fx:id="hashColumn" text="SHA-256" prefWidth="390" minWidth="220"/>
+        <TableColumn fx:id="verdictColumn" text="Verdict" prefWidth="140" minWidth="110"/>
+        <TableColumn fx:id="detailColumn" text="Result detail" prefWidth="300" minWidth="190"/>
+        <TableColumn fx:id="actionColumn" text="Action" prefWidth="125" minWidth="110"/>
+      </columns>
+    </TableView>
+    <HBox alignment="CENTER_LEFT" spacing="7" styleClass="file-shield-note">
+      <FontIcon iconLiteral="fth-info" iconSize="13" styleClass="file-shield-note-icon"/>
+      <Label text="UNKNOWN means no local reputation record was found; it is not a clean verdict."
+             styleClass="file-shield-note-text" wrapText="true"/>
+    </HBox>
+  </VBox>
+  <VBox spacing="10" styleClass="file-shield-results">
+    <HBox alignment="CENTER_LEFT" spacing="10">
+      <Label text="Quarantine and recent operations" styleClass="wd-section-title"/>
+      <Region HBox.hgrow="ALWAYS"/>
+      <Label fx:id="quarantineStatusLabel" text="Loading quarantine history…" styleClass="file-shield-summary" wrapText="true"/>
+    </HBox>
+    <Label text="Quarantine requires a known malicious or suspicious hash plus explicit confirmation. Unknown and unavailable reputation cannot be quarantined." styleClass="page-header-subtitle" wrapText="true"/>
+    <TableView fx:id="quarantineTable" prefHeight="190">
+      <columns>
+        <TableColumn fx:id="quarantineFileColumn" text="File" prefWidth="180"/>
+        <TableColumn fx:id="quarantineStateColumn" text="State" prefWidth="120"/>
+        <TableColumn fx:id="quarantineHashColumn" text="SHA-256" prefWidth="300"/>
+        <TableColumn fx:id="quarantineDetailColumn" text="Operation detail" prefWidth="300"/>
+        <TableColumn fx:id="restoreColumn" text="Restore" prefWidth="100"/>
+      </columns>
+    </TableView>
+  </VBox>
+</VBox>

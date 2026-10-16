@@ -14,6 +14,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -56,6 +58,23 @@ class AnalyzeControllerTest {
                 .content("{\"url\":\"https://example.com\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.risk_level").value("SAFE"));
+    }
+
+    @Test
+    void searchResultPreviewUsesSeparateNonPersistingServicePath() throws Exception {
+        when(analysisService.preview("https://destination.example/path"))
+                .thenReturn(new AnalyzeResponse("https://destination.example/path", .82, 82,
+                        "HIGH_RISK", "PHISHING", "BLOCK", .15, java.util.List.of("test reason")));
+
+        mockMvc.perform(post("/api/v1/analyze/preview")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"url\":\"https://destination.example/path\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.decision").value("BLOCK"))
+                .andExpect(jsonPath("$.reasons[0]").value("test reason"));
+
+        verify(analysisService).preview("https://destination.example/path");
+        verifyNoMoreInteractions(analysisService);
     }
 
     @Test

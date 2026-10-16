@@ -1,6 +1,7 @@
 package com.aiwatchdog.backend.logging;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Repository interface for persisting and retrieving {@link SecurityEvent} records.
@@ -17,6 +18,17 @@ public interface SecurityEventRepository {
      * Returns up to {@code limit} most-recent events, newest first.
      */
     List<SecurityEvent> findRecent(int limit);
+
+    /** Returns structured threat-assessment audit events, newest first. */
+    List<SecurityEvent> findRecentAssessments(int limit);
+
+    List<SecurityEvent> findRecentFileOperations(int limit);
+    List<SecurityEvent> findActiveQuarantines();
+    List<SecurityEvent> findIncompleteFileOperations();
+    Optional<SecurityEvent> findLatestFileOperation(String operationId);
+
+    /** Aggregate counts for persisted unified assessments, without loading event rows. */
+    AssessmentStats getAssessmentStats();
 
     /**
      * Returns all events matching the given risk level (SAFE/LOW_RISK/SUSPICIOUS/HIGH_RISK), newest first.

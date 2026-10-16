@@ -65,6 +65,9 @@
             <Button fx:id="navScannerBtn" text="URL Scanner" onAction="#navigateScanner" styleClass="nav-btn, wd-nav, wd-dbtn">
               <graphic><FontIcon iconLiteral="fth-search" iconSize="17"/></graphic>
             </Button>
+            <Button fx:id="navFileShieldBtn" text="File Shield Scanner" onAction="#navigateFileShield" styleClass="nav-btn, wd-nav, wd-dbtn">
+              <graphic><FontIcon iconLiteral="fth-hard-drive" iconSize="17"/></graphic>
+            </Button>
             <Button fx:id="navSecureAccessBtn" text="Secure Access" onAction="#navigateSecureAccess" styleClass="nav-btn, wd-nav, wd-dbtn">
               <graphic><FontIcon iconLiteral="fth-shield" iconSize="17"/></graphic>
             </Button>
@@ -90,8 +93,8 @@
               <FontIcon iconLiteral="fth-check" iconSize="13" iconColor="#FFFFFF"/>
             </StackPane>
             <VBox spacing="1" HBox.hgrow="ALWAYS">
-              <Label text="Protection Active" styleClass="protection-status-title"/>
-              <Label text="All systems operational" styleClass="protection-status-desc"/>
+              <Label fx:id="sidebarProtectionTitle" text="Checking services…" styleClass="protection-status-title"/>
+              <Label fx:id="sidebarProtectionDescription" text="Waiting for backend health and monitor state" styleClass="protection-status-desc" wrapText="true"/>
             </VBox>
           </HBox>
           <Label text="v1.0.0" styleClass="version-label" style="-fx-font-size: 10px; -fx-alignment: center;"/>
@@ -174,7 +177,7 @@
                   <Region fx:id="dashScannedLine" styleClass="wd-ln, wd-ln-blue"/>
                 </VBox>
 
-                <!-- Threats Blocked -->
+                <!-- Recorded policy BLOCK decisions; no OS enforcement is provided. -->
                 <VBox fx:id="dashCardBlocked" GridPane.columnIndex="1" styleClass="wd-card">
                   <HBox alignment="CENTER_LEFT">
                     <StackPane fx:id="dashBlockedTile" styleClass="wd-ic, wd-ic-red">
@@ -183,7 +186,7 @@
                     <Region HBox.hgrow="ALWAYS"/>
                     <Label fx:id="dashBlockedTrend" visible="false" managed="false"/>
                   </HBox>
-                  <Label text="Threats Blocked" styleClass="wd-lb" style="-fx-padding: 16px 0 0 0;"/>
+                  <Label text="BLOCK Policy Decisions" styleClass="wd-lb" style="-fx-padding: 16px 0 0 0;"/>
                   <Label fx:id="dashThreatsBlockedCount" text="0" styleClass="wd-nm"/>
                   <Label text="Backend total" styleClass="wd-sb" style="-fx-padding: 6px 0 0 0;"/>
                   <Region fx:id="dashBlockedLine" styleClass="wd-ln, wd-ln-red"/>
@@ -219,6 +222,32 @@
                   <Region fx:id="dashAllowedLine" styleClass="wd-ln, wd-ln-green"/>
                 </VBox>
               </GridPane>
+
+              <VBox styleClass="stitch-card" spacing="10">
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                  <Label text="Unified Assessment Overview" styleClass="panel-title"/>
+                  <Region HBox.hgrow="ALWAYS"/>
+                  <ProgressIndicator fx:id="dashAssessmentLoading" prefWidth="18" prefHeight="18" maxWidth="18" maxHeight="18"/>
+                  <Label fx:id="dashAssessmentState" text="Loading assessment metrics…" styleClass="breakdown-sub"/>
+                </HBox>
+                <HBox spacing="24" alignment="CENTER_LEFT">
+                  <VBox spacing="3"><Label fx:id="dashAssessmentTotal" text="N/A" styleClass="metric-value"/><Label text="Recorded assessments" styleClass="metric-label"/></VBox>
+                  <VBox spacing="3"><Label fx:id="dashAssessmentUrls" text="N/A" styleClass="metric-value"/><Label text="URL assessments" styleClass="metric-label"/></VBox>
+                  <VBox spacing="3"><Label fx:id="dashAssessmentFiles" text="N/A" styleClass="metric-value"/><Label text="File assessments" styleClass="metric-label"/></VBox>
+                  <VBox spacing="3"><Label fx:id="dashAssessmentPartial" text="N/A" styleClass="metric-value"/><Label text="Partial results" styleClass="metric-label"/></VBox>
+                  <VBox spacing="3"><Label fx:id="dashKnownMalicious" text="N/A" styleClass="metric-value"/><Label text="Known malicious reputation" styleClass="metric-label"/></VBox>
+                  <VBox spacing="3"><Label fx:id="dashUnknownReputation" text="N/A" styleClass="metric-value"/><Label text="Unknown reputation" styleClass="metric-label"/></VBox>
+                  <VBox spacing="3"><Label fx:id="dashKnownClean" text="N/A" styleClass="metric-value"/><Label text="Known clean reputation" styleClass="metric-label"/></VBox>
+                  <VBox spacing="3"><Label fx:id="dashLookupError" text="N/A" styleClass="metric-value"/><Label text="Reputation lookup errors" styleClass="metric-label"/></VBox>
+                </HBox>
+                <HBox spacing="24" alignment="CENTER_LEFT">
+                  <Label text="Assessment policy verdicts:" styleClass="metric-label"/>
+                  <Label text="ALLOW" styleClass="breakdown-sub"/><Label fx:id="dashAssessmentAllow" text="N/A" styleClass="metric-value"/>
+                  <Label text="REVIEW" styleClass="breakdown-sub"/><Label fx:id="dashAssessmentReview" text="N/A" styleClass="metric-value"/>
+                  <Label text="WARN" styleClass="breakdown-sub"/><Label fx:id="dashAssessmentWarn" text="N/A" styleClass="metric-value"/>
+                  <Label text="BLOCK" styleClass="breakdown-sub"/><Label fx:id="dashAssessmentBlock" text="N/A" styleClass="metric-value"/>
+                </HBox>
+              </VBox>
 
               <!-- Current Risk Status Large Card (Target Lock Radar & Breakdown) -->
               <VBox styleClass="wd-risk" spacing="18">
@@ -321,6 +350,15 @@
                 </HBox>
               </VBox>
             </VBox>
+          </ScrollPane>
+
+          <!-- ============================================================ -->
+          <!-- FILE SHIELD SCANNER                                         -->
+          <!-- ============================================================ -->
+          <ScrollPane fx:id="fileShieldPage" visible="false" fitToWidth="true" hbarPolicy="NEVER" styleClass="scroll-pane, wd-scroll">
+            <content>
+              <fx:include fx:id="fileShieldView" source="file-shield-view.fxml"/>
+            </content>
           </ScrollPane>
 
           <!-- ============================================================ -->
@@ -731,7 +769,7 @@
               <HBox alignment="CENTER_LEFT">
                 <VBox spacing="3">
                   <Label text="Threat Center" styleClass="page-header-title"/>
-                  <Label text="Monitor recent suspicious and blocked activity." styleClass="page-header-subtitle"/>
+                  <Label text="Monitor recent suspicious activity and recorded policy decisions." styleClass="page-header-subtitle"/>
                 </VBox>
                 <Region HBox.hgrow="ALWAYS"/>
                 <HBox spacing="10" alignment="CENTER">
@@ -749,7 +787,7 @@
                   <ColumnConstraints percentWidth="25"/>
                 </columnConstraints>
 
-                <!-- High Risk Threats -->
+                <!-- High risk events under the existing policy mapping. -->
                 <VBox fx:id="threatCard0" GridPane.columnIndex="0" styleClass="metric-card">
                   <HBox alignment="CENTER_LEFT">
                     <StackPane fx:id="threatTile0" styleClass="metric-icon-circle, icon-red-bg">
@@ -757,7 +795,7 @@
                     </StackPane>
                   </HBox>
                   <Label fx:id="threatBlockedCount" text="0" styleClass="metric-value"/>
-                  <Label text="High Risk Threats" styleClass="metric-label"/>
+                  <Label text="High Risk Policy Outcomes" styleClass="metric-label"/>
                   <Label fx:id="threatTrend0" text="No trend data" styleClass="metric-trend-red"/>
                   <Region styleClass="wd-ln, wd-ln-red"/>
                 </VBox>
@@ -775,7 +813,7 @@
                   <Region styleClass="wd-ln, wd-ln-amber"/>
                 </VBox>
 
-                <!-- Suspicious Links -->
+                <!-- High risk events across available sources. -->
                 <VBox fx:id="threatCard2" GridPane.columnIndex="2" styleClass="metric-card">
                   <HBox alignment="CENTER_LEFT">
                     <StackPane fx:id="threatTile2" styleClass="metric-icon-circle, icon-blue-bg">
@@ -783,7 +821,7 @@
                     </StackPane>
                   </HBox>
                   <Label fx:id="threatHighRiskCount" text="0" styleClass="metric-value"/>
-                  <Label text="Suspicious Links" styleClass="metric-label"/>
+                  <Label text="High Risk Assessments" styleClass="metric-label"/>
                   <Label fx:id="threatTrend2" text="No trend data" styleClass="metric-trend-amber"/>
                   <Region styleClass="wd-ln, wd-ln-blue"/>
                 </VBox>
@@ -942,7 +980,7 @@
                   <Region styleClass="wd-ln, wd-ln-blue"/>
                 </VBox>
 
-                <!-- Threats Blocked -->
+                <!-- Recorded policy BLOCK decisions; no OS enforcement is provided. -->
                 <VBox fx:id="activityCard2" GridPane.columnIndex="2" styleClass="metric-card">
                   <HBox alignment="CENTER_LEFT">
                     <StackPane fx:id="activityTile2" styleClass="metric-icon-circle, icon-red-bg">
@@ -950,8 +988,8 @@
                     </StackPane>
                   </HBox>
                   <Label fx:id="activityCount2" text="0" styleClass="metric-value"/>
-                  <Label text="Threats Blocked" styleClass="metric-label"/>
-                  <Label text="Blocked by protection" styleClass="breakdown-sub"/>
+                  <Label text="BLOCK Policy Decisions" styleClass="metric-label"/>
+                  <Label text="Recorded outcome; OS enforcement is unavailable" styleClass="breakdown-sub" wrapText="true"/>
                   <Region styleClass="wd-ln, wd-ln-red"/>
                 </VBox>
 
@@ -1001,9 +1039,9 @@
                   <Label fx:id="activityPaginationLabel" text="Waiting for backend event history" styleClass="breakdown-sub"/>
                   <Region HBox.hgrow="ALWAYS"/>
                   <HBox spacing="8" alignment="CENTER">
-                    <Button text="&lt; Previous" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary, wd-dbtn" style="-fx-font-size: 11px; -fx-padding: 5px 10px;"/>
-                    <Label text="Page 1 of 257" styleClass="metric-label" style="-fx-font-weight: 600;"/>
-                    <Button text="Next &gt;" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary, wd-dbtn" style="-fx-font-size: 11px; -fx-padding: 5px 10px;"/>
+                    <Button fx:id="activityPreviousBtn" text="&lt; Previous" onAction="#previousActivityPage" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary, wd-dbtn" style="-fx-font-size: 11px; -fx-padding: 5px 10px;"/>
+                    <Label fx:id="activityPageLabel" text="Page 1 of 1" styleClass="metric-label" style="-fx-font-weight: 600;"/>
+                    <Button fx:id="activityNextBtn" text="Next &gt;" onAction="#nextActivityPage" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary, wd-dbtn" style="-fx-font-size: 11px; -fx-padding: 5px 10px;"/>
                   </HBox>
                 </HBox>
               </VBox>
@@ -1121,7 +1159,7 @@
                     <FontIcon iconLiteral="fth-bar-chart-2" iconSize="16" iconColor="#2563EB"/>
                     <Label text="Threat Pattern Analysis" styleClass="wd-section-title"/>
                   </HBox>
-                  <Label text="Behavioral heuristics and frequency distribution of blocked and flagged parameters." styleClass="page-header-subtitle"/>
+                    <Label text="Behavioral heuristics and recorded policy outcomes; Windows access enforcement is not provided." styleClass="page-header-subtitle" wrapText="true"/>
 
                   <VBox spacing="14" style="-fx-padding: 8px 0 12px 0;">
                     <!-- Suspicious domains -->
@@ -1290,7 +1328,7 @@
                           <FontIcon iconLiteral="fth-check-circle" iconSize="12" iconColor="#64748B"/>
                         </HBox>
                         <Label text="Access Policy Decision" styleClass="wd-step-title" wrapText="true"/>
-                        <Label text="ALLOW / WARN / BLOCK enforcement" styleClass="breakdown-sub" style="-fx-font-size: 9px;" wrapText="true"/>
+                        <Label text="ALLOW / WARN / BLOCK policy outcomes" styleClass="breakdown-sub" style="-fx-font-size: 9px;" wrapText="true"/>
                       </VBox>
                     </GridPane>
                   </VBox>
@@ -1303,476 +1341,8 @@
           <!-- 8. SETTINGS (EXACT STITCH SCREEN)                            -->
           <!-- ============================================================ -->
           <ScrollPane fx:id="settingsPage" visible="false" fitToWidth="true" hbarPolicy="NEVER" styleClass="scroll-pane, wd-scroll">
-            <VBox spacing="20" style="-fx-padding: 0 28px 28px 28px;">
-              <!-- Header -->
-              <HBox alignment="CENTER_LEFT">
-                <VBox spacing="3">
-                  <Label text="Settings" styleClass="page-header-title"/>
-                  <Label text="Manage your protection preferences, security controls, and application settings." styleClass="page-header-subtitle"/>
-                </VBox>
-                <Region HBox.hgrow="ALWAYS"/>
-                <Label text="â— Protection Active" styleClass="pill-badge, badge-operational"/>
-              </HBox>
-
-              <!-- Main Settings Card with Left Sub-nav & Right Settings Form -->
-              <VBox styleClass="stitch-card" spacing="16">
-                <HBox spacing="24">
-                  <!-- Left Settings Sub-menu -->
-                  <VBox spacing="4" prefWidth="200" minWidth="200" styleClass="wd-settings-sidebar-divider">
-                    <Button fx:id="setSubGeneral" text="General" onAction="#selectSettingsSubGeneral" styleClass="settings-subnav-btn, settings-subnav-btn-active, wd-btn, wd-chip, wd-btn--chip, wd-on, wd-dbtn">
-                      <graphic><FontIcon iconLiteral="fth-settings" iconSize="15"/></graphic>
-                    </Button>
-                    <Button fx:id="setSubProtection" text="Protection" onAction="#selectSettingsSubProtection" styleClass="settings-subnav-btn, wd-btn, wd-chip, wd-btn--chip, wd-dbtn">
-                      <graphic><FontIcon iconLiteral="fth-shield" iconSize="15"/></graphic>
-                    </Button>
-                    <Button fx:id="setSubNotifications" text="Notifications" onAction="#selectSettingsSubNotifications" styleClass="settings-subnav-btn, wd-btn, wd-chip, wd-btn--chip, wd-dbtn">
-                      <graphic><FontIcon iconLiteral="fth-bell" iconSize="15"/></graphic>
-                    </Button>
-                    <Button fx:id="setSubAppearance" text="Appearance" onAction="#selectSettingsSubAppearance" styleClass="settings-subnav-btn, wd-btn, wd-chip, wd-btn--chip, wd-dbtn">
-                      <graphic><FontIcon iconLiteral="fth-eye" iconSize="15"/></graphic>
-                    </Button>
-                    <Button fx:id="setSubPrivacy" text="Privacy &amp; Data" onAction="#selectSettingsSubPrivacy" styleClass="settings-subnav-btn, wd-btn, wd-chip, wd-btn--chip, wd-dbtn">
-                      <graphic><FontIcon iconLiteral="fth-lock" iconSize="15"/></graphic>
-                    </Button>
-                    <Button fx:id="setSubAbout" text="About" onAction="#selectSettingsSubAbout" styleClass="settings-subnav-btn, wd-btn, wd-chip, wd-btn--chip, wd-dbtn">
-                      <graphic><FontIcon iconLiteral="fth-info" iconSize="15"/></graphic>
-                    </Button>
-                  </VBox>
-
-                  <!-- Right Settings Content Container (Sub-Panes) -->
-                  <StackPane HBox.hgrow="ALWAYS" alignment="TOP_LEFT" style="-fx-padding: 0 8px 0 8px;">
-
-                    <!-- 1. GENERAL PANE -->
-                    <VBox fx:id="settingsGeneralPane" spacing="18">
-                      <VBox spacing="2">
-                        <Label text="General Settings" style="-fx-font-size: 16px; -fx-font-weight: 700;"/>
-                        <Label text="Configure basic preferences for your AI WatchDog application." styleClass="page-header-subtitle"/>
-                      </VBox>
-
-                      <!-- Language -->
-                      <HBox alignment="CENTER_LEFT" spacing="12">
-                        <VBox HBox.hgrow="ALWAYS" spacing="2">
-                          <Label text="Application Language" styleClass="feature-val"/>
-                          <Label text="Choose the language used throughout the application." styleClass="breakdown-sub"/>
-                        </VBox>
-                        <ComboBox fx:id="settingsLanguageCombo" promptText="English (US)" styleClass="stitch-combo-box" prefWidth="130"/>
-                      </HBox>
-
-                      <!-- Start with Windows -->
-                      <HBox alignment="CENTER_LEFT" spacing="12">
-                        <VBox HBox.hgrow="ALWAYS" spacing="2">
-                          <Label text="Start with Windows" styleClass="feature-val"/>
-                          <Label text="Launch AI WatchDog automatically when your computer starts." styleClass="breakdown-sub"/>
-                        </VBox>
-                        <StackPane onMouseClicked="#toggleStartWithWindows" fx:id="switchStartWindows" styleClass="toggle-switch-on">
-                          <Circle radius="9" styleClass="toggle-knob"/>
-                        </StackPane>
-                      </HBox>
-
-                      <!-- Minimize to System Tray -->
-                      <HBox alignment="CENTER_LEFT" spacing="12">
-                        <VBox HBox.hgrow="ALWAYS" spacing="2">
-                          <Label text="Minimize to System Tray" styleClass="feature-val"/>
-                          <Label text="Keep protection active when the application window is minimized." styleClass="breakdown-sub"/>
-                        </VBox>
-                        <StackPane onMouseClicked="#toggleMinimizeTray" fx:id="switchMinimizeTray" styleClass="toggle-switch-on">
-                          <Circle radius="9" styleClass="toggle-knob"/>
-                        </StackPane>
-                      </HBox>
-
-                      <!-- Confirm Before Exit -->
-                      <HBox alignment="CENTER_LEFT" spacing="12">
-                        <VBox HBox.hgrow="ALWAYS" spacing="2">
-                          <Label text="Confirm Before Exit" styleClass="feature-val"/>
-                          <Label text="Ask for confirmation before closing AI WatchDog." styleClass="breakdown-sub"/>
-                        </VBox>
-                        <StackPane onMouseClicked="#toggleConfirmExit" fx:id="switchConfirmExit" styleClass="toggle-switch-on">
-                          <Circle radius="9" styleClass="toggle-knob"/>
-                        </StackPane>
-                      </HBox>
-
-                      <!-- Automatically Check for Updates -->
-                      <HBox alignment="CENTER_LEFT" spacing="12">
-                        <VBox HBox.hgrow="ALWAYS" spacing="2">
-                          <Label text="Automatically Check for Updates" styleClass="feature-val"/>
-                          <Label text="Check for application and security updates automatically." styleClass="breakdown-sub"/>
-                        </VBox>
-                        <StackPane onMouseClicked="#toggleAutoUpdates" fx:id="switchAutoUpdates" styleClass="toggle-switch-on">
-                          <Circle radius="9" styleClass="toggle-knob"/>
-                        </StackPane>
-                      </HBox>
-                    </VBox>
-
-                    <!-- 2. PROTECTION PANE -->
-                    <VBox fx:id="settingsProtectionPane" spacing="18" visible="false" managed="false">
-                      <VBox spacing="2">
-                        <Label text="Protection Settings" style="-fx-font-size: 16px; -fx-font-weight: 700;"/>
-                        <Label text="Configure real-time neural threat detection, URL defense, and proactive shielding." styleClass="page-header-subtitle"/>
-                      </VBox>
-
-                      <!-- Real-Time URL Protection -->
-                      <HBox alignment="CENTER_LEFT" spacing="12">
-                        <VBox HBox.hgrow="ALWAYS" spacing="2">
-                          <Label text="Real-Time URL Protection" styleClass="feature-val"/>
-                          <Label text="Inspect all web requests and hyperlinks as they are navigated." styleClass="breakdown-sub"/>
-                        </VBox>
-                        <StackPane onMouseClicked="#toggleRealTimeProtection" fx:id="switchRealTimeProtection" styleClass="toggle-switch-on">
-                          <Circle radius="9" styleClass="toggle-knob"/>
-                        </StackPane>
-                      </HBox>
-
-                      <!-- Proactive Threat Blocking -->
-                      <HBox alignment="CENTER_LEFT" spacing="12">
-                        <VBox HBox.hgrow="ALWAYS" spacing="2">
-                          <Label text="Proactive Threat Blocking" styleClass="feature-val"/>
-                          <Label text="Immediately intercept and block confirmed malicious and phishing pages." styleClass="breakdown-sub"/>
-                        </VBox>
-                        <StackPane onMouseClicked="#toggleThreatBlocking" fx:id="switchThreatBlocking" styleClass="toggle-switch-on">
-                          <Circle radius="9" styleClass="toggle-knob"/>
-                        </StackPane>
-                      </HBox>
-
-                      <!-- Zero-Hour Heuristics -->
-                      <HBox alignment="CENTER_LEFT" spacing="12">
-                        <VBox HBox.hgrow="ALWAYS" spacing="2">
-                          <Label text="Zero-Hour Phishing Heuristics" styleClass="feature-val"/>
-                          <Label text="Use local AI feature extraction and behavioral analysis on newly observed domains." styleClass="breakdown-sub"/>
-                        </VBox>
-                        <StackPane onMouseClicked="#toggleZeroHourHeuristics" fx:id="switchZeroHourHeuristics" styleClass="toggle-switch-on">
-                          <Circle radius="9" styleClass="toggle-knob"/>
-                        </StackPane>
-                      </HBox>
-
-                      <!-- SSL Inspection -->
-                      <HBox alignment="CENTER_LEFT" spacing="12">
-                        <VBox HBox.hgrow="ALWAYS" spacing="2">
-                          <Label text="SSL / TLS Certificate Inspection" styleClass="feature-val"/>
-                          <Label text="Validate cryptographic handshake authenticity and detect lookalike domain spoofing." styleClass="breakdown-sub"/>
-                        </VBox>
-                        <StackPane onMouseClicked="#toggleSslInspection" fx:id="switchSslInspection" styleClass="toggle-switch-on">
-                          <Circle radius="9" styleClass="toggle-knob"/>
-                        </StackPane>
-                      </HBox>
-
-                      <!-- Sensitivity Level -->
-                      <HBox alignment="CENTER_LEFT" spacing="12">
-                        <VBox HBox.hgrow="ALWAYS" spacing="2">
-                          <Label text="Analysis Sensitivity Level" styleClass="feature-val"/>
-                          <Label text="Choose how aggressively AI WatchDog flags suspicious or low-reputation links." styleClass="breakdown-sub"/>
-                        </VBox>
-                        <ComboBox fx:id="protectionSensitivityCombo" promptText="Balanced (Recommended)" styleClass="stitch-combo-box" prefWidth="200"/>
-                      </HBox>
-                    </VBox>
-
-                    <!-- 3. NOTIFICATIONS PANE -->
-                    <VBox fx:id="settingsNotificationsPane" spacing="18" visible="false" managed="false">
-                      <VBox spacing="2">
-                        <Label text="Notification Preferences" style="-fx-font-size: 16px; -fx-font-weight: 700;"/>
-                        <Label text="Control system alerts, audio cues, and popup warning banners." styleClass="page-header-subtitle"/>
-                      </VBox>
-
-                      <!-- Threat Alerts -->
-                      <HBox alignment="CENTER_LEFT" spacing="12">
-                        <VBox HBox.hgrow="ALWAYS" spacing="2">
-                          <Label text="Critical Threat Alerts" styleClass="feature-val"/>
-                          <Label text="Display immediate desktop alert banners when an exploit domain is intercepted." styleClass="breakdown-sub"/>
-                        </VBox>
-                        <StackPane onMouseClicked="#toggleCriticalAlerts" fx:id="switchCriticalAlerts" styleClass="toggle-switch-on">
-                          <Circle radius="9" styleClass="toggle-knob"/>
-                        </StackPane>
-                      </HBox>
-
-                      <!-- Scan Completion Notifications -->
-                      <HBox alignment="CENTER_LEFT" spacing="12">
-                        <VBox HBox.hgrow="ALWAYS" spacing="2">
-                          <Label text="Scan Completion Notifications" styleClass="feature-val"/>
-                          <Label text="Notify when deep multi-stage URL analysis has completed." styleClass="breakdown-sub"/>
-                        </VBox>
-                        <StackPane onMouseClicked="#toggleScanNotifications" fx:id="switchScanNotifications" styleClass="toggle-switch-on">
-                          <Circle radius="9" styleClass="toggle-knob"/>
-                        </StackPane>
-                      </HBox>
-
-                      <!-- Warning Banners -->
-                      <HBox alignment="CENTER_LEFT" spacing="12">
-                        <VBox HBox.hgrow="ALWAYS" spacing="2">
-                          <Label text="Warning Banners on Suspicious Links" styleClass="feature-val"/>
-                          <Label text="Show advisory badge on links with elevated risk scores (40â€“69)." styleClass="breakdown-sub"/>
-                        </VBox>
-                        <StackPane onMouseClicked="#toggleWarningBanners" fx:id="switchWarningBanners" styleClass="toggle-switch-on">
-                          <Circle radius="9" styleClass="toggle-knob"/>
-                        </StackPane>
-                      </HBox>
-
-                      <!-- Sound Alerts -->
-                      <HBox alignment="CENTER_LEFT" spacing="12">
-                        <VBox HBox.hgrow="ALWAYS" spacing="2">
-                          <Label text="Sound Alerts on Interception" styleClass="feature-val"/>
-                          <Label text="Play an audio notification chime when an attack or phishing page is blocked." styleClass="breakdown-sub"/>
-                        </VBox>
-                        <StackPane onMouseClicked="#toggleSoundAlerts" fx:id="switchSoundAlerts" styleClass="toggle-switch-off">
-                          <Circle radius="9" styleClass="toggle-knob"/>
-                        </StackPane>
-                      </HBox>
-
-                      <!-- Delivery Mode -->
-                      <HBox alignment="CENTER_LEFT" spacing="12">
-                        <VBox HBox.hgrow="ALWAYS" spacing="2">
-                          <Label text="Notification Delivery Mode" styleClass="feature-val"/>
-                          <Label text="Choose frequency and delivery style for non-critical security updates." styleClass="breakdown-sub"/>
-                        </VBox>
-                        <ComboBox fx:id="notificationDeliveryCombo" promptText="Instant Desktop Alerts" styleClass="stitch-combo-box" prefWidth="200"/>
-                      </HBox>
-                    </VBox>
-
-                    <!-- 4. APPEARANCE PANE -->
-                    <VBox fx:id="settingsAppearancePane" spacing="18" visible="false" managed="false">
-                      <VBox spacing="2">
-                        <Label text="Appearance &amp; Theme" style="-fx-font-size: 16px; -fx-font-weight: 700;"/>
-                        <Label text="Customize the visual appearance, color scheme, and display mode of AI WatchDog." styleClass="page-header-subtitle"/>
-                      </VBox>
-
-                      <!-- Theme Selection -->
-                      <VBox spacing="10">
-                        <HBox alignment="CENTER_LEFT">
-                          <Label text="Theme Mode" styleClass="feature-val"/>
-                          <Region HBox.hgrow="ALWAYS"/>
-                          <Label fx:id="activeThemeLabel" text="Active: LIGHT THEME" styleClass="pill-badge, badge-operational"/>
-                        </HBox>
-                        <GridPane hgap="12">
-                          <columnConstraints>
-                            <ColumnConstraints percentWidth="33.3"/>
-                            <ColumnConstraints percentWidth="33.3"/>
-                            <ColumnConstraints percentWidth="33.3"/>
-                          </columnConstraints>
-
-                          <Button fx:id="themeLightBtn" GridPane.columnIndex="0" maxWidth="Infinity" onAction="#setThemeLight" styleClass="theme-card-selected, wd-btn, wd-btn--static" style="-fx-alignment: center; -fx-padding: 14px 10px;">
-                            <graphic>
-                              <VBox alignment="CENTER" spacing="6">
-                                <FontIcon iconLiteral="fth-sun" iconSize="20"/>
-                                <Label text="Light Mode" style="-fx-font-size: 13px; -fx-font-weight: 700; -fx-text-fill: inherit;"/>
-                                <Label text="Crisp cybersecurity UI" style="-fx-font-size: 10px; -fx-text-fill: inherit; -fx-opacity: 0.8;"/>
-                              </VBox>
-                            </graphic>
-                          </Button>
-
-                          <Button fx:id="themeDarkBtn" GridPane.columnIndex="1" maxWidth="Infinity" onAction="#setThemeDark" styleClass="theme-card-unselected, wd-btn, wd-btn--static" style="-fx-alignment: center; -fx-padding: 14px 10px;">
-                            <graphic>
-                              <VBox alignment="CENTER" spacing="6">
-                                <FontIcon iconLiteral="fth-moon" iconSize="20"/>
-                                <Label text="Dark Mode" style="-fx-font-size: 13px; -fx-font-weight: 700; -fx-text-fill: inherit;"/>
-                                <Label text="Pure black cybersecurity" style="-fx-font-size: 10px; -fx-text-fill: inherit; -fx-opacity: 0.8;"/>
-                              </VBox>
-                            </graphic>
-                          </Button>
-
-                          <Button fx:id="themeSystemBtn" GridPane.columnIndex="2" maxWidth="Infinity" onAction="#setThemeSystem" styleClass="theme-card-unselected, wd-btn, wd-btn--static" style="-fx-alignment: center; -fx-padding: 14px 10px;">
-                            <graphic>
-                              <VBox alignment="CENTER" spacing="6">
-                                <FontIcon iconLiteral="fth-monitor" iconSize="20"/>
-                                <Label text="System Mode" style="-fx-font-size: 13px; -fx-font-weight: 700; -fx-text-fill: inherit;"/>
-                                <Label text="Sync with Windows OS" style="-fx-font-size: 10px; -fx-text-fill: inherit; -fx-opacity: 0.8;"/>
-                              </VBox>
-                            </graphic>
-                          </Button>
-                        </GridPane>
-                      </VBox>
-
-                      <!-- Font Scaling -->
-                      <HBox alignment="CENTER_LEFT" spacing="12">
-                        <VBox HBox.hgrow="ALWAYS" spacing="2">
-                          <Label text="Interface Font Scaling" styleClass="feature-val"/>
-                          <Label text="Adjust dashboard typography sizing for optimal readability." styleClass="breakdown-sub"/>
-                        </VBox>
-                        <ComboBox fx:id="fontScalingCombo" promptText="Standard (100%)" styleClass="stitch-combo-box" prefWidth="160"/>
-                      </HBox>
-
-                      <!-- High Contrast Badges -->
-                      <HBox alignment="CENTER_LEFT" spacing="12">
-                        <VBox HBox.hgrow="ALWAYS" spacing="2">
-                          <Label text="High-Contrast Security Badges" styleClass="feature-val"/>
-                          <Label text="Enhance saturation and borders on risk pills for high visibility." styleClass="breakdown-sub"/>
-                        </VBox>
-                        <StackPane onMouseClicked="#toggleHighContrastBadges" fx:id="switchHighContrastBadges" styleClass="toggle-switch-on">
-                          <Circle radius="9" styleClass="toggle-knob"/>
-                        </StackPane>
-                      </HBox>
-                    </VBox>
-
-                    <!-- 5. PRIVACY & DATA PANE -->
-                    <VBox fx:id="settingsPrivacyPane" spacing="18" visible="false" managed="false">
-                      <VBox spacing="2">
-                        <Label text="Privacy &amp; Data Controls" style="-fx-font-size: 16px; -fx-font-weight: 700;"/>
-                        <Label text="Manage local inspection logs, telemetry sharing, and cached security artifacts." styleClass="page-header-subtitle"/>
-                      </VBox>
-
-                      <!-- Save History -->
-                      <HBox alignment="CENTER_LEFT" spacing="12">
-                        <VBox HBox.hgrow="ALWAYS" spacing="2">
-                          <Label text="Save URL Scan History Locally" styleClass="feature-val"/>
-                          <Label text="Persist scanned links and risk scores on your machine for security audit records." styleClass="breakdown-sub"/>
-                        </VBox>
-                        <StackPane onMouseClicked="#toggleSaveHistory" fx:id="switchSaveHistory" styleClass="toggle-switch-on">
-                          <Circle radius="9" styleClass="toggle-knob"/>
-                        </StackPane>
-                      </HBox>
-
-                      <!-- Anonymous Telemetry -->
-                      <HBox alignment="CENTER_LEFT" spacing="12">
-                        <VBox HBox.hgrow="ALWAYS" spacing="2">
-                          <Label text="Anonymous Threat Telemetry" styleClass="feature-val"/>
-                          <Label text="Contribute anonymized malicious signatures to the community zero-trust defense network." styleClass="breakdown-sub"/>
-                        </VBox>
-                        <StackPane onMouseClicked="#toggleShareTelemetry" fx:id="switchShareTelemetry" styleClass="toggle-switch-on">
-                          <Circle radius="9" styleClass="toggle-knob"/>
-                        </StackPane>
-                      </HBox>
-
-                      <!-- DNS Anonymization -->
-                      <HBox alignment="CENTER_LEFT" spacing="12">
-                        <VBox HBox.hgrow="ALWAYS" spacing="2">
-                          <Label text="DNS Query Anonymization" styleClass="feature-val"/>
-                          <Label text="Route target domain pre-lookups through encrypted zero-logging resolvers." styleClass="breakdown-sub"/>
-                        </VBox>
-                        <StackPane onMouseClicked="#toggleDnsAnonymization" fx:id="switchDnsAnonymization" styleClass="toggle-switch-on">
-                          <Circle radius="9" styleClass="toggle-knob"/>
-                        </StackPane>
-                      </HBox>
-
-                      <!-- Clear Local Cache -->
-                      <HBox alignment="CENTER_LEFT" spacing="12">
-                        <VBox HBox.hgrow="ALWAYS" spacing="2">
-                          <Label text="Local Cache &amp; Storage" styleClass="feature-val"/>
-                          <Label text="Cached neural model weights and scan thumbnails occupy 14.2 MB." styleClass="breakdown-sub"/>
-                        </VBox>
-                        <Button text="Clear History &amp; Cache" onAction="#clearScanHistory" styleClass="stitch-btn-secondary, wd-btn, wd-danger-soft, wd-btn--danger-soft, wd-dbtn"/>
-                      </HBox>
-
-                      <!-- Export Audit Logs -->
-                      <HBox alignment="CENTER_LEFT" spacing="12">
-                        <VBox HBox.hgrow="ALWAYS" spacing="2">
-                          <Label text="Export Audit Telemetry" styleClass="feature-val"/>
-                          <Label text="Download your local scanning activity as a structured JSON/CSV report." styleClass="breakdown-sub"/>
-                        </VBox>
-                        <Button text="Export Logs" onAction="#exportAuditLogs" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary, wd-dbtn"/>
-                      </HBox>
-                    </VBox>
-
-                    <!-- 6. ABOUT PANE -->
-                    <VBox fx:id="settingsAboutPane" spacing="18" visible="false" managed="false">
-                      <VBox spacing="2">
-                        <Label text="About AI WatchDog" style="-fx-font-size: 16px; -fx-font-weight: 700;"/>
-                        <Label text="Product details, engine build information, and license details." styleClass="page-header-subtitle"/>
-                      </VBox>
-
-                      <!-- Hero Brand Box -->
-                      <HBox alignment="CENTER_LEFT" spacing="16" styleClass="wd-about-box">
-                        <StackPane styleClass="metric-icon-circle, icon-blue-bg" prefWidth="48" prefHeight="48" minWidth="48" minHeight="48">
-                          <FontIcon iconLiteral="fth-shield" iconSize="24" iconColor="#2563EB"/>
-                        </StackPane>
-                        <VBox spacing="3" HBox.hgrow="ALWAYS">
-                          <Label text="AI WatchDog Enterprise Desktop" styleClass="wd-about-title"/>
-                          <Label text="Version 1.0.0 (Production Build â€¢ September 2026)" styleClass="page-header-subtitle" style="-fx-font-size: 12px;"/>
-                          <Label text="Enterprise AI-powered phishing detection and zero-trust web access protection engine. Engineered with high-precision machine learning classifiers for real-time URL risk analysis." wrapText="true" styleClass="breakdown-sub" style="-fx-padding: 4px 0 0 0;"/>
-                        </VBox>
-                      </HBox>
-
-                      <!-- Engine Specs Grid -->
-                      <VBox spacing="10">
-                        <HBox alignment="CENTER_LEFT">
-                          <Label text="Security Engine" styleClass="feature-key" prefWidth="180"/>
-                          <Label text="PhishGuard ML v2.4 (RandomForest + Lexical Heuristics)" styleClass="feature-val"/>
-                        </HBox>
-                        <Separator/>
-                        <HBox alignment="CENTER_LEFT">
-                          <Label text="Inference Latency" styleClass="feature-key" prefWidth="180"/>
-                          <Label text="~12ms (Local Feature Vectorization)" styleClass="feature-val"/>
-                        </HBox>
-                        <Separator/>
-                        <HBox alignment="CENTER_LEFT">
-                          <Label text="Signatures Database" styleClass="feature-key" prefWidth="180"/>
-                          <Label text="Updated (Zero-Day Phishing Feed Active)" styleClass="feature-val"/>
-                        </HBox>
-                        <Separator/>
-                        <HBox alignment="CENTER_LEFT">
-                          <Label text="Framework Architecture" styleClass="feature-key" prefWidth="180"/>
-                          <Label text="JavaFX 21 + AtlantaFX Primer Design System" styleClass="feature-val"/>
-                        </HBox>
-                      </VBox>
-
-                      <!-- Action Buttons -->
-                      <HBox spacing="12" alignment="CENTER_LEFT" style="-fx-padding: 8px 0 0 0;">
-                        <Button text="Check for Updates" onAction="#checkForUpdates" styleClass="stitch-btn-primary, wd-btn, wd-primary, wd-btn--primary">
-                          <graphic><FontIcon iconLiteral="fth-refresh-cw" iconSize="14" iconColor="#FFFFFF"/></graphic>
-                        </Button>
-                        <Button text="View License" onAction="#viewLicense" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary, wd-dbtn">
-                          <graphic><FontIcon iconLiteral="fth-file-text" iconSize="14"/></graphic>
-                        </Button>
-                      </HBox>
-                    </VBox>
-
-                  </StackPane>
-                </HBox>
-              </VBox>
-
-              <!-- Security Engine Status Card -->
-              <VBox styleClass="stitch-card" spacing="14">
-                <HBox alignment="CENTER_LEFT">
-                  <Label text="Security Engine Status" styleClass="panel-title" style="-fx-font-size: 14px; -fx-font-weight: 700;"/>
-                  <Region HBox.hgrow="ALWAYS"/>
-                  <Label text="REALTIME MONITORING" styleClass="pill-badge, badge-live-shield" style="-fx-font-size: 10px; -fx-font-weight: 700;"/>
-                </HBox>
-
-                <!-- 3 Engine Status Badges in a Row -->
-                <GridPane hgap="12">
-                  <columnConstraints>
-                    <ColumnConstraints percentWidth="33.3"/>
-                    <ColumnConstraints percentWidth="33.3"/>
-                    <ColumnConstraints percentWidth="33.3"/>
-                  </columnConstraints>
-
-                  <HBox GridPane.columnIndex="0" alignment="CENTER_LEFT" spacing="10" styleClass="engine-status-box">
-                    <FontIcon iconLiteral="fth-shield" iconSize="15" iconColor="#10B981"/>
-                    <Label text="URL Protection" style="-fx-font-size: 12px; -fx-font-weight: 600;" HBox.hgrow="ALWAYS"/>
-                    <Region HBox.hgrow="ALWAYS"/>
-                    <Label text="ACTIVE" styleClass="pill-badge, badge-safe" style="-fx-font-size: 10px;"/>
-                  </HBox>
-
-                  <HBox GridPane.columnIndex="1" alignment="CENTER_LEFT" spacing="10" styleClass="engine-status-box">
-                    <FontIcon iconLiteral="fth-lock" iconSize="15" iconColor="#2563EB"/>
-                    <Label text="Secure Access" style="-fx-font-size: 12px; -fx-font-weight: 600;" HBox.hgrow="ALWAYS"/>
-                    <Region HBox.hgrow="ALWAYS"/>
-                    <Label text="ACTIVE" styleClass="pill-badge, badge-safe" style="-fx-font-size: 10px;"/>
-                  </HBox>
-
-                  <HBox GridPane.columnIndex="2" alignment="CENTER_LEFT" spacing="10" styleClass="engine-status-box">
-                    <FontIcon iconLiteral="fth-bell" iconSize="15" iconColor="#2563EB"/>
-                    <Label text="Notifications" style="-fx-font-size: 12px; -fx-font-weight: 600;" HBox.hgrow="ALWAYS"/>
-                    <Region HBox.hgrow="ALWAYS"/>
-                    <Label text="ACTIVE" styleClass="pill-badge, badge-safe" style="-fx-font-size: 10px;"/>
-                  </HBox>
-                </GridPane>
-
-                <HBox alignment="CENTER_LEFT" spacing="8" style="-fx-padding: 4px 0 0 0;">
-                  <FontIcon iconLiteral="fth-info" iconSize="13" iconColor="#2563EB"/>
-                  <Label text="Your protection settings are applied to this desktop session and synchronized with the security engine." styleClass="breakdown-sub"/>
-                </HBox>
-              </VBox>
-
-              <!-- Bottom Actions Bar -->
-              <HBox alignment="CENTER_LEFT" spacing="12">
-                <HBox alignment="CENTER_LEFT" spacing="6">
-                  <FontIcon iconLiteral="fth-check-circle" iconSize="14" iconColor="#10B981"/>
-                  <Label text="Settings synchronized &amp; operational." styleClass="wd-sync-label"/>
-                </HBox>
-                <Region HBox.hgrow="ALWAYS"/>
-                <Button text="Reset to Default" onAction="#resetSettingsToDefault" styleClass="stitch-btn-secondary, wd-btn, wd-warn-soft, wd-btn--warn-soft, wd-dbtn, wd-dbtn--reset"/>
-                <Button text="Save Changes" onAction="#saveSettings" styleClass="stitch-btn-primary, wd-btn, wd-primary, wd-btn--primary"/>
-              </HBox>
-            </VBox>
+            <fx:include fx:id="settingsView" source="settings-view.fxml"/>
           </ScrollPane>
-
-          <!-- ============================================================ -->
           <!-- 9. SECURE ACCESS                                             -->
           <!-- ============================================================ -->
           <ScrollPane fx:id="secureAccessPage" visible="false" fitToWidth="true" hbarPolicy="NEVER" styleClass="scroll-pane, wd-scroll, wd-pg-secure">

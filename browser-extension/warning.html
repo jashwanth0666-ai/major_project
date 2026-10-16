@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="extension.css"><title>AI WatchDog warning</title></head>
+<body><main id="warning" class="panel page-shell" hidden>
+  <div class="brand">AI WatchDog · Browser protection</div><h1>Pause before visiting this site</h1>
+  <p id="host" class="muted">Destination</p><p><span id="risk" class="status red">High risk</span></p>
+  <p>AI WatchDog policy classified this destination as high risk and the browser has applied a matching navigation warning rule.</p>
+  <section class="panel"><strong>Available evidence</strong><ul id="reasons"></ul><p class="muted">This decision uses AI WatchDog URL analysis and its configured policy. No external reputation provider is configured.</p></section>
+  <p class="notice">On the first visit, the page can begin loading while the local backend assesses it. This warning appears after a confirmed BLOCK decision; matching later navigations are redirected by the browser rule.</p>
+  <div class="actions"><button id="back">Return to safety</button><button id="details" class="secondary">Site report</button></div>
+  <p id="no-proceed" class="muted">Proceed is unavailable because the current policy decision is BLOCK.</p>
+  </main><script src="warning.js"></script></body></html>

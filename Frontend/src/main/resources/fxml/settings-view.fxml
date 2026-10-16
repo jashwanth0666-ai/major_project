@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.aiwatchdog.controller.SettingsController" spacing="18"
+      style="-fx-padding: 0 28px 28px 28px;">
+  <HBox alignment="CENTER_LEFT">
+    <VBox spacing="3">
+      <Label text="Settings" styleClass="page-header-title"/>
+      <Label text="Configure scan access, reputation data, monitoring, and appearance." styleClass="page-header-subtitle"/>
+    </VBox>
+    <Region HBox.hgrow="ALWAYS"/>
+    <Label fx:id="backendSettingsStatus" text="Connecting to Spring Boot…" styleClass="pill-badge"/>
+  </HBox>
+
+  <VBox styleClass="stitch-card" spacing="16">
+    <HBox spacing="24">
+      <VBox spacing="5" prefWidth="200" minWidth="200" styleClass="wd-settings-sidebar-divider">
+        <Button fx:id="fileShieldTab" text="File Shield" onAction="#showFileShield" styleClass="settings-subnav-btn, settings-subnav-btn-active, wd-btn, wd-chip, wd-btn--chip">
+          <graphic><FontIcon iconLiteral="fth-shield" iconSize="15"/></graphic>
+        </Button>
+        <Button fx:id="localMonitorTab" text="Local Monitoring" onAction="#showLocalMonitor" styleClass="settings-subnav-btn, wd-btn, wd-chip, wd-btn--chip">
+          <graphic><FontIcon iconLiteral="fth-activity" iconSize="15"/></graphic>
+        </Button>
+        <Button fx:id="appearanceTab" text="Appearance" onAction="#showAppearance" styleClass="settings-subnav-btn, wd-btn, wd-chip, wd-btn--chip">
+          <graphic><FontIcon iconLiteral="fth-eye" iconSize="15"/></graphic>
+        </Button>
+        <Button fx:id="aboutTab" text="About" onAction="#showAbout" styleClass="settings-subnav-btn, wd-btn, wd-chip, wd-btn--chip">
+          <graphic><FontIcon iconLiteral="fth-info" iconSize="15"/></graphic>
+        </Button>
+      </VBox>
+
+      <StackPane HBox.hgrow="ALWAYS" alignment="TOP_LEFT">
+        <VBox fx:id="fileShieldPane" spacing="14">
+          <VBox spacing="3">
+            <Label text="File Shield Scanner" styleClass="panel-title"/>
+            <Label text="These folders are allowed for manual scans. Watched folders must be inside an approved root." styleClass="breakdown-sub" wrapText="true"/>
+          </VBox>
+          <HBox alignment="CENTER_LEFT" spacing="10">
+            <VBox HBox.hgrow="ALWAYS" spacing="2">
+              <Label text="Enable File Shield scans" styleClass="feature-val"/>
+              <Label text="Turn off to reject all manual File Shield scan requests." styleClass="breakdown-sub"/>
+            </VBox>
+            <CheckBox fx:id="fileShieldEnabled" selected="true"/>
+          </HBox>
+          <Label text="Approved scan roots" styleClass="feature-val"/>
+          <ListView fx:id="approvedRootsList" prefHeight="86" VBox.vgrow="ALWAYS"/>
+          <HBox spacing="8">
+            <Button text="Add folder…" onAction="#addApprovedRoot" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary"/>
+            <Button text="Remove selected" onAction="#removeApprovedRoot" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary"/>
+          </HBox>
+
+          <Separator/>
+          <Label text="SHA-256 reputation database" styleClass="feature-val"/>
+          <HBox spacing="8" alignment="CENTER_LEFT">
+            <TextField fx:id="reputationDatabasePath" promptText="Path to an existing SQLite reputation database" HBox.hgrow="ALWAYS"/>
+            <Button text="Browse…" onAction="#browseReputationDatabase" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary"/>
+          </HBox>
+          <Label fx:id="reputationDatabaseStatus" text="Database, provider, and quarantine status will appear here." wrapText="true" styleClass="breakdown-sub"/>
+
+          <Separator/>
+          <HBox alignment="CENTER_LEFT" spacing="10">
+            <VBox HBox.hgrow="ALWAYS" spacing="2">
+              <Label text="Monitor folders continuously" styleClass="feature-val"/>
+              <Label text="The backend scans new or changed files. This is best effort and does not block file access." styleClass="breakdown-sub" wrapText="true"/>
+            </VBox>
+            <CheckBox fx:id="backendMonitoringEnabled"/>
+          </HBox>
+          <HBox alignment="CENTER_LEFT" spacing="10">
+            <Label text="Recursively include subfolders" styleClass="feature-val" HBox.hgrow="ALWAYS"/>
+            <CheckBox fx:id="recursiveMonitoring" selected="true"/>
+          </HBox>
+          <Label text="Backend monitored folders" styleClass="feature-val"/>
+          <ListView fx:id="watchDirectoriesList" prefHeight="76"/>
+          <HBox spacing="8">
+            <Button text="Add monitored folder…" onAction="#addWatchDirectory" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary"/>
+            <Button text="Remove selected" onAction="#removeWatchDirectory" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary"/>
+          </HBox>
+          <HBox alignment="CENTER_LEFT" spacing="10">
+            <Label text="Monitoring depth" styleClass="feature-val" HBox.hgrow="ALWAYS"/>
+            <Spinner fx:id="monitoringDepth" prefWidth="100" editable="true"/>
+          </HBox>
+
+          <Separator/>
+          <Label text="Scan limits" styleClass="feature-val"/>
+          <GridPane hgap="12" vgap="8">
+            <columnConstraints><ColumnConstraints percentWidth="25"/><ColumnConstraints percentWidth="25"/><ColumnConstraints percentWidth="25"/><ColumnConstraints percentWidth="25"/></columnConstraints>
+            <Label text="Max file (MiB)" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <Spinner fx:id="maxFileSizeMb" prefWidth="100" editable="true" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <Label text="Files per folder scan" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+            <Spinner fx:id="maxFilesPerScan" prefWidth="110" editable="true" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+            <Label text="Folder scan depth" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+            <Spinner fx:id="scanDepth" prefWidth="100" editable="true" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+          </GridPane>
+          <Label text="Changes apply immediately and are saved for the next backend start. Reputation data is read only; this app does not create or download signatures." styleClass="breakdown-sub" wrapText="true"/>
+        </VBox>
+
+        <VBox fx:id="localMonitorPane" spacing="14" visible="false" managed="false">
+          <Label text="Desktop event monitoring" styleClass="panel-title"/>
+          <Label text="The Monitoring page’s Start button watches these local folders and reports file metadata to Spring Boot. Monitoring starts only when you press Start." styleClass="breakdown-sub" wrapText="true"/>
+          <ListView fx:id="localMonitorRootsList" prefHeight="240" VBox.vgrow="ALWAYS"/>
+          <HBox spacing="8">
+            <Button text="Add folder…" onAction="#addLocalMonitorRoot" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary"/>
+            <Button text="Remove selected" onAction="#removeLocalMonitorRoot" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary"/>
+          </HBox>
+          <Label text="The desktop watcher observes names, sizes, and file changes. It does not read content or run a reputation scan." styleClass="breakdown-sub" wrapText="true"/>
+          <Separator/>
+          <Label text="Windows security telemetry" styleClass="panel-title"/>
+          <CheckBox fx:id="windowsTelemetryEnabled" text="Collect Defender detection and Windows Security audit events" disable="true"/>
+          <CheckBox fx:id="scriptMonitoringEnabled" text="Analyze PowerShell events and changed script files" disable="true"/>
+          <CheckBox fx:id="processMonitoringEnabled" text="Correlate Windows process creation and parent events" disable="true"/>
+          <Label fx:id="windowsTelemetryStatus" text="Provider availability will be read from Spring Boot." styleClass="breakdown-sub" wrapText="true"/>
+          <Label text="PowerShell Script Block Logging and Windows process audit policies must be configured externally. Script file inspection also needs active backend File Shield watch roots. AI WatchDog does not change Windows audit settings." styleClass="breakdown-sub" wrapText="true"/>
+          <Button fx:id="saveWindowsTelemetryButton" text="Apply monitoring settings" onAction="#saveWindowsTelemetrySettings" disable="true" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary"/>
+          <Separator/>
+          <Label text="Desktop notifications" styleClass="panel-title"/>
+          <CheckBox fx:id="notificationsEnabled" text="Show tray notifications for new security findings" disable="true"/>
+          <HBox spacing="18">
+            <CheckBox fx:id="warnNotificationsEnabled" text="WARN findings" disable="true"/>
+            <CheckBox fx:id="blockNotificationsEnabled" text="BLOCK findings" disable="true"/>
+          </HBox>
+          <Label fx:id="notificationPreferencesStatus" text="Notification preference status unavailable until Spring Boot responds." styleClass="breakdown-sub" wrapText="true"/>
+          <Button fx:id="saveNotificationPreferencesButton" text="Save notification preferences" onAction="#saveNotificationPreferences" disable="true" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary"/>
+        </VBox>
+
+        <VBox fx:id="appearancePane" spacing="14" visible="false" managed="false">
+          <Label text="Appearance" styleClass="panel-title"/>
+          <HBox alignment="CENTER_LEFT"><Label text="Theme" styleClass="feature-val"/><Region HBox.hgrow="ALWAYS"/><Label fx:id="activeThemeLabel" text="Active: LIGHT THEME" styleClass="pill-badge"/></HBox>
+          <GridPane hgap="12">
+            <columnConstraints><ColumnConstraints percentWidth="33.3"/><ColumnConstraints percentWidth="33.3"/><ColumnConstraints percentWidth="33.3"/></columnConstraints>
+            <Button fx:id="themeLightBtn" text="Light" onAction="#setThemeLight" maxWidth="Infinity" GridPane.columnIndex="0" styleClass="theme-card-unselected, wd-btn"/>
+            <Button fx:id="themeDarkBtn" text="Dark" onAction="#setThemeDark" maxWidth="Infinity" GridPane.columnIndex="1" styleClass="theme-card-unselected, wd-btn"/>
+            <Button fx:id="themeSystemBtn" text="System" onAction="#setThemeSystem" maxWidth="Infinity" GridPane.columnIndex="2" styleClass="theme-card-unselected, wd-btn"/>
+          </GridPane>
+          <Label text="Theme preference is saved on this computer." styleClass="breakdown-sub"/>
+        </VBox>
+
+        <VBox fx:id="aboutPane" spacing="10" visible="false" managed="false">
+          <Label text="About AI WatchDog" styleClass="panel-title"/>
+          <Label text="Local security monitoring prototype with a JavaFX desktop, Spring Boot service, and Python URL-analysis service." wrapText="true"/>
+          <Label text="The URL model uses its existing configured model. File reputation uses a local read-only SQLite database. Static PE analysis is heuristic and does not execute files." styleClass="breakdown-sub" wrapText="true"/>
+          <Label text="Monitoring and policy decisions are best effort. They do not block operating-system file access, terminate processes, or replace endpoint protection." styleClass="breakdown-sub" wrapText="true"/>
+        </VBox>
+      </StackPane>
+    </HBox>
+    <Separator/>
+    <HBox alignment="CENTER_LEFT" spacing="10">
+      <Label fx:id="settingsMessage" text="Choose settings, then apply changes." styleClass="breakdown-sub" wrapText="true" HBox.hgrow="ALWAYS"/>
+      <Button text="Apply Settings" onAction="#saveSettings" styleClass="stitch-btn-primary, wd-btn, wd-primary, wd-btn--primary"/>
+    </HBox>
+  </VBox>
+</VBox>

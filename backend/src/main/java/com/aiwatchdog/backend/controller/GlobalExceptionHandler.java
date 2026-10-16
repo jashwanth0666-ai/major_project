@@ -2,12 +2,14 @@ package com.aiwatchdog.backend.controller;
 
 import com.aiwatchdog.backend.service.MlServiceException;
 import com.aiwatchdog.backend.service.InvalidRequestException;
+import com.aiwatchdog.backend.fileshield.exception.FileShieldException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.time.Instant;
@@ -15,6 +17,21 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Map<String, Object>> handleResponseStatusException(ResponseStatusException ex) {
+        HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
+        return error(status, status.name(), ex.getReason() == null ? "Request rejected." : ex.getReason());
+    }
+
+    @ExceptionHandler(FileShieldException.class)
+    public ResponseEntity<Map<String, Object>> handleFileShieldException(FileShieldException ex) {
+        return ResponseEntity.status(ex.status()).body(Map.of(
+                "timestamp", Instant.now().toString(),
+                "status", ex.status().value(),
+                "error", ex.code(),
+                "message", ex.getMessage()));
+    }
 
     @ExceptionHandler(MlServiceException.class)
     public ResponseEntity<Map<String, Object>> handleMlServiceException(

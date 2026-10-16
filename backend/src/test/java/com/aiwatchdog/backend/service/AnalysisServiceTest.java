@@ -19,6 +19,26 @@ import static org.mockito.Mockito.*;
 class AnalysisServiceTest {
 
     @Test
+    void previewUsesExistingModelAndPolicyWithoutPersistingUnvisitedUrl() {
+        MlServiceClient ml = mock(MlServiceClient.class);
+        PolicyEngine policy = mock(PolicyEngine.class);
+        SecurityEventLogger logger = mock(SecurityEventLogger.class);
+        when(ml.predict("https://result.example/path"))
+                .thenReturn(new MlPredictionResponse("https://result.example/path", .81, 81,
+                        "HIGH_RISK", "PHISHING", .15, List.of("model reason")));
+        when(policy.evaluate(any())).thenReturn(Decision.BLOCK);
+
+        AnalyzeResponse response = new AnalysisService(ml, policy, logger)
+                .preview("https://result.example/path");
+
+        assertEquals("BLOCK", response.decision());
+        assertEquals("HIGH_RISK", response.risk_level());
+        verify(ml).predict("https://result.example/path");
+        verify(policy).evaluate(any());
+        verifyNoInteractions(logger);
+    }
+
+    @Test
     void validUrlUsesPolicyDecisionAndPreservesMlAssessment() {
 
         MlServiceClient mlServiceClient = mock(MlServiceClient.class);

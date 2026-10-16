@@ -42,12 +42,23 @@ public class AnalysisService {
 
     public AnalyzeResponse analyze(String url) {
 
+        AnalysisResult result = assess(url);
+        securityEventLogger.log(result.event());
+        return result.response();
+    }
+
+    /** Runs the existing ML and policy path without persisting search-result previews. */
+    public AnalyzeResponse preview(String url) {
+        return assess(url).response();
+    }
+
+    private AnalysisResult assess(String url) {
+
         validateUrl(url);
         logger.info("Analysis request received");
 
         MlPredictionResponse mlResult =
                 mlServiceClient.predict(url);
-
         logger.info("ML analysis completed");
 
         PolicyRequest policyRequest = new PolicyRequest(
@@ -70,9 +81,7 @@ public class AnalysisService {
                 mlResult.prediction(),
                 finalDecision.name());
 
-        securityEventLogger.log(event);
-
-        return new AnalyzeResponse(
+        AnalyzeResponse response = new AnalyzeResponse(
                 mlResult.url(),
                 mlResult.phishing_probability(),
                 mlResult.risk_score(),
@@ -81,7 +90,10 @@ public class AnalysisService {
                 finalDecision.name(),
                 mlResult.threshold(),
                 mlResult.reasons());
+        return new AnalysisResult(response, event);
     }
+
+    private record AnalysisResult(AnalyzeResponse response, SecurityEvent event) { }
 
     private String auditUrl(String rawUrl) {
         try {

@@ -26,6 +26,16 @@ public class SecurityEventController {
         return ResponseEntity.ok(repository.findRecent(100));
     }
 
+    @GetMapping("/assessments")
+    public ResponseEntity<List<SecurityEvent>> getRecentAssessments() {
+        return ResponseEntity.ok(repository.findRecentAssessments(100));
+    }
+
+    @GetMapping("/assessments/stats")
+    public ResponseEntity<AssessmentStats> getAssessmentStats() {
+        return ResponseEntity.ok(repository.getAssessmentStats());
+    }
+
     @GetMapping("/risk/{riskLevel}")
     public ResponseEntity<List<SecurityEvent>> getByRiskLevel(@PathVariable String riskLevel) {
         RiskLevel level = RiskLevel.parse(riskLevel);

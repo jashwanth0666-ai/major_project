@@ -19,3 +19,7 @@ Audit date: 2026-10-01. Branch `main`; starting commit `bc9a4d3`.
 - Live URL analysis, file/process monitor routing, Spring/FastAPI restart recovery, and monitor-history persistence were verified.
 
 See [AI_WatchDog_FINAL_ACCEPTANCE_REPORT.md](AI_WatchDog_FINAL_ACCEPTANCE_REPORT.md) for exact scope and remaining checks.
+
+## Browser extension source update — 2026-10-16
+
+The optional extension source now separates search pages from visited destinations, uses a non-persisting preview endpoint for supported search result links, provides popup/report/warning pages, and can install Chrome/Edge navigation redirect rules after a confirmed `HIGH_RISK` plus `BLOCK` response. The extension remains source-only and has not been installed or exercised in a browser during this update. The test plan in the repository includes the required browser acceptance cases; no test, build, or runtime verification was performed for this update.

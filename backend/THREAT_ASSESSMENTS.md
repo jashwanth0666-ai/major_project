@@ -1,0 +1,29 @@
+# Unified Threat Assessments
+
+Spring exposes `POST /api/v1/threat-assessments/url` using the existing `{"url":"https://…"}` body and `POST /api/v1/threat-assessments/file` using `{"path":"…"}`. The file endpoint runs the existing read-only SHA-256 reputation scan, then calls the configured FastAPI `POST /api/analyze-file` endpoint. Paths must satisfy both services' separately configured approved roots. No binary is executed or modified. `GET /api/security-events/assessments` returns the latest 100 persisted assessment events, including structured `details_json`. `GET /api/security-events/assessments/stats` returns lifetime SQL aggregates over those persisted assessments (subject type, policy verdict, completion status, and file reputation categories). Existing URL history and statistics remain URL-only.
+
+Responses include an assessment ID, UTC timestamp, subject type and identifier, source results, the policy verdict, `COMPLETE` or `PARTIAL` status, explanation, errors, and a correlation ID. Source scores remain source-specific. The PE score is a deterministic structural heuristic, never a malware probability.
+
+The optional browser extension also uses `POST /api/v1/analyze/preview` for unvisited search-result destinations. It has the same `AnalyzeRequest` and `AnalyzeResponse` schema and calls the same URL model and policy engine as `POST /api/v1/analyze`, but does not write to the URL event logger. The existing `/analyze` persistence behavior and response contract are unchanged. Preview requests are bounded by the extension and are not suitable for bulk scanning.
+
+## Deterministic rules
+
+- URL assessments preserve the existing ML prediction, threshold, risk score, and risk category. The existing policy engine maps `SAFE` → `ALLOW`, `LOW_RISK` → `REVIEW`, `SUSPICIOUS` → `WARN`, and `HIGH_RISK` → `BLOCK`. No new threshold is applied. If prediction or policy evaluation fails, the result is `PARTIAL` with `REVIEW`.
+- File reputation `KNOWN_MALICIOUS` maps to `BLOCK`; `KNOWN_CLEAN` maps to `ALLOW`; `SUSPICIOUS` maps to `WARN`; `UNKNOWN` and `LOOKUP_ERROR` map to `REVIEW`. An unknown hash is never described as clean. Local SQLite records take precedence; the optional HTTPS hash-only provider is disabled by default.
+- A completed PE analysis with heuristic score 50 or greater can change `ALLOW` to `REVIEW`. It cannot establish maliciousness or produce `BLOCK`; the threshold is only a review trigger. The PE score is retained separately from reputation.
+- A failed, rejected, unsupported, unavailable, or inconsistent source makes the assessment `PARTIAL`. A hash mismatch between sequential scans also changes the policy verdict to `REVIEW` because the sources may describe different bytes. A confirmed malicious reputation match remains `BLOCK` even if PE analysis is unavailable.
+- Audit-write failure returns the assessment as `PARTIAL` and adds an explicit persistence error. It never claims the event was stored.
+
+## Event history migration
+
+The existing `security_events` table is the sole assessment history. The first backend startup detects the old URL-only schema and logs `Applying data-preserving security_events schema v2 migration`. In one SQLite transaction it creates a nullable model-field schema, copies all old IDs and values, then switches to the new table and records schema version 2. It does not create a second event table or delete historical rows. URL history and statistics continue to select `URL_ANALYSIS` events; assessment JSON is stored in the same table's structured `details_json` column. Assessment records store the SHA-256 (or a non-path placeholder) rather than the local path. URL audit copies remove query, fragment, and user-info before persistence.
+
+Before deploying against an existing database, stop the backend and make a normal SQLite backup. On startup, check the backend log for the migration message. The migration is transactional; if it fails, startup reports a schema initialization error and the old table remains available for recovery. The repository tests create a legacy database, verify the original URL row survives, and verify a file assessment uses the same table with null URL-model fields.
+
+## Configuration
+
+Keep the existing settings in `application.properties`: `ai-watchdog.ml.base-url` points at FastAPI and its configured read timeout applies to URL and PE requests. Set `ai-watchdog.file-shield.allowed-roots` for reputation scans and `AI_WATCHDOG_PE_APPROVED_ROOTS` for the analyzer to the same narrow local roots. PE analysis can be disabled by leaving the Python approved-root list empty; assessments then return the reputation result plus explicit partial/unavailable PE evidence.
+
+The JavaFX File Shield view keeps the existing single-file, directory scan, and **Unified Assessment** actions. Single-file scans include Authenticode signature status; bounded directory and watcher scans report `NOT_REQUESTED`. The view also provides a confirmed manual quarantine/restore action for current known malicious or suspicious files. The backend revalidates hash, approved-root and reparse-point safety, stores files under restricted approved-root quarantine, and records correlated operations in the existing `security_events` table. No automatic quarantine, process termination, or browser blocking is performed.
+
+The JavaFX dashboard displays URL-only metrics from the existing URL stats endpoint and separate lifetime unified-assessment aggregates from `/api/security-events/assessments/stats`. An unavailable aggregate is shown as `N/A`; it is not shown as zero. Activity merges the latest 100 assessments with recent URL and monitor events, supports local date/type/verdict/status filters and 10-row paging, and opens structured source evidence on row activation. Assessment detail uses the audit-safe persisted JSON; file subjects display a shortened SHA-256 identifier rather than a local path.

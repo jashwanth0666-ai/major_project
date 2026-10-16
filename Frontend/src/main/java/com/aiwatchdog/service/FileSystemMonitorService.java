@@ -1,6 +1,7 @@
 package com.aiwatchdog.service;
 
 import com.aiwatchdog.model.MonitorEvent;
+import com.aiwatchdog.util.DesktopMonitorPreferences;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,6 +48,11 @@ public final class FileSystemMonitorService implements AutoCloseable {
     public FileSystemMonitorService(MonitorEventSubmitter eventSubmitter, Consumer<MonitorEvent> eventConsumer) {
         this(eventSubmitter, eventConsumer, configuredRoots(),
                 configuredPaths("AI_WATCHDOG_MONITOR_EXCLUDE", List.of()));
+    }
+
+    public FileSystemMonitorService(MonitorEventSubmitter eventSubmitter, Consumer<MonitorEvent> eventConsumer,
+                                    List<Path> roots) {
+        this(eventSubmitter, eventConsumer, roots, configuredPaths("AI_WATCHDOG_MONITOR_EXCLUDE", List.of()));
     }
 
     FileSystemMonitorService(MonitorEventSubmitter eventSubmitter, Consumer<MonitorEvent> eventConsumer,
@@ -180,10 +186,7 @@ public final class FileSystemMonitorService implements AutoCloseable {
     }
 
     private static List<Path> configuredRoots() {
-        String configured = System.getenv("AI_WATCHDOG_MONITOR_DIRS");
-        if (configured != null && !configured.isBlank()) return configuredPaths("AI_WATCHDOG_MONITOR_DIRS", List.of());
-        Path home = Path.of(System.getProperty("user.home"));
-        return List.of(home.resolve("Downloads"), home.resolve("Desktop"), home.resolve("Documents"));
+        return DesktopMonitorPreferences.getRoots();
     }
 
     private static List<Path> configuredPaths(String variable, List<Path> fallback) {

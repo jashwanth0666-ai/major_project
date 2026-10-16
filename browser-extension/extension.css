@@ -1,0 +1,22 @@
+:root { color-scheme: light; font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; color: #172433; background: #f3f6f8; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 340px; padding: 20px; }
+.brand { color: #11645f; font-size: 12px; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+h1 { margin: 8px 0 4px; font-size: 21px; line-height: 1.2; }
+p { margin: 8px 0; }
+.muted { color: #566576; }
+.panel { margin-top: 14px; padding: 14px; background: #fff; border: 1px solid #d9e1e7; border-radius: 12px; }
+.status { display: inline-flex; align-items: center; gap: 8px; padding: 5px 10px; border-radius: 999px; font-weight: 700; background: #edf0f4; color: #586273; }
+.status::before { content: ""; width: 8px; height: 8px; background: currentColor; border-radius: 50%; }
+.green { color: #176b3a; background: #e7f6ec; } .yellow { color: #855600; background: #fff3cd; }
+.red { color: #a21c28; background: #fde8e9; } .gray { color: #586273; background: #edf0f4; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.actions { display: flex; gap: 8px; margin-top: 15px; }
+button, .button { display: inline-block; border: 0; border-radius: 8px; padding: 9px 12px; background: #11645f; color: #fff; font: inherit; font-weight: 650; text-decoration: none; cursor: pointer; }
+button.secondary, .button.secondary { background: #e6ecef; color: #172433; }
+button:disabled { opacity: .55; cursor: default; }
+ul { margin: 8px 0 0; padding-left: 20px; overflow-wrap: anywhere; }
+.notice { padding: 10px; background: #f1f4f6; border-radius: 8px; color: #455463; font-size: 12px; }
+.switch { width: 42px; height: 24px; accent-color: #11645f; }
+.wide { width: 100%; }
+.page-shell { max-width: 760px; margin: 6vh auto; padding: 28px; }

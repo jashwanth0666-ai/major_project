@@ -13,6 +13,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.List;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 @Service
 public class MlServiceClient {
@@ -89,6 +92,40 @@ public class MlServiceClient {
                 }
         }
 
+        /** Calls the already-running FastAPI static analyzer; no model or parser is duplicated here. */
+        public JsonNode analyzeFile(String path) {
+                try {
+                        String body = restClient.post().uri("/api/analyze-file")
+                                        .body(new FileAnalysisRequest(path)).retrieve().body(String.class);
+                        if (body == null || body.isBlank())
+                                throw new MlServiceException("PE analyzer returned an empty response.",
+                                        MlServiceException.FailureType.MALFORMED_RESPONSE, null);
+                        JsonNode response = new ObjectMapper().readTree(body);
+                        if (response == null || !response.isObject())
+                                throw new MlServiceException("PE analyzer returned an unusable response.",
+                                        MlServiceException.FailureType.MALFORMED_RESPONSE, null);
+                        return response;
+                } catch (ResourceAccessException ex) {
+                        throw new MlServiceException("PE analyzer is unavailable or timed out.",
+                                isTimeout(ex) ? MlServiceException.FailureType.TIMEOUT
+                                        : MlServiceException.FailureType.UNAVAILABLE, ex);
+                } catch (RestClientException ex) {
+                        // A non-2xx response still contains a meaningful structured analyzer result (e.g. unsupported file).
+                        if (ex instanceof org.springframework.web.client.HttpStatusCodeException http
+                                && http.getResponseBodyAsString() != null) {
+                                try {
+                                        JsonNode body = new ObjectMapper().readTree(http.getResponseBodyAsString());
+                                        if (body != null && body.isObject()) return body;
+                                } catch (JsonProcessingException ignored) { }
+                        }
+                        throw new MlServiceException("PE analyzer returned an unusable response.",
+                                MlServiceException.FailureType.MALFORMED_RESPONSE, ex);
+                } catch (JsonProcessingException ex) {
+                        throw new MlServiceException("PE analyzer returned malformed JSON.",
+                                MlServiceException.FailureType.MALFORMED_RESPONSE, ex);
+                }
+        }
+
         public boolean isHealthy() {
 
                 try {
@@ -109,6 +146,7 @@ public class MlServiceClient {
 
         private record PredictionRequest(String url) {
         }
+        private record FileAnalysisRequest(String path) { }
 
         private void validateResponse(MlPredictionResponse response) {
 

@@ -34,24 +34,9 @@ public class SqliteSecurityEventLogger implements SecurityEventLogger {
     }
 
     private void initializeDatabase() {
-        String sql = """
-                CREATE TABLE IF NOT EXISTS security_events (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    timestamp TEXT NOT NULL,
-                    url TEXT NOT NULL,
-                    phishing_probability REAL NOT NULL,
-                    risk_score INTEGER NOT NULL,
-                    risk_level TEXT NOT NULL,
-                    prediction TEXT NOT NULL,
-                    decision TEXT NOT NULL
-                )
-                """;
-
         try (Connection connection = DriverManager.getConnection(dbUrl);
              Statement statement = connection.createStatement()) {
-
-            statement.execute(sql);
-
+            SecurityEventSchema.initialize(connection);
         } catch (SQLException e) {
             throw new IllegalStateException(
                     "Failed to initialize SQLite database", e);
@@ -124,6 +109,29 @@ public class SqliteSecurityEventLogger implements SecurityEventLogger {
         } catch (SQLException e) {
             throw new IllegalStateException(
                     "Failed to persist security event", e);
+        }
+    }
+
+    @Override
+    public void logAssessment(SecurityEvent event) {
+        if (event == null || event.eventType() == null || event.subjectType() == null
+                || event.subjectId() == null || event.detailsJson() == null
+                || event.decision() == null || event.decision().isBlank())
+            throw new IllegalArgumentException("Assessment event is incomplete");
+        if (event.detailsJson().length() > 1_000_000)
+            throw new IllegalArgumentException("Assessment evidence exceeds the storage limit");
+        String decision = parseDecision(event.decision()).name();
+        Instant timestamp = event.timestamp() == null ? Instant.now() : event.timestamp();
+        String sql = "INSERT INTO security_events (timestamp,event_type,subject_type,subject_id,"
+                + "correlation_id,details_json,decision) VALUES (?,?,?,?,?,?,?)";
+        try (Connection connection = DriverManager.getConnection(dbUrl);
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, timestamp.toString()); statement.setString(2, event.eventType());
+            statement.setString(3, event.subjectType()); statement.setString(4, event.subjectId());
+            statement.setString(5, event.correlationId()); statement.setString(6, event.detailsJson());
+            statement.setString(7, decision); statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to persist security assessment event", e);
         }
     }
 

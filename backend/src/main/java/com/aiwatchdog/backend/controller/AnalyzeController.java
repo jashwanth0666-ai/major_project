@@ -28,4 +28,11 @@ public class AnalyzeController {
 
         return ResponseEntity.ok(response);
     }
+
+    /** Evaluates a search result without adding an unvisited destination to audit history. */
+    @PostMapping("/analyze/preview")
+    public ResponseEntity<AnalyzeResponse> preview(
+            @Valid @RequestBody AnalyzeRequest request) {
+        return ResponseEntity.ok(analysisService.preview(request.url()));
+    }
 }

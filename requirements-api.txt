@@ -6,3 +6,4 @@ scikit-learn==1.8.0
 xgboost
 pandas
 numpy
+pefile==2024.8.26

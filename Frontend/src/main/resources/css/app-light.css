@@ -2510,3 +2510,26 @@
     -fx-background-radius: 10px;
     -fx-border-radius: 10px;
 }
+
+/* File Shield scan workspace */
+.file-shield-workspace, .file-shield-results {
+    -fx-padding: 18px 20px; -fx-background-color: #ffffff; -fx-background-radius: 12px;
+    -fx-border-color: #e1e8e6; -fx-border-radius: 12px;
+}
+.file-shield-local-tag, .file-shield-note { -fx-padding: 8px 11px; -fx-background-color: #e9f1ef; -fx-background-radius: 8px; }
+.file-shield-local-label { -fx-font-size: 9px; -fx-font-weight: 700; -fx-text-fill: #3c7067; }
+.file-shield-local-icon, .file-shield-note-icon { -fx-icon-color: #4d8178; }
+.file-shield-status { -fx-font-size: 11px; -fx-font-weight: 600; -fx-text-fill: #526360; }
+.file-shield-summary { -fx-font-size: 10px; -fx-text-fill: #687875; -fx-text-alignment: RIGHT; }
+.file-shield-error { -fx-padding: 10px 12px; -fx-background-color: #f8e9e6; -fx-background-radius: 7px; -fx-text-fill: #a4473e; -fx-font-size: 11px; }
+.file-shield-note-text { -fx-font-size: 10px; -fx-text-fill: #5c716d; }
+.file-shield-results .table-view { -fx-background-color: #ffffff; -fx-border-color: #e1e8e6; -fx-border-radius: 8px; -fx-background-radius: 8px; }
+.file-shield-results .table-view .column-header-background { -fx-background-color: #f2f6f5; -fx-background-radius: 8px 8px 0 0; }
+.file-shield-results .table-view .column-header, .file-shield-results .table-view .filler { -fx-background-color: transparent; -fx-size: 36px; }
+.file-shield-results .table-view .column-header .label { -fx-font-size: 9px; -fx-font-weight: 700; -fx-text-fill: #687875; }
+.file-shield-results .table-row-cell { -fx-background-color: #ffffff; -fx-border-color: transparent transparent #edf1f0 transparent; -fx-cell-size: 42px; }
+.file-shield-results .table-row-cell:filled:hover { -fx-background-color: #f5f8f7; }
+.file-shield-results .table-cell { -fx-font-size: 10px; -fx-text-fill: #344340; -fx-padding: 8px 10px; }
+.file-shield-results .verdict-malicious { -fx-text-fill: #a6423c; -fx-font-weight: 700; }
+.file-shield-results .verdict-clean { -fx-text-fill: #34775f; -fx-font-weight: 700; }
+.file-shield-results .verdict-review, .file-shield-results .verdict-error { -fx-text-fill: #a26c22; -fx-font-weight: 700; }

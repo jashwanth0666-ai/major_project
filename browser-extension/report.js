@@ -1,0 +1,36 @@
+const query = new URLSearchParams(location.search);
+const tabId = Number(query.get("tabId"));
+const ruleId = Number(query.get("ruleId"));
+function safeHost(raw) { try { return new URL(raw).hostname; } catch { return "No website assessment available"; } }
+function displayUrl(raw) { try { const url = new URL(raw); url.username = ""; url.password = ""; url.search = ""; url.hash = ""; return url.href; } catch { return ""; } }
+function rating(item) {
+  if (item.state === "UNAVAILABLE") return ["gray", "Temporarily unavailable"];
+  if (item.state === "PAUSED") return ["gray", "Protection paused"];
+  if (item.state === "SEARCH_PAGE") return ["gray", "Search results page — destinations checked separately"];
+  if (item.state !== "ASSESSED") return ["gray", "Unknown / not assessed"];
+  if (item.decision === "BLOCK" && item.riskLevel === "HIGH_RISK") return ["red", item.enforcement === "DISABLED" ? "High risk — protection paused" : item.enforcement === "RULE_APPLIED" ? "High risk — browser warning rule applied" : "High risk — browser warning unavailable"];
+  if (["WARN", "REVIEW"].includes(item.decision) || item.riskLevel === "SUSPICIOUS") return ["yellow", "Caution advised"];
+  if (item.decision === "ALLOW" && item.riskLevel === "SAFE") return ["green", "Low risk from available checks"];
+  return ["gray", "Unknown / not assessed"];
+}
+async function render() {
+  const [item, health] = await Promise.all([
+    chrome.runtime.sendMessage({ type: "GET_CURRENT_ASSESSMENT", tabId: Number.isInteger(tabId) ? tabId : undefined, ruleId: Number.isInteger(ruleId) && ruleId > 0 ? ruleId : undefined }),
+    chrome.runtime.sendMessage({ type: "GET_HEALTH" })
+  ]);
+  document.getElementById("host").textContent = safeHost(item?.url);
+  document.getElementById("url").textContent = displayUrl(item?.url);
+  const [color, label] = rating(item || { state: "UNKNOWN" });
+  const pill = document.getElementById("rating"); pill.className = `status ${color}`; pill.textContent = label;
+  document.getElementById("decision").textContent = item?.state === "ASSESSED" ? `Risk level: ${item.riskLevel} · Policy: ${item.decision} · Model prediction: ${item.prediction}` : "No URL assessment is available.";
+  document.getElementById("timestamp").textContent = Number.isFinite(item?.timestamp) ? `Received by extension: ${new Date(item.timestamp).toLocaleString()}` : "Assessment time unavailable";
+  const ml = item?.state === "ASSESSED" && Number.isFinite(item.probability) ? `Phishing probability: ${(item.probability * 100).toFixed(1)}% · Policy risk score: ${item.riskScore ?? "unavailable"} · Model threshold: ${item.threshold ?? "unavailable"}` : "Model assessment: unavailable or not yet completed.";
+  document.getElementById("ml").textContent = ml;
+  document.getElementById("backend").textContent = health?.spring_boot ? `Backend: Spring Boot ${health.spring_boot} · ML service ${health.ml_service || "status unavailable"}` : `Backend unavailable (${health?.state || "connection error"}).`;
+  document.getElementById("enforcement").textContent = item?.decision === "BLOCK" && item?.riskLevel === "HIGH_RISK" && item.enforcement === "RULE_APPLIED" ? "Browser enforcement: a dynamic navigation redirect rule was installed for the assessed URL path. The first visit may begin loading before assessment completes." : item?.decision === "BLOCK" && item?.riskLevel === "HIGH_RISK" && item.enforcement === "DISABLED" ? "Browser enforcement: protection was paused and its dynamic navigation rules were removed." : item?.decision === "BLOCK" && item?.riskLevel === "HIGH_RISK" ? "Browser enforcement: the policy returned BLOCK, but a navigation rule could not be installed for this URL." : "Browser enforcement: no navigation block is active for this result.";
+  const list = document.getElementById("reasons"); list.replaceChildren();
+  const reasons = Array.isArray(item?.reasons) ? item.reasons.slice(0, 12) : [];
+  if (!reasons.length) reasons.push(item?.state === "UNAVAILABLE" ? "The local backend could not provide an assessment." : "No assessment reasons are available.");
+  for (const reason of reasons) { const li = document.createElement("li"); li.textContent = reason; list.append(li); }
+}
+void render();

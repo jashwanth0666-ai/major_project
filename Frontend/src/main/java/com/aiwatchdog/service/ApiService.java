@@ -2,10 +2,23 @@ package com.aiwatchdog.service;
 
 import com.aiwatchdog.model.AnalyzeRequest;
 import com.aiwatchdog.model.AnalyzeResponse;
+import com.aiwatchdog.model.AssessmentStats;
+import com.aiwatchdog.model.FileShieldDirectoryResult;
+import com.aiwatchdog.model.FileShieldSettings;
+import com.aiwatchdog.model.FileShieldSettingsUpdate;
+import com.aiwatchdog.model.FileShieldScanRequest;
+import com.aiwatchdog.model.FileShieldScanResult;
 import com.aiwatchdog.model.MonitorEvent;
 import com.aiwatchdog.model.SecurityEvent;
 import com.aiwatchdog.model.SecurityEventStats;
 import com.aiwatchdog.model.ServiceHealth;
+import com.aiwatchdog.model.ThreatAssessmentResult;
+import com.aiwatchdog.model.NotificationPreferences;
+import com.aiwatchdog.model.WindowsTelemetryHealth;
+import com.aiwatchdog.model.WindowsTelemetrySettings;
+import com.aiwatchdog.model.WindowsTelemetrySettingsUpdate;
+import com.aiwatchdog.model.QuarantineHistory;
+import com.aiwatchdog.model.QuarantineOperation;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -59,6 +72,72 @@ public class ApiService implements MonitorEventSubmitter {
         return readBody(response, AnalyzeResponse.class, "Backend returned an empty analysis response");
     }
 
+    /** Performs one read-only file scan. Call from a background Task, never the FX thread. */
+    public FileShieldScanResult scanFile(String path) throws Exception {
+        return postJson("/api/v1/file-shield/scan", new FileShieldScanRequest(path), FileShieldScanResult.class);
+    }
+
+    /** Performs a bounded directory scan. Call from a background Task, never the FX thread. */
+    public FileShieldDirectoryResult scanDirectory(String path) throws Exception {
+        return postJson("/api/v1/file-shield/scan-directory", new FileShieldScanRequest(path), FileShieldDirectoryResult.class);
+    }
+
+    public FileShieldSettings getFileShieldSettings() throws Exception {
+        HttpResponse<String> response = get("/api/v1/file-shield/settings");
+        requireSuccess(response, "File Shield settings request failed");
+        return readBody(response, FileShieldSettings.class, "Backend returned no File Shield settings");
+    }
+
+    public FileShieldSettings updateFileShieldSettings(FileShieldSettingsUpdate settings) throws Exception {
+        return postJson("/api/v1/file-shield/settings", settings, FileShieldSettings.class, "PUT");
+    }
+
+    public QuarantineHistory getQuarantineHistory() throws Exception {
+        HttpResponse<String> response = get("/api/v1/file-shield/quarantine");
+        requireSuccess(response, "Quarantine history request failed");
+        return readBody(response, QuarantineHistory.class, "Backend returned no quarantine history");
+    }
+
+    public QuarantineOperation quarantineFile(String path, String sha256) throws Exception {
+        return postJson("/api/v1/file-shield/quarantine", new QuarantineRequest(path, sha256, true), QuarantineOperation.class);
+    }
+
+    public QuarantineOperation restoreQuarantinedFile(String operationId, String destinationPath, boolean reinspect) throws Exception {
+        return postJson("/api/v1/file-shield/quarantine/" + java.net.URLEncoder.encode(operationId, java.nio.charset.StandardCharsets.UTF_8)
+                + "/restore", new RestoreRequest(destinationPath, true, reinspect), QuarantineOperation.class);
+    }
+
+    public NotificationPreferences getNotificationPreferences() throws Exception {
+        HttpResponse<String> response = get("/api/v1/notifications/preferences");
+        requireSuccess(response, "Notification preferences request failed");
+        return readBody(response, NotificationPreferences.class, "Backend returned no notification preferences");
+    }
+
+    public NotificationPreferences updateNotificationPreferences(NotificationPreferences preferences) throws Exception {
+        return postJson("/api/v1/notifications/preferences", preferences, NotificationPreferences.class, "PUT");
+    }
+
+    public WindowsTelemetrySettings getWindowsTelemetrySettings() throws Exception {
+        HttpResponse<String> response = get("/api/v1/windows-telemetry/settings");
+        requireSuccess(response, "Windows telemetry settings request failed");
+        return readBody(response, WindowsTelemetrySettings.class, "Backend returned no Windows telemetry settings");
+    }
+
+    public WindowsTelemetrySettings updateWindowsTelemetrySettings(WindowsTelemetrySettingsUpdate settings) throws Exception {
+        return postJson("/api/v1/windows-telemetry/settings", settings, WindowsTelemetrySettings.class, "PUT");
+    }
+
+    public WindowsTelemetryHealth getWindowsTelemetryHealth() throws Exception {
+        HttpResponse<String> response = get("/api/v1/windows-telemetry/health");
+        requireSuccess(response, "Windows telemetry health request failed");
+        return readBody(response, WindowsTelemetryHealth.class, "Backend returned no Windows telemetry health");
+    }
+
+    /** Runs reputation, PE analysis, deterministic policy, and audit integration on Spring's worker thread. */
+    public ThreatAssessmentResult assessFile(String path) throws Exception {
+        return postJson("/api/v1/threat-assessments/file", new ThreatAssessmentRequest(path), ThreatAssessmentResult.class);
+    }
+
     /** Parses the response body even for HTTP 503 so Spring and ML status remain distinct. */
     public ServiceHealth getServiceHealth() throws Exception {
         HttpRequest request = HttpRequest.newBuilder().uri(endpoint("/api/v1/health"))
@@ -77,6 +156,18 @@ public class ApiService implements MonitorEventSubmitter {
 
     public List<SecurityEvent> getRecentEvents() throws Exception {
         return getList("/api/security-events", new TypeReference<>() {});
+    }
+
+    /** Returns only the latest bounded assessment page exposed by Spring. */
+    public List<SecurityEvent> getRecentAssessments() throws Exception {
+        return getList("/api/security-events/assessments", new TypeReference<>() {});
+    }
+
+    /** Returns lifetime SQL aggregates for persisted unified assessments. */
+    public AssessmentStats getAssessmentStats() throws Exception {
+        HttpResponse<String> response = get("/api/security-events/assessments/stats");
+        requireSuccess(response, "Assessment statistics request failed");
+        return readBody(response, AssessmentStats.class, "Backend returned no assessment statistics");
     }
 
     public List<MonitorEvent> getRecentMonitorEvents() throws Exception {
@@ -115,6 +206,31 @@ public class ApiService implements MonitorEventSubmitter {
         return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
+    private <T> T postJson(String path, Object payload, Class<T> responseType) throws Exception {
+        return postJson(path, payload, responseType, "POST");
+    }
+
+    private <T> T postJson(String path, Object payload, Class<T> responseType, String method) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder().uri(endpoint(path))
+                .header("Content-Type", "application/json")
+                .timeout("PUT".equals(method) ? Duration.ofSeconds(15) : Duration.ofMinutes(30))
+                .method(method, HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(payload)))
+                .build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            String message = "Backend request failed (HTTP " + response.statusCode() + ")";
+            if (response.body() != null && !response.body().isBlank()) {
+                try {
+                    String serverMessage = mapper.readTree(response.body()).path("message").asText();
+                    if (!serverMessage.isBlank()) message = serverMessage;
+                } catch (IOException ignored) { }
+            }
+            throw new IOException(message);
+        }
+        if (response.body() == null || response.body().isBlank()) throw new IOException("Backend returned no response body");
+        return mapper.readValue(response.body(), responseType);
+    }
+
     private URI endpoint(String path) { return URI.create(baseUrl + path); }
 
     private static void requireSuccess(HttpResponse<String> response, String message) throws IOException {
@@ -130,4 +246,7 @@ public class ApiService implements MonitorEventSubmitter {
 
     private record MonitorEventRequest(String eventType, String action, String resourceName,
                                        Long processId, Long sizeBytes) { }
+    private record ThreatAssessmentRequest(String path) { }
+    private record QuarantineRequest(String path, String expectedSha256, boolean confirmed) { }
+    private record RestoreRequest(String destinationPath, boolean confirmed, boolean reinspect) { }
 }

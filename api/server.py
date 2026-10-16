@@ -12,6 +12,7 @@ from .config import (
     MODEL_PATH,
 )
 from .integrity import ModelIntegrityError, verify_model
+from .pe_analyzer.router import router as pe_analysis_router
 
 from phase5_inference import WatchDogDetector
 
@@ -56,9 +57,13 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="AI WatchDog ML Service",
     version="6.2.1",
-    description="Hardened URL phishing inference service.",
+    description=(
+        "Hardened URL phishing inference with an isolated, local-only static PE analysis endpoint. "
+        "PE indicators and scores are heuristic and do not constitute a malware verdict."
+    ),
     lifespan=lifespan,
 )
+app.include_router(pe_analysis_router)
 
 
 @app.get("/health")

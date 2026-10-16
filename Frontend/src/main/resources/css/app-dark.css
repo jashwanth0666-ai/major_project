@@ -1973,4 +1973,27 @@
     -fx-fill: #6b7280;
 }
 
+/* File Shield scan workspace */
+.file-shield-workspace, .file-shield-results {
+    -fx-padding: 18px 20px; -fx-background-color: #1d2528; -fx-background-radius: 12px;
+    -fx-border-color: #2b3638; -fx-border-radius: 12px;
+}
+.file-shield-local-tag, .file-shield-note { -fx-padding: 8px 11px; -fx-background-color: #263735; -fx-background-radius: 8px; }
+.file-shield-local-label { -fx-font-size: 9px; -fx-font-weight: 700; -fx-text-fill: #9bcfc2; }
+.file-shield-local-icon, .file-shield-note-icon { -fx-icon-color: #85bdb2; }
+.file-shield-status { -fx-font-size: 11px; -fx-font-weight: 600; -fx-text-fill: #c3cfcd; }
+.file-shield-summary { -fx-font-size: 10px; -fx-text-fill: #9aa9a7; -fx-text-alignment: RIGHT; }
+.file-shield-error { -fx-padding: 10px 12px; -fx-background-color: #422d2b; -fx-background-radius: 7px; -fx-text-fill: #e5a59a; -fx-font-size: 11px; }
+.file-shield-note-text { -fx-font-size: 10px; -fx-text-fill: #afc0bc; }
+.file-shield-results .table-view { -fx-background-color: #1d2528; -fx-border-color: #2b3638; -fx-border-radius: 8px; -fx-background-radius: 8px; }
+.file-shield-results .table-view .column-header-background { -fx-background-color: #252f32; -fx-background-radius: 8px 8px 0 0; }
+.file-shield-results .table-view .column-header, .file-shield-results .table-view .filler { -fx-background-color: transparent; -fx-size: 36px; }
+.file-shield-results .table-view .column-header .label { -fx-font-size: 9px; -fx-font-weight: 700; -fx-text-fill: #9aa9a7; }
+.file-shield-results .table-row-cell { -fx-background-color: #1d2528; -fx-border-color: transparent transparent #2a3436 transparent; -fx-cell-size: 42px; }
+.file-shield-results .table-row-cell:filled:hover { -fx-background-color: #252f32; }
+.file-shield-results .table-cell { -fx-font-size: 10px; -fx-text-fill: #d7e0de; -fx-padding: 8px 10px; }
+.file-shield-results .verdict-malicious { -fx-text-fill: #ef9c91; -fx-font-weight: 700; }
+.file-shield-results .verdict-clean { -fx-text-fill: #8fcdb4; -fx-font-weight: 700; }
+.file-shield-results .verdict-review, .file-shield-results .verdict-error { -fx-text-fill: #e5bc76; -fx-font-weight: 700; }
+
 

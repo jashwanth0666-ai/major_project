@@ -1,6 +1,7 @@
 package com.aiwatchdog.controller;
 
 import com.aiwatchdog.model.AnalyzeResponse;
+import com.aiwatchdog.model.AssessmentStats;
 import com.aiwatchdog.model.MonitorEvent;
 import com.aiwatchdog.model.SecurityEvent;
 import com.aiwatchdog.model.SecurityEventStats;
@@ -9,8 +10,11 @@ import com.aiwatchdog.service.ApiService;
 import com.aiwatchdog.service.BrowserMonitorService;
 import com.aiwatchdog.service.FileSystemMonitorService;
 import com.aiwatchdog.service.ProcessMonitorService;
+import com.aiwatchdog.model.FileShieldSettings;
+import com.aiwatchdog.model.NotificationPreferences;
+import com.aiwatchdog.model.WindowsTelemetryHealth;
+import com.aiwatchdog.util.SystemTraySupport;
 import com.aiwatchdog.ui.scanner.ScanRadarView;
-import com.aiwatchdog.util.ThemeManager;
 import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.beans.property.DoubleProperty;
@@ -28,6 +32,8 @@ import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.scene.shape.Arc;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
@@ -71,6 +77,7 @@ public class MainController {
     // Navigation buttons
     @FXML private Button navDashboardBtn;
     @FXML private Button navScannerBtn;
+    @FXML private Button navFileShieldBtn;
     @FXML private Button navSecureAccessBtn;
     @FXML private Button navThreatCenterBtn;
     @FXML private Button navActivityBtn;
@@ -102,12 +109,15 @@ public class MainController {
     // Pages
     @FXML private ScrollPane dashboardPage;
     @FXML private ScrollPane scannerInputPage;
+    @FXML private ScrollPane fileShieldPage;
+    @FXML private FileShieldController fileShieldViewController;
     @FXML private ScrollPane analyzingPage;
     @FXML private ScrollPane resultPage;
     @FXML private ScrollPane threatCenterPage;
     @FXML private ScrollPane activityPage;
     @FXML private ScrollPane insightsPage;
     @FXML private ScrollPane settingsPage;
+    @FXML private SettingsController settingsViewController;
     @FXML private ScrollPane secureAccessPage;
     @FXML private ScrollPane scanErrorPage;
     @FXML private Label scanErrorUrl;
@@ -134,6 +144,8 @@ public class MainController {
     @FXML private HBox dashLiveShieldBox;
     @FXML private FontIcon dashLiveShieldIcon;
     @FXML private Label dashLiveShieldText;
+    @FXML private Label sidebarProtectionTitle;
+    @FXML private Label sidebarProtectionDescription;
 
     // Upgraded Dashboard Node Hooks (wd-)
     @FXML private VBox dashCardScanned, dashCardBlocked, dashCardReview, dashCardAllowed;
@@ -142,6 +154,10 @@ public class MainController {
     @FXML private Label dashScannedTrend, dashBlockedTrend, dashReviewTrend, dashAllowedTrend;
     @FXML private Region dashScannedLine, dashBlockedLine, dashReviewLine, dashAllowedLine;
     @FXML private Label dashSafePercent, dashSuspiciousPercent, dashPotentialPercent, dashHighRiskPercent;
+    @FXML private Label dashAssessmentTotal, dashAssessmentUrls, dashAssessmentFiles;
+    @FXML private Label dashAssessmentPartial, dashKnownMalicious, dashKnownClean, dashUnknownReputation, dashLookupError;
+    @FXML private Label dashAssessmentAllow, dashAssessmentReview, dashAssessmentWarn, dashAssessmentBlock, dashAssessmentState;
+    @FXML private ProgressIndicator dashAssessmentLoading;
 
     private com.aiwatchdog.ui.dashboard.RiskRadarView riskRadarView;
     private com.aiwatchdog.ui.dashboard.DashboardCardsHelper cardsHelper;
@@ -213,6 +229,10 @@ public class MainController {
     @FXML private TextField activitySearchInput;
     @FXML private VBox activityTableContainer;
     @FXML private Label activityPaginationLabel;
+    @FXML private Label activityPageLabel;
+    @FXML private Button activityPreviousBtn, activityNextBtn;
+    private int activityPageIndex;
+    private static final int ACTIVITY_PAGE_SIZE = 10;
     @FXML private VBox activityCard0, activityCard1, activityCard2, activityCard3;
     @FXML private StackPane activityTile0, activityTile1, activityTile2, activityTile3;
     @FXML private FontIcon activityIcon0, activityIcon1, activityIcon2, activityIcon3;
@@ -226,18 +246,6 @@ public class MainController {
     @FXML private Label insightCount0, insightCount1, insightCount2, insightCount3;
     @FXML private Label insightTrend0, insightTrend1, insightTrend2, insightTrend3;
     private com.aiwatchdog.ui.dashboard.DashboardCardsHelper insightsCardsHelper;
-
-    // Settings (Stitch Screen 7)
-    @FXML private Button setSubGeneral, setSubProtection, setSubNotifications, setSubAppearance, setSubPrivacy, setSubAbout;
-    @FXML private VBox settingsGeneralPane, settingsProtectionPane, settingsNotificationsPane, settingsAppearancePane, settingsPrivacyPane, settingsAboutPane;
-    @FXML private ComboBox<String> settingsLanguageCombo, protectionSensitivityCombo, notificationDeliveryCombo, fontScalingCombo;
-    @FXML private StackPane switchStartWindows, switchMinimizeTray, switchConfirmExit, switchAutoUpdates;
-    @FXML private StackPane switchRealTimeProtection, switchThreatBlocking, switchZeroHourHeuristics, switchSslInspection;
-    @FXML private StackPane switchCriticalAlerts, switchScanNotifications, switchWarningBanners, switchSoundAlerts;
-    @FXML private StackPane switchHighContrastBadges;
-    @FXML private StackPane switchSaveHistory, switchShareTelemetry, switchDnsAnonymization;
-    @FXML private Button themeLightBtn, themeDarkBtn, themeSystemBtn;
-    @FXML private Label activeThemeLabel;
 
     // Secure Access
     @FXML private VBox secureAccessContainer;
@@ -262,6 +270,14 @@ public class MainController {
     private volatile FileSystemMonitorService fileMonitor;
     private volatile ProcessMonitorService processMonitor;
     private volatile boolean closed;
+    private volatile SystemTraySupport systemTraySupport;
+    private volatile ServiceHealth latestBackendHealth;
+    private volatile FileShieldSettings latestFileShieldSettings;
+    private volatile NotificationPreferences latestNotificationPreferences;
+    private volatile WindowsTelemetryHealth latestWindowsTelemetryHealth;
+    private boolean initialEventSnapshotLoaded;
+    private long lastMonitorEventId;
+    private long lastUrlEventId;
 
     private int totalScanned;
     private int totalBlocked;
@@ -307,7 +323,14 @@ public class MainController {
     private boolean splashCompleted = false;
 
     // Record classes for UI logs
-    public record ActivityItem(String time, String event, String urlOrDesc, String riskLevel, String decision, String status, Instant instant) {}
+    public record ActivityItem(String time, String event, String urlOrDesc, String riskLevel,
+                               String decision, String status, Instant instant, String assessmentId,
+                               String subjectType, String detailsJson, String correlationId) {
+        public ActivityItem(String time, String event, String urlOrDesc, String riskLevel,
+                            String decision, String status, Instant instant) {
+            this(time, event, urlOrDesc, riskLevel, decision, status, instant, null, null, null, null);
+        }
+    }
     public record ThreatItem(String url, String riskLevel, String decision, String time, Instant instant) {}
 
     // =========================================================================
@@ -315,10 +338,11 @@ public class MainController {
     // =========================================================================
     @FXML
     public void initialize() {
+        if (dashAssessmentLoading != null) dashAssessmentLoading.setVisible(true);
         // Initialize sidebar navigation items list & set initial active state to Dashboard
         navItems.clear();
         for (ButtonBase btn : new ButtonBase[]{
-                navDashboardBtn, navScannerBtn, navSecureAccessBtn,
+                navDashboardBtn, navScannerBtn, navFileShieldBtn, navSecureAccessBtn,
                 navThreatCenterBtn, navActivityBtn, navInsightsBtn, navSettingsBtn
         }) {
             if (btn != null) navItems.add(btn);
@@ -333,6 +357,7 @@ public class MainController {
         setupAnalyzingUpgrades();
         setupSidebarCollapsible();
         setupSecureAccessUpgrades();
+        if (settingsViewController != null) settingsViewController.setLocalMonitoringApplyHandler(this::applyLocalMonitorSettings);
         if (dashLiveShieldBox != null) {
             dashLiveShieldBox.setOnMouseClicked(event -> toggleLocalMonitoring());
             dashLiveShieldBox.setCursor(javafx.scene.Cursor.HAND);
@@ -379,14 +404,15 @@ public class MainController {
             activityTimeFilter.setValue("Last 7 days");
         }
         if (activityEventFilter != null) {
-            activityEventFilter.getItems().addAll("All Events", "URL Scan", "File Event", "Process Event");
+            activityEventFilter.getItems().addAll("All Events", "URL Scan", "File Event", "Process Event", "Script Finding",
+                    "Windows Security Event", "Unified Assessment · URL", "Unified Assessment · FILE");
             activityEventFilter.setValue("All Events");
-            activityEventFilter.setOnAction(event -> renderActivityTable(activitySearchInput == null ? "" : activitySearchInput.getText()));
+            activityEventFilter.setOnAction(event -> { activityPageIndex = 0; renderActivityTable(activitySearchInput == null ? "" : activitySearchInput.getText()); });
         }
         if (activityStatusFilter != null) {
-            activityStatusFilter.getItems().addAll("All Status", "Allowed", "Blocked", "Reviewed", "Warn");
+            activityStatusFilter.getItems().addAll("All Status", "Allowed", "BLOCK policy", "Reviewed", "Warn", "ALLOW", "REVIEW", "BLOCK", "COMPLETE", "PARTIAL");
             activityStatusFilter.setValue("All Status");
-            activityStatusFilter.setOnAction(event -> renderActivityTable(activitySearchInput == null ? "" : activitySearchInput.getText()));
+            activityStatusFilter.setOnAction(event -> { activityPageIndex = 0; renderActivityTable(activitySearchInput == null ? "" : activitySearchInput.getText()); });
         }
         if (activityTimeFilter != null) {
             activityTimeFilter.setOnAction(event -> renderActivityTable(activitySearchInput == null ? "" : activitySearchInput.getText()));
@@ -398,23 +424,6 @@ public class MainController {
             insightsTimeFilter.getItems().addAll("Last 24 hours", "Last 7 days", "Last 30 days");
             insightsTimeFilter.setValue("Last 7 days");
         }
-        if (settingsLanguageCombo != null) {
-            settingsLanguageCombo.getItems().addAll("English (US)", "English (UK)", "Español", "Deutsch", "Français");
-            settingsLanguageCombo.setValue("English (US)");
-        }
-        if (protectionSensitivityCombo != null) {
-            protectionSensitivityCombo.getItems().addAll("Balanced (Recommended)", "Aggressive (High Security)", "Permissive (Low Friction)");
-            protectionSensitivityCombo.setValue("Balanced (Recommended)");
-        }
-        if (notificationDeliveryCombo != null) {
-            notificationDeliveryCombo.getItems().addAll("Instant Desktop Alerts", "Hourly Digest", "Muted during Fullscreen");
-            notificationDeliveryCombo.setValue("Instant Desktop Alerts");
-        }
-        if (fontScalingCombo != null) {
-            fontScalingCombo.getItems().addAll("Standard (100%)", "Large (110%)", "Compact (90%)");
-            fontScalingCombo.setValue("Standard (100%)");
-        }
-
         // Populate Activity and Threat Center from Spring's persisted event APIs.
         renderThreatTable();
         renderActivityTable("");
@@ -436,16 +445,42 @@ public class MainController {
         if (closed || !refreshInFlight.compareAndSet(false, true)) return;
         try {
             ServiceHealth health = apiService.getServiceHealth();
-            List<SecurityEvent> urlEvents = apiService.getRecentEvents();
-            List<MonitorEvent> monitorEvents = apiService.getRecentMonitorEvents();
-            SecurityEventStats stats = apiService.getSecurityEventStats();
-            Platform.runLater(() -> applyBackendSnapshot(health, urlEvents, monitorEvents, stats));
+            FileShieldSettings fileShieldSettings = safeLoad(apiService::getFileShieldSettings);
+            NotificationPreferences notificationPreferences = safeLoad(apiService::getNotificationPreferences);
+            WindowsTelemetryHealth windowsTelemetryHealth = safeLoad(apiService::getWindowsTelemetryHealth);
+            List<SecurityEvent> urlEvents = safeLoad(apiService::getRecentEvents);
+            List<MonitorEvent> monitorEvents = safeLoad(apiService::getRecentMonitorEvents);
+            SecurityEventStats stats = safeLoad(apiService::getSecurityEventStats);
+            List<SecurityEvent> assessments = safeLoad(apiService::getRecentAssessments);
+            AssessmentStats assessmentStats = safeLoad(apiService::getAssessmentStats);
+            Platform.runLater(() -> {
+                latestBackendHealth = health;
+                latestFileShieldSettings = fileShieldSettings;
+                latestNotificationPreferences = notificationPreferences;
+                latestWindowsTelemetryHealth = windowsTelemetryHealth;
+                updateSidebarProtectionStatus(health, fileShieldSettings, windowsTelemetryHealth);
+                applyBackendSnapshot(health, urlEvents, monitorEvents, stats, assessments, assessmentStats);
+                notifyForNewThreatEvents(urlEvents, monitorEvents);
+            });
         } catch (Exception error) {
-            Platform.runLater(() -> showBackendUnavailable(error));
+            Platform.runLater(() -> {
+                latestBackendHealth = null;
+                latestFileShieldSettings = null;
+                latestNotificationPreferences = null;
+                latestWindowsTelemetryHealth = null;
+                updateSidebarProtectionStatus(null, null, null);
+                showBackendUnavailable(error);
+            });
         } finally {
             refreshInFlight.set(false);
         }
     }
+
+    private static <T> T safeLoad(BackendRead<T> read) {
+        try { return read.get(); } catch (Exception ignored) { return null; }
+    }
+
+    @FunctionalInterface private interface BackendRead<T> { T get() throws Exception; }
 
     private void toggleLocalMonitoring() {
         if (closed || !monitorChanging.compareAndSet(false, true)) return;
@@ -490,6 +525,27 @@ public class MainController {
         worker.start();
     }
 
+    private void applyLocalMonitorSettings(List<java.nio.file.Path> roots) {
+        FileSystemMonitorService current = fileMonitor;
+        if (current == null || !current.isRunning() || closed) return;
+        Thread worker = new Thread(() -> {
+            try {
+                current.close();
+                FileSystemMonitorService replacement = new FileSystemMonitorService(apiService,
+                        event -> onMonitorEvent(), roots);
+                fileMonitor = replacement;
+                int count = replacement.start();
+                Platform.runLater(() -> notifyUser("Local file monitor updated · " + count + " folders watched"));
+            } catch (Exception error) {
+                fileMonitor = null;
+                Platform.runLater(() -> notifyUser("Could not apply local monitoring folders: "
+                        + valueOr(error.getMessage(), "Folder access failed")));
+            }
+        }, "aiwatchdog-local-monitor-settings");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
     private void onMonitorEvent() {
         if (!closed) backendRefresh.schedule(this::refreshBackendSnapshot, 300, TimeUnit.MILLISECONDS);
     }
@@ -500,12 +556,133 @@ public class MainController {
             if (dashLiveShieldIcon != null) dashLiveShieldIcon.setIconColor(Color.web(running ? "#10B981" : "#64748B"));
         }
         if (dashLiveShieldText != null) dashLiveShieldText.setText(running ? "Live Shield Active" : "Live Shield Paused");
+        updateSidebarProtectionStatus(latestBackendHealth, latestFileShieldSettings, latestWindowsTelemetryHealth);
         notifyUser(message);
     }
 
+    public void setSystemTraySupport(SystemTraySupport support) {
+        systemTraySupport = support;
+    }
+
+    public void openAlertsFromTray() {
+        navigateThreatCenter();
+    }
+
+    private void updateSidebarProtectionStatus(ServiceHealth health, FileShieldSettings backendSettings,
+                                               WindowsTelemetryHealth windowsTelemetry) {
+        if (sidebarProtectionTitle == null || sidebarProtectionDescription == null) return;
+        if (health == null || !health.isBackendAvailable()) {
+            sidebarProtectionTitle.setText("Backend unavailable");
+            sidebarProtectionDescription.setText("Collector and analysis status could not be confirmed");
+            return;
+        }
+        if (!health.isMlAvailable()) {
+            sidebarProtectionTitle.setText("Service degraded");
+            sidebarProtectionDescription.setText("Spring Boot online · URL analysis unavailable");
+            return;
+        }
+        boolean desktopMonitoring = (fileMonitor != null && fileMonitor.isRunning())
+                || (processMonitor != null && processMonitor.isRunning());
+        boolean backendMonitoring = backendSettings != null && backendSettings.watcherActive();
+        boolean windowsMonitoring = windowsTelemetry != null && windowsTelemetry.enabled()
+                && windowsTelemetry.running() && "RUNNING".equals(windowsTelemetry.state());
+        boolean windowsDegraded = windowsTelemetry != null && windowsTelemetry.enabled()
+                && !"RUNNING".equals(windowsTelemetry.state());
+        if (desktopMonitoring || backendMonitoring) {
+            sidebarProtectionTitle.setText(windowsDegraded ? "Monitoring degraded" : "Monitoring active");
+            String active = describeActiveMonitors(desktopMonitoring, backendMonitoring);
+            if (backendSettings == null && desktopMonitoring) active += " · backend watcher status unavailable";
+            active += " · " + windowsTelemetrySummary(windowsTelemetry);
+            sidebarProtectionDescription.setText(active);
+        } else if (windowsMonitoring) {
+            sidebarProtectionTitle.setText("Monitoring active");
+            sidebarProtectionDescription.setText(windowsTelemetrySummary(windowsTelemetry));
+        } else if (windowsDegraded) {
+            sidebarProtectionTitle.setText("Monitoring degraded");
+            sidebarProtectionDescription.setText(windowsTelemetrySummary(windowsTelemetry));
+        } else if (backendSettings == null) {
+            sidebarProtectionTitle.setText("Monitor status unavailable");
+            sidebarProtectionDescription.setText("Spring Boot and URL analysis online · File Shield watcher state unavailable · "
+                    + windowsTelemetrySummary(windowsTelemetry));
+        } else {
+            sidebarProtectionTitle.setText("Services online");
+            sidebarProtectionDescription.setText("URL analysis is online · " + windowsTelemetrySummary(windowsTelemetry));
+        }
+    }
+
+    private String windowsTelemetrySummary(WindowsTelemetryHealth health) {
+        if (health == null) return "Windows telemetry state unavailable";
+        if (!health.supported()) return "Windows event collection unsupported on this operating system";
+        if (!health.enabled()) return "Windows Defender/Security event collection disabled";
+        return "Windows event collection " + valueOr(health.state(), "UNKNOWN");
+    }
+
+    private String describeActiveMonitors(boolean desktopMonitoring, boolean backendMonitoring) {
+        if (desktopMonitoring && backendMonitoring) return "File Shield watcher and desktop event monitors are active";
+        if (backendMonitoring) return "File Shield directory watcher is active";
+        return "Desktop file and process event monitors are active";
+    }
+
+    private void notifyForNewThreatEvents(List<SecurityEvent> urlEvents, List<MonitorEvent> monitorEvents) {
+        if (urlEvents == null || monitorEvents == null) return;
+        long newestUrlId = urlEvents.stream().map(SecurityEvent::id).filter(java.util.Objects::nonNull)
+                .mapToLong(Long::longValue).max().orElse(lastUrlEventId);
+        long newestMonitorId = monitorEvents.stream().map(MonitorEvent::id).filter(java.util.Objects::nonNull)
+                .mapToLong(Long::longValue).max().orElse(lastMonitorEventId);
+        if (!initialEventSnapshotLoaded) {
+            lastUrlEventId = newestUrlId;
+            lastMonitorEventId = newestMonitorId;
+            initialEventSnapshotLoaded = true;
+            return;
+        }
+        for (SecurityEvent event : urlEvents) {
+            if (event.id() != null && event.id() > lastUrlEventId && isAlertDecision(event.decision())) {
+                sendThreatNotification("URL assessment", event.riskLevel(), event.decision());
+            }
+        }
+        for (MonitorEvent event : monitorEvents) {
+            if (event.id() != null && event.id() > lastMonitorEventId && isAlertDecision(event.decision())) {
+                String source = "FILE".equalsIgnoreCase(event.eventType()) ? "File event"
+                        : "SCRIPT".equalsIgnoreCase(event.eventType()) ? "Script finding"
+                        : "WINDOWS".equalsIgnoreCase(event.eventType()) ? "Windows security event" : "Process event";
+                sendThreatNotification(source, event.riskLevel(), event.decision());
+            }
+        }
+        lastUrlEventId = Math.max(lastUrlEventId, newestUrlId);
+        lastMonitorEventId = Math.max(lastMonitorEventId, newestMonitorId);
+    }
+
+    private boolean isAlertDecision(String decision) {
+        return "WARN".equalsIgnoreCase(decision) || "BLOCK".equalsIgnoreCase(decision);
+    }
+
+    private void sendThreatNotification(String source, String riskLevel, String decision) {
+        NotificationPreferences preferences = latestNotificationPreferences;
+        if (preferences == null || !preferences.enabled()) return;
+        boolean block = "BLOCK".equalsIgnoreCase(decision);
+        if (block && !preferences.blockEnabled()) return;
+        if (!block && !preferences.warnEnabled()) return;
+        SystemTraySupport tray = systemTraySupport;
+        if (tray != null) tray.showNotification("AI WatchDog · " + source,
+                valueOr(riskLevel, "Risk unknown") + " · policy decision " + valueOr(decision, "unknown")
+                        + ". Open the dashboard to review details.");
+    }
+
     private void applyBackendSnapshot(ServiceHealth health, List<SecurityEvent> urlEvents,
-                                      List<MonitorEvent> monitorEvents, SecurityEventStats stats) {
+                                      List<MonitorEvent> monitorEvents, SecurityEventStats stats,
+                                      List<SecurityEvent> assessments, AssessmentStats assessmentStats) {
         if (closed) return;
+        if (dashAssessmentLoading != null) { dashAssessmentLoading.setVisible(false); dashAssessmentLoading.setManaged(false); }
+        boolean statsAvailable = stats != null;
+        boolean urlHistoryAvailable = urlEvents != null;
+        boolean monitorHistoryAvailable = monitorEvents != null;
+        boolean assessmentsAvailable = assessments != null;
+        boolean assessmentStatsAvailable = assessmentStats != null;
+        if (stats == null) stats = new SecurityEventStats(0,0,0,0,0,0,0,0,0,0,0);
+        if (urlEvents == null) urlEvents = List.of();
+        if (monitorEvents == null) monitorEvents = List.of();
+        if (assessments == null) assessments = List.of();
+        updateAssessmentDashboard(assessmentStats);
         totalScanned = Math.toIntExact(Math.min(Integer.MAX_VALUE, stats.totalEvents()));
         totalBlocked = Math.toIntExact(Math.min(Integer.MAX_VALUE, stats.blockCount()));
         totalInReview = Math.toIntExact(Math.min(Integer.MAX_VALUE, stats.reviewCount() + stats.warnCount()));
@@ -545,11 +722,26 @@ public class MainController {
             setCount(insightCount1, stats.phishingCount());
             setCount(insightCount3, totalScanned);
         }
+        if (!statsAvailable) {
+            for (Label label : new Label[]{dashScannedCount, dashThreatsBlockedCount, dashInReviewCount,
+                    dashAllowedCount, threatBlockedCount, threatInReviewCount, threatHighRiskCount,
+                    dashSafePercent, dashSuspiciousPercent, dashPotentialPercent, dashHighRiskPercent,
+                    activityCount1, activityCount2, activityCount3}) if (label != null) label.setText("N/A");
+            if (dashRiskDescription != null) dashRiskDescription.setText("URL assessment metrics are unavailable from Spring Boot.");
+        }
         int totalRiskEvents = Math.max(1, (int) Math.min(Integer.MAX_VALUE, stats.totalEvents()));
         updateBreakdown(dashSafeProgress, dashSafePercent, stats.safeCount(), totalRiskEvents);
         updateBreakdown(dashSuspiciousProgress, dashSuspiciousPercent, stats.suspiciousCount(), totalRiskEvents);
         updateBreakdown(dashPotentialProgress, dashPotentialPercent, stats.lowRiskCount(), totalRiskEvents);
         updateBreakdown(dashHighRiskProgress, dashHighRiskPercent, stats.highRiskCount(), totalRiskEvents);
+        if (!statsAvailable) {
+            for (Label label : new Label[]{dashSafePercent, dashSuspiciousPercent, dashPotentialPercent,
+                    dashHighRiskPercent, threatSafeCount, insightCount1, insightCount3}) {
+                if (label != null) label.setText("N/A");
+            }
+            for (ProgressBar bar : new ProgressBar[]{dashSafeProgress, dashSuspiciousProgress,
+                    dashPotentialProgress, dashHighRiskProgress}) if (bar != null) bar.setProgress(0);
+        }
         if (threatInsightsHelper != null) {
             int threatCount = (int) Math.min(Integer.MAX_VALUE, stats.highRiskCount() + stats.suspiciousCount() + stats.lowRiskCount());
             int divisor = Math.max(1, threatCount);
@@ -594,31 +786,126 @@ public class MainController {
             String decision = valueOr(event.decision(), "UNKNOWN");
             String time = formatEventTime(event.timestamp());
             String description = valueOr(event.resourceName(), "Resource unavailable");
+            if (event.reasons() != null && !event.reasons().isEmpty()) {
+                description += " · " + String.join(" · ", event.reasons().stream().limit(3).toList());
+            }
             Instant instant = parseEventInstant(event.timestamp());
             String eventName = "FILE".equalsIgnoreCase(event.eventType()) ? "File Event"
-                    : "PROCESS".equalsIgnoreCase(event.eventType()) ? "Process Event" : valueOr(event.eventType(), "Monitor event");
+                    : "PROCESS".equalsIgnoreCase(event.eventType()) ? "Process Event"
+                    : "SCRIPT".equalsIgnoreCase(event.eventType()) ? "Script Finding"
+                    : "WINDOWS".equalsIgnoreCase(event.eventType()) ? "Windows Security Event"
+                    : valueOr(event.eventType(), "Monitor event");
             recent.add(new ActivityItem(time, eventName, description, risk,
                     decision, statusForDecision(decision), instant));
             if (!"ALLOW".equalsIgnoreCase(decision)) {
                 threats.add(new ThreatItem(description, risk, decision, time, instant));
             }
         }
+        for (SecurityEvent event : assessments) {
+            JsonNode assessment = parseAssessment(event.detailsJson());
+            String assessmentId = textAt(assessment, "assessmentId", "event-" + valueOr(event.id() == null ? null : event.id().toString(), "unknown"));
+            String subjectType = valueOr(event.subjectType(), "Assessment");
+            String subject = "FILE".equalsIgnoreCase(subjectType)
+                    ? "File SHA-256 " + abbreviate(valueOr(event.subjectId(), "unavailable"))
+                    : "URL".equalsIgnoreCase(subjectType) ? valueOr(event.subjectId(), "URL unavailable") : "Subject unavailable";
+            String summary = assessmentSourceSummary(assessment);
+            String decision = valueOr(event.decision(), "UNKNOWN");
+            String status = textAt(assessment, "status", "UNKNOWN");
+            recent.add(new ActivityItem(formatEventTime(event.timestamp()), "Unified Assessment · " + subjectType,
+                    assessmentId + " · " + subject + " · " + summary, "Assessment", decision, status,
+                    parseEventInstant(event.timestamp()), assessmentId, subjectType, event.detailsJson(), event.correlationId()));
+        }
         activityLog.clear();
-        activityLog.addAll(recent.stream().sorted(Comparator.comparing(ActivityItem::instant).reversed()).limit(100).toList());
+        // Each backend source is capped at 100 rows, so this combined in-memory page remains bounded.
+        activityLog.addAll(recent.stream().sorted(Comparator.comparing(ActivityItem::instant).reversed()).toList());
         threatLog.clear();
         threatLog.addAll(threats.stream().sorted(Comparator.comparing(ThreatItem::instant).reversed()).limit(100).toList());
         renderActivityTable(activitySearchInput == null ? "" : activitySearchInput.getText());
         renderThreatTable();
+        if (!urlHistoryAvailable || !monitorHistoryAvailable) {
+            if (activityCount0 != null) activityCount0.setText("N/A");
+        }
+        if (activityPaginationLabel != null && (!statsAvailable || !urlHistoryAvailable
+                || !monitorHistoryAvailable || !assessmentsAvailable || !assessmentStatsAvailable)) {
+            activityPaginationLabel.setText("Partial data: one or more history or aggregate requests failed. Assessment history is limited to the latest 100 records.");
+        }
+    }
+
+    private void updateAssessmentDashboard(AssessmentStats stats) {
+        if (stats == null) {
+            if (dashAssessmentState != null) dashAssessmentState.setText("Assessment metrics unavailable");
+            for (Label label : new Label[]{dashAssessmentTotal, dashAssessmentUrls, dashAssessmentFiles,
+                    dashAssessmentPartial, dashKnownMalicious, dashKnownClean, dashUnknownReputation,
+                    dashLookupError, dashAssessmentAllow, dashAssessmentReview, dashAssessmentWarn,
+                    dashAssessmentBlock}) if (label != null) label.setText("N/A");
+            return;
+        }
+        setCount(dashAssessmentTotal, stats.totalAssessments());
+        setCount(dashAssessmentUrls, stats.urlAssessments());
+        setCount(dashAssessmentFiles, stats.fileAssessments());
+        setCount(dashAssessmentPartial, stats.partialCount());
+        setCount(dashKnownMalicious, stats.knownMaliciousCount());
+        setCount(dashKnownClean, stats.knownCleanCount());
+        setCount(dashUnknownReputation, stats.unknownReputationCount());
+        setCount(dashLookupError, stats.lookupErrorCount());
+        setCount(dashAssessmentAllow, stats.allowCount());
+        setCount(dashAssessmentReview, stats.reviewCount());
+        setCount(dashAssessmentWarn, stats.warnCount());
+        setCount(dashAssessmentBlock, stats.blockCount());
+        if (dashAssessmentState != null) dashAssessmentState.setText(stats.totalAssessments() == 0
+                ? "Spring Boot available · no persisted assessments" : "Lifetime totals · reputation counts are source results");
+    }
+
+    private static JsonNode parseAssessment(String json) {
+        if (json == null || json.isBlank()) return com.fasterxml.jackson.databind.node.MissingNode.getInstance();
+        try { return new ObjectMapper().readTree(json); }
+        catch (Exception ignored) { return com.fasterxml.jackson.databind.node.MissingNode.getInstance(); }
+    }
+
+    private static String textAt(JsonNode node, String field, String fallback) {
+        JsonNode value = node.path(field);
+        return value.isTextual() ? value.asText() : fallback;
+    }
+
+    private static String abbreviate(String value) {
+        return value.length() > 16 ? value.substring(0, 8) + "…" + value.substring(value.length() - 6) : value;
+    }
+
+    private static String assessmentSourceSummary(JsonNode assessment) {
+        JsonNode sources = assessment.path("sources");
+        List<String> parts = new ArrayList<>();
+        JsonNode url = sources.path("urlModel");
+        if (url.isObject()) parts.add("URL " + textAt(url, "risk_level", textAt(url, "status", "result unavailable")));
+        JsonNode reputation = sources.path("fileReputation");
+        if (reputation.isObject()) parts.add("Reputation " + textAt(reputation, "reputationStatus", "unavailable"));
+        JsonNode pe = sources.path("staticPe");
+        if (pe.isObject()) {
+            String peStatus = textAt(pe, "status", "unavailable");
+            parts.add(pe.path("risk_score").isNumber()
+                    ? "PE heuristic " + pe.path("risk_score").asInt() + "/100 · " + peStatus
+                    : "PE " + peStatus);
+        }
+        return parts.isEmpty() ? "Source details unavailable" : String.join(" · ", parts);
     }
 
     private void showBackendUnavailable(Exception error) {
         if (closed) return;
+        if (dashAssessmentLoading != null) { dashAssessmentLoading.setVisible(false); dashAssessmentLoading.setManaged(false); }
         if (dashOperationalBadge != null && !"BACKEND UNAVAILABLE".equals(dashOperationalBadge.getText())) {
             dashOperationalBadge.setText("BACKEND UNAVAILABLE");
         }
         if (dashStatusNormalLabel != null && !"Unable to load security data from Spring Boot".equals(dashStatusNormalLabel.getText())) {
             dashStatusNormalLabel.setText("Unable to load security data from Spring Boot");
         }
+        for (Label label : new Label[]{dashScannedCount, dashThreatsBlockedCount, dashInReviewCount,
+                dashAllowedCount, dashAssessmentTotal, dashAssessmentUrls, dashAssessmentFiles,
+                dashAssessmentPartial, dashKnownMalicious, dashKnownClean, dashUnknownReputation,
+                dashLookupError, dashAssessmentAllow, dashAssessmentReview, dashAssessmentWarn,
+                dashAssessmentBlock, threatBlockedCount, threatInReviewCount, threatHighRiskCount,
+                threatSafeCount, dashSafePercent, dashSuspiciousPercent, dashPotentialPercent,
+                dashHighRiskPercent, activityCount0, activityCount1, activityCount2, activityCount3,
+                insightCount1, insightCount3}) if (label != null) label.setText("N/A");
+        if (dashAssessmentState != null) dashAssessmentState.setText("Spring Boot unavailable");
     }
 
     private static void setCount(Label label, long value) {
@@ -655,7 +942,7 @@ public class MainController {
     private static String statusForDecision(String decision) {
         return switch (decision.toUpperCase(Locale.ROOT)) {
             case "ALLOW" -> "Allowed";
-            case "BLOCK" -> "Blocked";
+            case "BLOCK" -> "BLOCK policy";
             case "REVIEW" -> "Reviewed";
             case "WARN" -> "Warn";
             default -> decision;
@@ -1044,6 +1331,7 @@ public class MainController {
         }
     }
     @FXML public void navigateScanner() { selectNav(navScannerBtn, scannerInputPage); }
+    @FXML public void navigateFileShield() { selectNav(navFileShieldBtn, fileShieldPage); }
     @FXML public void navigateSecureAccess() { selectNav(navSecureAccessBtn, secureAccessPage); }
     @FXML public void navigateThreatCenter() {
         selectNav(navThreatCenterBtn, threatCenterPage);
@@ -1093,171 +1381,6 @@ public class MainController {
     }
 
     // =========================================================================
-    // Settings Sub-Navigation, Panes & Toggles (Stitch Screen 7)
-    // =========================================================================
-    @FXML public void selectSettingsSubGeneral() { selectSettingsSub(setSubGeneral, settingsGeneralPane); }
-    @FXML public void selectSettingsSubProtection() { selectSettingsSub(setSubProtection, settingsProtectionPane); }
-    @FXML public void selectSettingsSubNotifications() { selectSettingsSub(setSubNotifications, settingsNotificationsPane); }
-    @FXML public void selectSettingsSubAppearance() { selectSettingsSub(setSubAppearance, settingsAppearancePane); }
-    @FXML public void selectSettingsSubPrivacy() { selectSettingsSub(setSubPrivacy, settingsPrivacyPane); }
-    @FXML public void selectSettingsSubAbout() { selectSettingsSub(setSubAbout, settingsAboutPane); }
-
-    private void selectSettingsSub(Button targetBtn, VBox targetPane) {
-        setActiveNav(navSettingsBtn);
-        Button[] subs = {setSubGeneral, setSubProtection, setSubNotifications, setSubAppearance, setSubPrivacy, setSubAbout};
-        for (Button b : subs) {
-            if (b != null) {
-                b.getStyleClass().removeIf(c -> "settings-subnav-btn-active".equals(c) || "wd-on".equals(c));
-            }
-        }
-        if (targetBtn != null) {
-            if (!targetBtn.getStyleClass().contains("settings-subnav-btn-active")) {
-                targetBtn.getStyleClass().add("settings-subnav-btn-active");
-            }
-            if (!targetBtn.getStyleClass().contains("wd-on")) {
-                targetBtn.getStyleClass().add("wd-on");
-            }
-        }
-
-        VBox[] panes = {settingsGeneralPane, settingsProtectionPane, settingsNotificationsPane, settingsAppearancePane, settingsPrivacyPane, settingsAboutPane};
-        for (VBox p : panes) {
-            if (p != null) {
-                boolean show = (p == targetPane);
-                p.setVisible(show);
-                p.setManaged(show);
-                if (show) p.toFront();
-            }
-        }
-    }
-
-    // --- General Toggles ---
-    @FXML public void toggleStartWithWindows() { toggleSwitch(switchStartWindows, "Start with Windows"); }
-    @FXML public void toggleMinimizeTray() { toggleSwitch(switchMinimizeTray, "Minimize to System Tray"); }
-    @FXML public void toggleConfirmExit() { toggleSwitch(switchConfirmExit, "Confirm Before Exit"); }
-    @FXML public void toggleAutoUpdates() { toggleSwitch(switchAutoUpdates, "Automatic Updates"); }
-
-    // --- Protection Toggles ---
-    @FXML public void toggleRealTimeProtection() { toggleSwitch(switchRealTimeProtection, "Real-Time URL Protection"); }
-    @FXML public void toggleThreatBlocking() { toggleSwitch(switchThreatBlocking, "Proactive Threat Blocking"); }
-    @FXML public void toggleZeroHourHeuristics() { toggleSwitch(switchZeroHourHeuristics, "Zero-Hour Heuristics"); }
-    @FXML public void toggleSslInspection() { toggleSwitch(switchSslInspection, "SSL / TLS Inspection"); }
-
-    // --- Notifications Toggles ---
-    @FXML public void toggleCriticalAlerts() { toggleSwitch(switchCriticalAlerts, "Critical Threat Alerts"); }
-    @FXML public void toggleScanNotifications() { toggleSwitch(switchScanNotifications, "Scan Completion Notifications"); }
-    @FXML public void toggleWarningBanners() { toggleSwitch(switchWarningBanners, "Warning Banners"); }
-    @FXML public void toggleSoundAlerts() { toggleSwitch(switchSoundAlerts, "Sound Alerts"); }
-
-    // --- Appearance Toggles & Theme Switching ---
-    @FXML public void toggleHighContrastBadges() { toggleSwitch(switchHighContrastBadges, "High-Contrast Badges"); }
-
-    @FXML
-    public void setThemeLight() {
-        if (root != null && root.getScene() != null) {
-            ThemeManager.setScene(root.getScene());
-        }
-        ThemeManager.applyTheme(ThemeManager.ThemeMode.LIGHT);
-        updateThemeUI(ThemeManager.ThemeMode.LIGHT);
-        setActiveNav(currentActiveNav != null ? currentActiveNav : navDashboardBtn);
-        notifyUser("Light Theme activated.");
-    }
-
-    @FXML
-    public void setThemeDark() {
-        if (root != null && root.getScene() != null) {
-            ThemeManager.setScene(root.getScene());
-        }
-        ThemeManager.applyTheme(ThemeManager.ThemeMode.DARK);
-        updateThemeUI(ThemeManager.ThemeMode.DARK);
-        setActiveNav(currentActiveNav != null ? currentActiveNav : navDashboardBtn);
-        notifyUser("Dark Theme activated.");
-    }
-
-    @FXML
-    public void setThemeSystem() {
-        if (root != null && root.getScene() != null) {
-            ThemeManager.setScene(root.getScene());
-        }
-        ThemeManager.applyTheme(ThemeManager.ThemeMode.SYSTEM);
-        updateThemeUI(ThemeManager.ThemeMode.SYSTEM);
-        setActiveNav(currentActiveNav != null ? currentActiveNav : navDashboardBtn);
-        notifyUser("System Theme activated.");
-    }
-
-    private void updateThemeUI(ThemeManager.ThemeMode mode) {
-        if (themeLightBtn != null) {
-            themeLightBtn.getStyleClass().removeAll("stitch-btn-primary", "stitch-btn-secondary", "theme-card-selected", "theme-card-unselected");
-            themeLightBtn.getStyleClass().add(mode == ThemeManager.ThemeMode.LIGHT ? "theme-card-selected" : "theme-card-unselected");
-        }
-        if (themeDarkBtn != null) {
-            themeDarkBtn.getStyleClass().removeAll("stitch-btn-primary", "stitch-btn-secondary", "theme-card-selected", "theme-card-unselected");
-            themeDarkBtn.getStyleClass().add(mode == ThemeManager.ThemeMode.DARK ? "theme-card-selected" : "theme-card-unselected");
-        }
-        if (themeSystemBtn != null) {
-            themeSystemBtn.getStyleClass().removeAll("stitch-btn-primary", "stitch-btn-secondary", "theme-card-selected", "theme-card-unselected");
-            themeSystemBtn.getStyleClass().add(mode == ThemeManager.ThemeMode.SYSTEM ? "theme-card-selected" : "theme-card-unselected");
-        }
-        if (activeThemeLabel != null) {
-            activeThemeLabel.setText("Active: " + mode.name() + " THEME");
-        }
-    }
-
-    // --- Privacy Toggles & Actions ---
-    @FXML public void toggleSaveHistory() { toggleSwitch(switchSaveHistory, "Save URL History Locally"); }
-    @FXML public void toggleShareTelemetry() { toggleSwitch(switchShareTelemetry, "Anonymous Threat Telemetry"); }
-    @FXML public void toggleDnsAnonymization() { toggleSwitch(switchDnsAnonymization, "DNS Query Anonymization"); }
-    @FXML public void clearScanHistory() { notifyUser("Scan history and local cache cleared."); }
-    @FXML public void exportAuditLogs() { notifyUser("Audit telemetry exported successfully."); }
-
-    // --- About Actions ---
-    @FXML public void checkForUpdates() { notifyUser("AI WatchDog is up to date (v1.0.0)."); }
-    @FXML public void viewLicense() { notifyUser("AI WatchDog Enterprise License: Active."); }
-
-    private void toggleSwitch(StackPane sw, String name) {
-        if (sw == null) return;
-        if (sw.getStyleClass().contains("toggle-switch-on")) {
-            sw.getStyleClass().remove("toggle-switch-on");
-            sw.getStyleClass().add("toggle-switch-off");
-            notifyUser(name + " disabled");
-        } else {
-            sw.getStyleClass().remove("toggle-switch-off");
-            sw.getStyleClass().add("toggle-switch-on");
-            notifyUser(name + " enabled");
-        }
-    }
-
-    @FXML
-    public void resetSettingsToDefault() {
-        StackPane[] switchesOn = {
-            switchStartWindows, switchMinimizeTray, switchConfirmExit, switchAutoUpdates,
-            switchRealTimeProtection, switchThreatBlocking, switchZeroHourHeuristics, switchSslInspection,
-            switchCriticalAlerts, switchScanNotifications, switchWarningBanners, switchHighContrastBadges,
-            switchSaveHistory, switchShareTelemetry, switchDnsAnonymization
-        };
-        for (StackPane sw : switchesOn) {
-            if (sw != null && !sw.getStyleClass().contains("toggle-switch-on")) {
-                sw.getStyleClass().removeAll("toggle-switch-off", "toggle-switch-on");
-                sw.getStyleClass().add("toggle-switch-on");
-            }
-        }
-        if (switchSoundAlerts != null) {
-            switchSoundAlerts.getStyleClass().removeAll("toggle-switch-off", "toggle-switch-on");
-            switchSoundAlerts.getStyleClass().add("toggle-switch-off");
-        }
-        if (settingsLanguageCombo != null) settingsLanguageCombo.setValue("English (US)");
-        if (protectionSensitivityCombo != null) protectionSensitivityCombo.setValue("Balanced (Recommended)");
-        if (notificationDeliveryCombo != null) notificationDeliveryCombo.setValue("Instant Desktop Alerts");
-        if (fontScalingCombo != null) fontScalingCombo.setValue("Standard (100%)");
-
-        setThemeLight();
-        notifyUser("Settings reset to defaults.");
-    }
-
-    @FXML
-    public void saveSettings() {
-        notifyUser("All settings saved and applied successfully ✓");
-    }
-
     @FXML
     public void addException() {
         if (secureAccessContainer != null) {
@@ -2370,20 +2493,35 @@ public class MainController {
         String eventFilter = activityEventFilter == null ? null : activityEventFilter.getValue();
         String statusFilter = activityStatusFilter == null ? null : activityStatusFilter.getValue();
         String timeFilter = activityTimeFilter == null ? null : activityTimeFilter.getValue();
-        int count = 0;
-        int matched = 0;
+        List<ActivityItem> filtered = new ArrayList<>();
         for (ActivityItem item : activityLog) {
-            String searchText = (item.urlOrDesc + " " + item.event + " " + item.riskLevel + " " + item.decision + " " + item.status)
+            String searchText = (item.urlOrDesc + " " + item.event + " " + item.riskLevel + " " + item.decision + " " + item.status + " " + valueOr(item.assessmentId(), ""))
                     .toLowerCase(Locale.ROOT);
             if (!q.isEmpty() && !searchText.contains(q)) {
                 continue;
             }
             if (eventFilter != null && !eventFilter.startsWith("All") && !eventFilter.equalsIgnoreCase(item.event)) continue;
-            if (statusFilter != null && !statusFilter.startsWith("All") && !statusFilter.equalsIgnoreCase(item.status)) continue;
+            if (statusFilter != null && !statusFilter.startsWith("All")) {
+                String expectedVerdict = switch (statusFilter) {
+                    case "Allowed" -> "ALLOW";
+                    case "BLOCK policy" -> "BLOCK";
+                    case "Reviewed" -> "REVIEW";
+                    case "Warn" -> "WARN";
+                    default -> statusFilter;
+                };
+                boolean verdictFilter = List.of("ALLOW", "REVIEW", "WARN", "BLOCK").contains(expectedVerdict.toUpperCase(Locale.ROOT));
+                if (verdictFilter ? !expectedVerdict.equalsIgnoreCase(item.decision())
+                        : !expectedVerdict.equalsIgnoreCase(item.status())) continue;
+            }
             if (!matchesSelectedTime(item.instant(), timeFilter)) continue;
-            matched++;
-            if (count >= 10) continue;
-            count++;
+            filtered.add(item);
+        }
+        int matched = filtered.size();
+        int pageCount = Math.max(1, (matched + ACTIVITY_PAGE_SIZE - 1) / ACTIVITY_PAGE_SIZE);
+        activityPageIndex = Math.min(activityPageIndex, pageCount - 1);
+        int from = Math.min(matched, activityPageIndex * ACTIVITY_PAGE_SIZE);
+        int to = Math.min(matched, from + ACTIVITY_PAGE_SIZE);
+        for (ActivityItem item : filtered.subList(from, to)) {
 
             HBox row = new HBox(8);
             row.getStyleClass().add("table-row-item");
@@ -2437,12 +2575,58 @@ public class MainController {
             statusLabel.getStyleClass().add("url-table-time");
 
             row.getChildren().addAll(timeLabel, eventBox, urlLabel, riskBox, decLabel, statusLabel);
+            if (item.assessmentId() != null) {
+                row.setCursor(javafx.scene.Cursor.HAND);
+                row.setOnMouseClicked(event -> showAssessmentDetails(item));
+                row.setFocusTraversable(true);
+                row.setAccessibleText("Open assessment details for " + item.assessmentId());
+                row.setOnKeyPressed(event -> {
+                    if (event.getCode() == javafx.scene.input.KeyCode.ENTER || event.getCode() == javafx.scene.input.KeyCode.SPACE) showAssessmentDetails(item);
+                });
+            }
             activityTableContainer.getChildren().add(row);
         }
 
         if (activityPaginationLabel != null) {
-            activityPaginationLabel.setText("Showing " + (count == 0 ? 0 : 1) + "-" + count + " of " + matched + " matching events");
+            activityPaginationLabel.setText(matched == 0 ? "No matching events in the latest bounded history." :
+                    "Showing " + (from + 1) + "-" + to + " of " + matched + " matching events");
         }
+        if (activityPageLabel != null) activityPageLabel.setText("Page " + (activityPageIndex + 1) + " of " + pageCount);
+        if (activityPreviousBtn != null) activityPreviousBtn.setDisable(activityPageIndex == 0);
+        if (activityNextBtn != null) activityNextBtn.setDisable(activityPageIndex + 1 >= pageCount);
+    }
+
+    @FXML public void previousActivityPage() {
+        if (activityPageIndex > 0) activityPageIndex--;
+        renderActivityTable(activitySearchInput == null ? "" : activitySearchInput.getText());
+    }
+
+    @FXML public void nextActivityPage() {
+        activityPageIndex++;
+        renderActivityTable(activitySearchInput == null ? "" : activitySearchInput.getText());
+    }
+
+    private void showAssessmentDetails(ActivityItem item) {
+        JsonNode details = parseAssessment(item.detailsJson());
+        StringBuilder bodyText = new StringBuilder()
+                .append("Assessment ID: ").append(item.assessmentId()).append('\n')
+                .append("Correlation ID: ").append(valueOr(item.correlationId(), "Unavailable")).append('\n')
+                .append("Subject: ").append(item.subjectType()).append(" · ").append(item.urlOrDesc()).append('\n')
+                .append("Verdict: ").append(item.decision()).append(" · Status: ").append(item.status()).append("\n\n")
+                .append("Source results\n");
+        JsonNode sources = details.path("sources");
+        try { bodyText.append(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(sources)); }
+        catch (Exception ignored) { bodyText.append("Source details are unavailable or malformed."); }
+        JsonNode explanation = details.path("explanation");
+        if (explanation.isArray() && !explanation.isEmpty()) bodyText.append("\n\nExplanation\n").append(explanation.toString());
+        JsonNode errors = details.path("errors");
+        if (errors.isArray() && !errors.isEmpty()) bodyText.append("\n\nReported limitations\n").append(errors.toString());
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Assessment details"); alert.setHeaderText(item.assessmentId());
+        TextArea content = new TextArea(bodyText.toString());
+        content.setEditable(false); content.setWrapText(true); content.setPrefColumnCount(72); content.setPrefRowCount(22);
+        alert.getDialogPane().setContent(content);
+        alert.showAndWait();
     }
 
     private static boolean matchesSelectedTime(Instant instant, String selection) {
@@ -2458,6 +2642,7 @@ public class MainController {
 
     @FXML
     public void filterActivityLog() {
+        activityPageIndex = 0;
         if (activitySearchInput != null) {
             renderActivityTable(activitySearchInput.getText());
         }
@@ -2506,5 +2691,7 @@ public class MainController {
         ProcessMonitorService process = processMonitor;
         if (file != null) file.close();
         if (process != null) process.close();
+        if (fileShieldViewController != null) fileShieldViewController.close();
+        if (settingsViewController != null) settingsViewController.close();
     }
 }

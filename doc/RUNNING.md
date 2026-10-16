@@ -48,7 +48,6 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 Open Terminal 1 and run from the repository root. Do not start this command from the `api` directory.
 
 ```powershell
-cd P:\major_project
 .\.venv\Scripts\Activate.ps1
 $env:PYTHONPATH = "$PWD\scripts"
 python -m uvicorn api.server:app --host 127.0.0.1 --port 8000
@@ -61,6 +60,8 @@ Invoke-RestMethod http://127.0.0.1:8000/health
 ```
 
 The response should contain `status: OK`, `model_loaded: true`, and `model_integrity: VERIFIED`.
+
+To enable the local static PE endpoint, configure `AI_WATCHDOG_PE_APPROVED_ROOTS` and `AI_WATCHDOG_PE_MAX_FILE_SIZE_BYTES` before starting FastAPI. See [PE analyzer setup and API details](../api/PE_ANALYZER.md).
 
 Test a prediction:
 
@@ -76,7 +77,7 @@ Invoke-RestMethod -Method Post `
 Open Terminal 2:
 
 ```powershell
-cd P:\major_project\backend
+cd backend
 .\mvnw.cmd spring-boot:run
 ```
 
@@ -96,7 +97,7 @@ The frontend is a desktop prototype and can run independently of the backend and
 Open Terminal 3:
 
 ```powershell
-cd P:\major_project\Frontend
+cd Frontend
 mvn clean javafx:run
 ```
 

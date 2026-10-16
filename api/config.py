@@ -19,3 +19,14 @@ EXPECTED_MODEL_SHA256 = os.getenv(
 ).strip().lower()
 
 MAX_URL_LENGTH = int(os.getenv("AI_WATCHDOG_MAX_URL_LENGTH", "4096"))
+
+# PE analysis is disabled until at least one explicit approved root is set.
+# os.pathsep is ';' on Windows, so drive-letter colons remain intact.
+PE_APPROVED_ROOTS = tuple(
+    Path(value.strip()).expanduser()
+    for value in os.getenv("AI_WATCHDOG_PE_APPROVED_ROOTS", "").split(os.pathsep)
+    if value.strip()
+)
+MAX_PE_FILE_SIZE_BYTES = int(os.getenv("AI_WATCHDOG_PE_MAX_FILE_SIZE_BYTES", str(50 * 1024 * 1024)))
+if not 1 <= MAX_PE_FILE_SIZE_BYTES <= 200 * 1024 * 1024:
+    raise ValueError("AI_WATCHDOG_PE_MAX_FILE_SIZE_BYTES must be between 1 and 209715200.")
