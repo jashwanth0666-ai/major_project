@@ -27,6 +27,6 @@ PE_APPROVED_ROOTS = tuple(
     for value in os.getenv("AI_WATCHDOG_PE_APPROVED_ROOTS", "").split(os.pathsep)
     if value.strip()
 )
-MAX_PE_FILE_SIZE_BYTES = int(os.getenv("AI_WATCHDOG_PE_MAX_FILE_SIZE_BYTES", str(50 * 1024 * 1024)))
-if not 1 <= MAX_PE_FILE_SIZE_BYTES <= 200 * 1024 * 1024:
-    raise ValueError("AI_WATCHDOG_PE_MAX_FILE_SIZE_BYTES must be between 1 and 209715200.")
+# Comma-separated protected brands for typosquatting checks (optional; empty = disabled).
+PROTECTED_BRANDS = os.getenv("AI_WATCHDOG_PROTECTED_BRANDS", "")
+REPUTATION_TIMEOUT_SECONDS = float(os.getenv("AI_WATCHDOG_REPUTATION_TIMEOUT", "5.0"))

@@ -324,13 +324,195 @@ def risk_level(risk_score: int) -> str:
 
 
 # ---------------------------------------------------------------------
+# Modular multi-signal detectors (Phase 1, experimental)
+# ---------------------------------------------------------------------
+
+import os
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List
+
+
+PROTECTED_BRANDS: List[str] = [
+    b.strip().lower()
+    for b in os.environ.get(
+        "AI_WATCHDOG_PROTECTED_BRANDS",
+        os.environ.get("WATCHDOG_PROTECTED_BRANDS", ""),
+    ).split(",")
+    if b.strip()
+]
+
+
+def url_heuristics(url: str, features: dict) -> List[Dict[str, Any]]:
+    """Return specific heuristic findings with codes and explanations."""
+    findings: List[Dict[str, Any]] = []
+    try:
+        parsed = urlparse(normalize_url(url))
+        hostname = (parsed.hostname or "").lower()
+    except Exception:
+        return [{"code": "MALFORMED_URL", "detail": "URL could not be parsed safely."}]
+
+    if features.get("has_ip"):
+        findings.append({"code": "IP_HOST", "detail": "Host is an IPv4 address."})
+    if hostname.count(".") >= 4:
+        findings.append({"code": "EXCESSIVE_SUBDOMAINS", "detail": "Unusually deep subdomain structure."})
+    if "%" in url:
+        findings.append({"code": "PERCENT_ENCODING", "detail": "Percent-encoded characters present."})
+    if "@" in url:
+        findings.append({"code": "AT_SYMBOL", "detail": "URL contains '@'."})
+    if features.get("url_length", 0) >= 100:
+        findings.append({"code": "LONG_URL", "detail": "Unusually long URL."})
+    if features.get("has_shortener"):
+        findings.append({"code": "URL_SHORTENER", "detail": "Known URL-shortening service."})
+    if not findings:
+        findings.append({"code": "NONE", "detail": "No heuristic anomalies detected."})
+    return findings
+
+
+def homograph_check(hostname: str) -> Dict[str, Any]:
+    """Detect IDN / mixed-script / confusable patterns. IDN presence != malicious."""
+    result = {"idn": False, "mixed_script": False, "confusable": False, "findings": []}
+    if not hostname:
+        return result
+    try:
+        ascii_host = hostname.encode("ascii")
+    except UnicodeEncodeError:
+        result["idn"] = True
+        result["findings"].append("Internationalized domain name (IDN) present.")
+    # mixed script detection
+    scripts = set()
+    for ch in hostname:
+        if ch.isalpha():
+            if "\u0400" <= ch <= "\u04ff":
+                scripts.add("cyrillic")
+            elif "\u0370" <= ch <= "\u03ff":
+                scripts.add("greek")
+            elif ch.isascii():
+                scripts.add("latin")
+    if len(scripts) > 1:
+        result["mixed_script"] = True
+        result["findings"].append("Mixed scripts in hostname (possible homograph).")
+    # confusable common substitutions
+    confusables = {"0": "o", "1": "l", "rn": "m"}
+    lowered = hostname.lower()
+    for a, b in confusables.items():
+        if a in lowered:
+            result["confusable"] = True
+            result["findings"].append(f"Confusable character pattern '{a}' present.")
+            break
+    if not result["findings"]:
+        result["findings"].append("No homograph indicators detected.")
+    return result
+
+
+def _levenshtein(a: str, b: str) -> int:
+    if a == b:
+        return 0
+    if not a:
+        return len(b)
+    if not b:
+        return len(a)
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        cur = [i]
+        for j, cb in enumerate(b, 1):
+            cost = 0 if ca == cb else 1
+            cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost))
+        prev = cur
+    return prev[-1]
+
+
+def typosquatting_check(hostname: str) -> Dict[str, Any]:
+    """Compare against configured protected brands only. Similarity != proof."""
+    result = {"protected_brand": None, "candidate": None, "distance": None, "findings": []}
+    if not PROTECTED_BRANDS or not hostname:
+        result["findings"].append("No protected brands configured or hostname empty.")
+        return result
+    # extract registrable-ish label (last two labels)
+    labels = hostname.split(".")
+    candidate = ".".join(labels[-2:]) if len(labels) >= 2 else hostname
+    best = None
+    for brand in PROTECTED_BRANDS:
+        d = _levenshtein(candidate, brand)
+        if best is None or d < best[1]:
+            best = (brand, d)
+    if best is not None:
+        brand, d = best
+        result["protected_brand"] = brand
+        result["candidate"] = candidate
+        result["distance"] = d
+        if 0 < d <= 2:
+            result["findings"].append(
+                f"Hostname resembles protected brand '{brand}' (edit distance {d}); review, not proof."
+            )
+        elif d == 0:
+            result["findings"].append(f"Hostname exactly matches protected brand '{brand}'.")
+        else:
+            result["findings"].append("No close protected-brand resemblance.")
+    return result
+
+
+class ReputationProvider(ABC):
+    """Interface for reputation providers. Default returns UNKNOWN."""
+
+    def __init__(self, timeout: float = 5.0):
+        self.timeout = timeout
+
+    @abstractmethod
+    def check(self, url: str, hostname: str) -> Dict[str, Any]:
+        ...
+
+
+class NullReputationProvider(ReputationProvider):
+    def check(self, url: str, hostname: str) -> Dict[str, Any]:
+        return {
+            "status": "UNKNOWN",
+            "detail": "Reputation checking unavailable: no provider configured.",
+            "timeout": self.timeout,
+        }
+
+
+REPUTATION_STATES = {"MALICIOUS", "BENIGN", "UNKNOWN", "ERROR"}
+
+
+def fuse_signals(
+    ml_probability: float,
+    heuristic_findings: List[Dict[str, Any]],
+    homograph: Dict[str, Any],
+    typosquatting: Dict[str, Any],
+    reputation: Dict[str, Any],
+):
+    """Experimental fusion. Does not alter ML probability or policy."""
+    score = int(round(ml_probability * 100))
+    explanations: List[str] = [f"ML calibrated probability: {ml_probability:.4f} (threshold {THRESHOLD})."]
+    # Heuristic contribution (bounded, avoid double counting)
+    heuristic_codes = {f.get("code") for f in heuristic_findings}
+    if heuristic_codes - {"NONE"}:
+        score = min(100, score + 10)
+        explanations.append("Heuristic anomalies present (+10, experimental).")
+    if homograph.get("mixed_script") or homograph.get("confusable"):
+        score = min(100, score + 15)
+        explanations.append("Homograph/confusable indicators present (+15, experimental).")
+    if typosquatting.get("distance") is not None and 0 < (typosquatting.get("distance") or 99) <= 2:
+        score = min(100, score + 10)
+        explanations.append("Typosquatting resemblance present (+10, experimental).")
+    rep_status = reputation.get("status")
+    if rep_status == "MALICIOUS":
+        score = min(100, score + 25)
+        explanations.append("Reputation provider reports MALICIOUS (+25, experimental).")
+    elif rep_status in ("UNKNOWN", "ERROR"):
+        explanations.append(f"Reputation status {rep_status}: not treated as benign.")
+    explanations.append("Experimental score is not a calibrated probability and does not change policy/blocking.")
+    return score, explanations
+
+
+# ---------------------------------------------------------------------
 # Detector
 # ---------------------------------------------------------------------
 
 class WatchDogDetector:
     """Reusable AI WatchDog inference engine."""
 
-    def __init__(self, model_path: Path = MODEL_PATH):
+    def __init__(self, model_path: Path = MODEL_PATH, reputation_provider: ReputationProvider = None):
         self.model_path = Path(model_path)
 
         if not self.model_path.exists():
@@ -342,6 +524,7 @@ class WatchDogDetector:
             )
 
         self.model = joblib.load(self.model_path)
+        self.reputation_provider = reputation_provider or NullReputationProvider()
 
     def predict(self, url: str) -> dict:
         features = extract_features(url)
@@ -360,7 +543,25 @@ class WatchDogDetector:
         risk_score = int(np.clip(round(probability * 100), 0, 100))
         level = risk_level(risk_score)
 
+        # --- Modular multi-signal detectors (experimental, Phase 1) ---
+        try:
+            parsed = urlparse(normalize_url(url))
+            hostname = (parsed.hostname or "").lower()
+        except Exception:
+            hostname = ""
 
+        heuristic_findings = url_heuristics(url, features)
+        homograph_result = homograph_check(hostname)
+        typosquat_result = typosquatting_check(hostname)
+        reputation_result = self.reputation_provider.check(url, hostname)
+
+        fused_score, fused_explanations = fuse_signals(
+            ml_probability=probability,
+            heuristic_findings=heuristic_findings,
+            homograph=homograph_result,
+            typosquatting=typosquat_result,
+            reputation=reputation_result,
+        )
 
         return {
             "url": url,
@@ -368,9 +569,20 @@ class WatchDogDetector:
             "risk_score": risk_score,
             "risk_level": level,
             "prediction": prediction,
-            
+
             "threshold": THRESHOLD,
             "reasons": generate_reasons(url, features),
+            "signals": {
+                "ml_probability": round(probability, 6),
+                "heuristics": heuristic_findings,
+                "homograph": homograph_result,
+                "typosquatting": typosquat_result,
+                "reputation": reputation_result,
+            },
+            "experimental": {
+                "fused_risk_score": fused_score,
+                "explanations": fused_explanations,
+            },
         }
 
     def predict_batch(
@@ -395,7 +607,6 @@ class WatchDogDetector:
                 "risk_score": result["risk_score"],
                 "risk_level": result["risk_level"],
                 "prediction": result["prediction"],
-                "decision": result["decision"],
                 "threshold": result["threshold"],
                 "reasons": " | ".join(result["reasons"]),
             })

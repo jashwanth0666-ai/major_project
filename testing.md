@@ -167,6 +167,52 @@
 The source-level unit cases for bounded script analysis and process correlation are in `backend/src/test/java/com/aiwatchdog/backend/windowstelemetry/ScriptThreatAnalyzerTest.java` and `ProcessBehaviorCorrelatorTest.java`. They cover script indicator detection, transient fragment assembly, unrelated process suppression, and duplicate event suppression. They are part of the backend test suite and still require execution in a later verification pass.
 ## Browser integration scenarios — planned, not executed
 
+## False-positive regression plan — planned, not executed
+
+These cases extend U1 and BR2–BR14 for the false-positive investigation in [`doc/false_positive_investigation.md`](doc/false_positive_investigation.md). Do not infer a safe verdict from a URL's reputation or familiarity. Record the API's actual model probability, score, risk level, prediction, reasons, and policy decision; compare them with the current model and policy contract. No case below was run during implementation.
+
+### FP1 — Supplied YouTube short URL
+
+- **Input:** `https://youtu.be/Wo3__JUisj8?si=qw5ReP8d-HBiXPVJ`
+- **Procedure:** Submit through preview and actual analysis. Record normalized URL, all 25 model inputs, probability, threshold, prediction, score, level, decision, extension badge/interstitial, and audit behavior.
+- **Expected:** The result is whatever the existing model and policy produce for the observed features. A safe/low-risk outcome is not guaranteed by the domain. Preview creates no audit row; actual analysis retains its existing audit behavior. Extension blocks only on `HIGH_RISK` plus `BLOCK`.
+
+### FP2 — Canonical video URL and unrelated legitimate root URLs
+
+- **Inputs:** `https://www.youtube.com/watch?v=Wo3__JUisj8`, `https://youtube.com/`, `https://www.google.com/`, `https://www.wikipedia.org/`, `https://www.microsoft.com/`.
+- **Procedure:** Record the same model/policy fields as FP1; compare normalization and feature derivation across the URL forms.
+- **Expected:** Each verdict follows the model, available approved reputation evidence, and policy. Do not force a safe outcome because a domain appears here. Disagreement between root and video URL is recorded as model behavior unless a feature-extraction mismatch is demonstrated.
+
+### FP3 — Ordinary query, long path, and tracking parameters
+
+- **Inputs:** Controlled benign URLs with ordinary query values (for example `https://example.com/search?q=watch&page=2`); long path and tracking query under a domain controlled by the tester.
+- **Procedure:** Compare host/path/query lengths, parameter count, special-character counts and all 25 feature values with the normalized URL; inspect probability and policy mapping.
+- **Expected:** Query text is not parsed as host or path. Risk indicators can increase suspicion but alone do not establish maliciousness. A high-risk or low-risk verdict must agree with the actual returned probability/score and configured bands.
+
+### FP4 — Approved phishing fixtures and deceptive hostname
+
+- **Inputs:** Non-live, non-clicked URLs from the project's approved controlled phishing test dataset, plus a reserved/test deceptive lookalike hostname such as `https://www.microsoft.com.example.test/` in an isolated fixture.
+- **Procedure:** Assess via preview and actual analysis without navigating to the destinations; verify the host is parsed as `example.test` and inspect the complete independent model/policy fields.
+- **Expected:** No guaranteed classification based on fixture label alone. A confirmed high-risk case requires the existing assessment to return `HIGH_RISK` and policy `BLOCK`; suspicious-but-unconfirmed remains WARN/REVIEW or another actual policy result. No trusted brand substring can make a lookalike safe.
+
+### FP5 — Malformed URLs, unsupported schemes, unknown domains
+
+- **Inputs:** `http://[`, `http://`, a URL with invalid port syntax, `ftp://example.test/`, and an authorized inert unknown/new test domain.
+- **Procedure:** Submit through API where accepted; inspect extension state for unsupported schemes and backend validation/inference errors.
+- **Expected:** Malformed/unsupported inputs are rejected or unassessed. Unknown domains receive only the model/policy result available; unavailable inference is Unknown/Unavailable, never Safe.
+
+### FP6 — Failure state, mapping consistency, and path equivalence
+
+- **Procedure:** In an isolated environment, make inference unavailable and separately induce a bounded backend timeout. For successful cases, check `risk_score = round(probability × 100)`, risk band, threshold classification, policy mapping, response fields, popup/report text, and the extension's high-risk gate. Submit the same URL through preview and actual analysis.
+- **Expected:** Inference failure and timeout are HTTP error/Unavailable states, not Safe or fabricated threat-intelligence results. Probability, score, model prediction, risk level and policy remain distinct and consistent. Preview does not persist; actual analysis persists according to existing audit behavior.
+
+### FP7 — BLOCK enforcement and duplicate observations
+
+- **Procedure:** Use only an approved controlled fixture that the current service actually assesses as `HIGH_RISK` plus `BLOCK`; exercise warning/redirect behavior, repeat the navigation, and submit duplicate preview URLs.
+- **Expected:** A redirect rule and warning appear only when the existing policy returns `BLOCK` with `HIGH_RISK`; unavailable rule installation is reported as unavailable. Duplicate preview entries are bounded/deduplicated, and the existing navigation/notification deduplication behavior is preserved.
+
+**Execution status:** Planned only. These procedures and all existing tests remain unexecuted. The existing source-level feature parity test is not evidence that runtime parity or any URL verdict has been verified in this investigation.
+
 Prerequisites for manual cases: disposable Chrome or Chromium Edge profile, unpacked extension loaded with permissions granted, FastAPI and Spring running against a disposable database, and only benign controlled URLs. Use an approved phishing simulation URL only for BR4/BR6; never open live malware or a real credential link. Automated cases are source-level plans for `browser-extension/service-worker.test.cjs`, `backend/src/test/java/com/aiwatchdog/backend/service/AnalysisServiceTest.java`, and `backend/src/test/java/com/aiwatchdog/backend/controller/AnalyzeControllerTest.java`. No procedure below was run during this implementation.
 
 ### BR1 — Search ordinary words (`hi`, `hello`) — Manual + automated
@@ -439,3 +485,105 @@ Prerequisites for manual cases: disposable Chrome or Chromium Edge profile, unpa
 - **Procedure:** Observe actual provider subscriptions and wait for naturally occurring allowlisted events. For deterministic pipeline coverage, separately use synthetic analyzer fixtures; do not change audit policies, generate Defender detections, or use malicious samples. Inspect provider status, `monitor_events`, Activity, and notification preferences.
 - **Expected:** Provider status and last event times come from the real collector; only approved metadata is persisted; the existing Policy Engine receives source-specific mapped risk bands; any BLOCK outcome is clearly a recorded policy decision and does not claim an OS action.
 - **Pass/fail:** PASS if live subscription and deterministic analyzer cases both meet their criteria; mark the live portion BLOCKED if the provider is missing/disabled or no natural event arrives. Do not label missing event traffic a pass or as zero detections.
+
+
+## Phase 1 multi-signal URL detector (planned, unexecuted)
+
+### U-P1-1 - Legitimate YouTube and unrelated legitimate domains
+- Submit https://www.youtube.com/watch?v=... and https://example.com; expect ML risk unchanged, heuristic findings minimal.
+
+### U-P1-2 - Supplied youtu.be URL
+- Submit https://youtu.be/...; expect compatibility with existing response fields.
+
+### U-P1-3 - Known phishing URLs from approved labeled dataset
+- Submit labeled phishing URLs; expect ML probability >= 0.15 yields PHISHING; signals populated.
+
+### U-P1-4 - Unicode and mixed-script domains
+- Submit IDN and mixed-script hostnames; expect homograph.idn true but not auto-labeled dangerous.
+
+### U-P1-5 - Typosquatted and legitimate brand-like domains
+- Configure WATCHDOG_PROTECTED_BRANDS and submit lookalikes plus exact brand domains; expect distance reported, no auto-trust.
+
+### U-P1-6 - IP-based URLs and unusual subdomains
+- Submit IP host and deep subdomain URLs; expect IP_HOST / EXCESSIVE_SUBDOMAINS findings.
+
+### U-P1-7 - Malformed inputs
+- Submit empty, whitespace, over-length, and unparseable strings; expect safe failure.
+
+### U-P1-8 - Reputation provider unavailable, timeout, error
+- Run with no provider; expect status UNKNOWN and explanation that reputation is unavailable.
+
+### U-P1-9 - Backward compatibility of /predict
+- Verify original fields unchanged; new signals/experimental optional.
+
+### U-P1-10 - ML vs heuristic agreement/disagreement
+- Cases where ML high but heuristics low and vice versa; experimental score differs but policy unchanged.
+
+### U-P1-11 - Experimental score does not change policy/blocking
+- Confirm browser blocking and notifications still use ML risk_level/policy, not fused_risk_score.
+
+
+## Phase 3 false-positive evaluation (planned, unexecuted)
+
+### FP3-1 - Dataset creation
+- Build labeled benign/phishing URL set split by domain; include YouTube examples. Verify no duplicate domains across splits.
+
+### FP3-2 - Baseline metrics
+- Compute FP rate, precision, recall, F1, confusion matrix for ML threshold 0.15. Record values, do not fabricate.
+
+### FP3-3 - Experimental metrics
+- Compute same metrics for fused score at documented experimental threshold. Compare to baseline.
+
+### FP3-4 - Disagreement analysis
+- List cases where baseline and experimental disagree; classify helpful vs harmful signals.
+
+### FP3-5 - Preservation check
+- Confirm production policy, blocking, notifications unchanged; experimental score never feeds policy.
+
+
+## Phase 3.1 evaluation readiness and dataset QA (planned, unexecuted)
+
+### DQ-1 - Schema validation
+- Input CSV must contain url,label columns; reject missing.
+
+### DQ-2 - Label mapping
+- Verify 0/1 and benign/phishing labels map consistently; unknown labels flagged.
+
+### DQ-3 - Duplicate URLs and conflicting labels
+- Detect duplicate URLs with differing labels; document resolution.
+
+### DQ-4 - Missing values
+- Reject or report rows with empty URL or label.
+
+### DQ-5 - Domain leakage check
+- Confirm no domain overlap between train and test splits.
+
+### DQ-6 - Fair comparison
+- Baseline and experimental use identical test rows and labels.
+
+### DQ-7 - Zero denominators
+- Metrics function returns 0.0 for precision/recall/F1/FPR when denominators are zero.
+
+### DQ-8 - Disagreement without overclaim
+- Disagreement list records differences; heuristic flags not treated as confirmed phishing.
+
+### DQ-9 - Reproducibility
+- Report includes seed, split strategy, thresholds, dataset path, output files.
+
+### DQ-10 - Provenance documentation
+- Record dataset source, collection date, and labeling methodology before execution.
+
+
+## Phase 3.2 evaluation readiness review (planned, unexecuted)
+
+### R-1 - to_binary rejects unknown labels
+- Unrecognized label raises ValueError rather than defaulting to benign.
+
+### R-2 - Empty details handling
+- Empty evaluation set writes empty details.csv without IndexError.
+
+### R-3 - Predict failure isolation
+- A URL that raises during prediction is recorded with error and excluded from metrics.
+
+### R-4 - UTF-8 output
+- report.json and details.csv written with explicit UTF-8 encoding.
