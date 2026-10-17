@@ -8,6 +8,12 @@ if not exist "%ROOT%.venv\Scripts\python.exe" (
   exit /b 1
 )
 
+powershell -NoProfile -ExecutionPolicy Bypass -File "%ROOT%setup-local-auth.ps1"
+if errorlevel 1 (
+  echo AI WatchDog could not initialize local API credentials.
+  exit /b 1
+)
+
 echo Starting FastAPI. Its console remains open so startup errors stay visible.
 start "AI WatchDog - FastAPI" /D "%ROOT%" cmd.exe /k call run-aiwatchdog-ml.bat
 powershell -NoProfile -ExecutionPolicy Bypass -File "%ROOT%wait-aiwatchdog-health.ps1" -Uri "http://127.0.0.1:8000/health" -TimeoutSeconds 60

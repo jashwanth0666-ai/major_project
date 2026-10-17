@@ -1,8 +1,12 @@
 from contextlib import asynccontextmanager
+import hmac
+import json
+import os
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, Request, status
 from pydantic import BaseModel, Field
+from fastapi.responses import JSONResponse
 
 from .config import (
     API_HOST,
@@ -10,6 +14,7 @@ from .config import (
     EXPECTED_MODEL_SHA256,
     MAX_URL_LENGTH,
     MODEL_PATH,
+    LOCAL_TOKEN_FILE,
 )
 from .integrity import ModelIntegrityError, verify_model
 from .pe_analyzer.router import router as pe_analysis_router
@@ -66,16 +71,56 @@ app = FastAPI(
 app.include_router(pe_analysis_router)
 
 
+def _service_token() -> Optional[str]:
+    override = os.getenv("AI_WATCHDOG_SPRING_TO_ML_TOKEN", "").strip()
+    if len(override) >= 64 and all(char in "0123456789abcdefABCDEF" for char in override):
+        return override
+    try:
+        with LOCAL_TOKEN_FILE.open("r", encoding="utf-8") as handle:
+            value = json.load(handle).get("springToMl")
+        return (
+            value
+            if isinstance(value, str)
+            and len(value) >= 64
+            and all(char in "0123456789abcdefABCDEF" for char in value)
+            else None
+        )
+    except (OSError, ValueError, AttributeError):
+        return None
+
+
+@app.middleware("http")
+async def require_service_credential(request: Request, call_next):
+    if request.url.path == "/health" and request.method == "GET":
+        return await call_next(request)
+    expected = _service_token()
+    if expected is None:
+        return JSONResponse(
+            status_code=503,
+            content={"error": "LOCAL_AUTH_NOT_CONFIGURED", "message": "Local API credentials are not configured."},
+        )
+    authorization = request.headers.get("authorization", "")
+    supplied = authorization[7:] if authorization.startswith("Bearer ") else ""
+    if not supplied or not hmac.compare_digest(expected, supplied):
+        return JSONResponse(
+            status_code=401,
+            content={"error": "INVALID_CREDENTIAL", "message": "A valid service credential is required."},
+        )
+    return await call_next(request)
+
+
 @app.get("/health")
 def health():
-    if detector is None:
+    if detector is None or _service_token() is None:
+        error = model_error if detector is None else "Local service credentials are not configured."
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={
                 "status": "NOT_READY",
-                "model_loaded": False,
-                "model_integrity": "FAILED",
-                "error": model_error,
+                "model_loaded": detector is not None,
+                "model_integrity": "VERIFIED" if verified_model_sha256 else "FAILED",
+                "service_auth_configured": _service_token() is not None,
+                "error": error,
             },
         )
 
@@ -83,8 +128,15 @@ def health():
         "status": "OK",
         "model_loaded": True,
         "model_integrity": "VERIFIED",
+        "service_auth_configured": True,
         "model_sha256": verified_model_sha256,
     }
+
+
+@app.get("/auth-check")
+def auth_check():
+    # This endpoint is reachable only after middleware validates Spring's service token.
+    return {"status": "OK", "service_auth": "VERIFIED"}
 
 
 @app.post("/predict")

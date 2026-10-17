@@ -20,6 +20,14 @@ EXPECTED_MODEL_SHA256 = os.getenv(
 
 MAX_URL_LENGTH = int(os.getenv("AI_WATCHDOG_MAX_URL_LENGTH", "4096"))
 
+_configured_token_file = os.getenv("AI_WATCHDOG_TOKEN_FILE", "").strip()
+if _configured_token_file:
+    LOCAL_TOKEN_FILE = Path(_configured_token_file).expanduser()
+elif os.getenv("APPDATA"):
+    LOCAL_TOKEN_FILE = Path(os.environ["APPDATA"]) / "AIWatchDog" / "auth" / "api-tokens.json"
+else:
+    LOCAL_TOKEN_FILE = Path.home() / ".aiwatchdog" / "api-tokens.json"
+
 # PE analysis is disabled until at least one explicit approved root is set.
 # os.pathsep is ';' on Windows, so drive-letter colons remain intact.
 PE_APPROVED_ROOTS = tuple(

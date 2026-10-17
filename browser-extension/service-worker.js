@@ -1,6 +1,6 @@
 const API_BASES = ["http://127.0.0.1:8080", "http://localhost:8080"];
-const NAVIGATION_ENDPOINT = "/api/v1/analyze";
-const PREVIEW_ENDPOINT = "/api/v1/analyze/preview";
+const NAVIGATION_ENDPOINT = "/api/v1/threat-assessments/url";
+const PREVIEW_ENDPOINT = "/api/v1/threat-assessments/url/preview";
 const RESULT_LIMIT = 8;
 const CACHE_TTL_MS = 5 * 60_000;
 const inFlightNavigation = new Map();
@@ -124,13 +124,18 @@ function isSearchResultsPage(rawUrl) {
 
 async function callApi(path, payload) {
   let lastError = "backend_unavailable";
+  const credential = await chrome.storage.local.get("localApiToken");
+  const token = credential.localApiToken;
+  if (typeof token !== "string" || !/^[a-f0-9]{64,}$/i.test(token.trim())) {
+    throw new Error("credentials_not_configured");
+  }
   for (const base of API_BASES) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 12_000);
     try {
       const response = await fetch(`${base}${path}`, {
         method: payload ? "POST" : "GET",
-        headers: payload ? { "Content-Type": "application/json" } : undefined,
+        headers: payload ? { "Content-Type": "application/json", "Authorization": `Bearer ${token.trim()}` } : undefined,
         body: payload ? JSON.stringify(payload) : undefined,
         signal: controller.signal
       });
@@ -190,25 +195,38 @@ async function analyzeNavigation(tab, force = false) {
 }
 
 function normalizeAssessment(response, url, state) {
-  if (!response || typeof response.decision !== "string" || typeof response.risk_level !== "string") {
+  if (!response || typeof (response.policyVerdict || response.decision) !== "string") {
     throw new Error("invalid_response");
   }
+  const model = response.sources?.urlModel || response;
+  const decision = response.policyVerdict || response.decision;
+  const riskLevel = typeof model.risk_level === "string" ? model.risk_level : "UNKNOWN";
+  const modelReasons = Array.isArray(model.reasons) ? model.reasons : [];
+  const evidenceReasons = Array.isArray(response.explanation) ? response.explanation : [];
   return {
     state,
-    url: sanitizeUrl(response.url) || url,
-    decision: response.decision,
-    riskLevel: response.risk_level,
-    prediction: typeof response.prediction === "string" ? response.prediction : "UNKNOWN",
-    probability: Number.isFinite(response.phishing_probability) ? response.phishing_probability : null,
-    riskScore: Number.isFinite(response.risk_score) ? response.risk_score : null,
-    threshold: Number.isFinite(response.threshold) ? response.threshold : null,
-    reasons: Array.isArray(response.reasons) ? response.reasons.filter((item) => typeof item === "string").slice(0, 12) : [],
+    url: sanitizeUrl(model.url || response.url || response.subjectId) || url,
+    decision,
+    riskLevel,
+    prediction: typeof model.prediction === "string" ? model.prediction : "UNKNOWN",
+    probability: Number.isFinite(model.phishing_probability) ? model.phishing_probability : null,
+    riskScore: Number.isFinite(model.risk_score) ? model.risk_score : null,
+    threshold: Number.isFinite(model.threshold) ? model.threshold : null,
+    reasons: [...evidenceReasons, ...modelReasons].filter((item) => typeof item === "string").slice(0, 12),
+    evidence: response.sources && typeof response.sources === "object" ? response.sources : null,
+    domainDenied: response.sources?.localDomainRule?.action === "DENY",
+    hostnameConcern: ["KNOWN_MALICIOUS", "SUSPICIOUS"].includes(response.sources?.urlReputation?.status)
+      || (Array.isArray(response.sources?.urlHostSignals?.signals)
+        && response.sources.urlHostSignals.signals.some((signal) => signal?.severity === "HIGH")),
+    assessmentStatus: typeof response.status === "string" ? response.status : "COMPLETE",
     enforcement: "NOT_APPLICABLE",
     timestamp: Date.now()
   };
 }
 
-function isDangerous(item) { return item?.decision === "BLOCK" && item?.riskLevel === "HIGH_RISK"; }
+function isDangerous(item) {
+  return item?.decision === "BLOCK" && (item?.riskLevel === "HIGH_RISK" || item?.domainDenied === true);
+}
 
 async function previewResults(rawUrls) {
   if (!Array.isArray(rawUrls)) return [];
@@ -305,7 +323,7 @@ async function setProtection(enabled) {
     const stored = await chrome.storage.session.get(assessmentStorageKey);
     const assessments = stored[assessmentStorageKey] || {};
     for (const item of Object.values(assessments)) {
-      if (item?.decision === "BLOCK" && item?.riskLevel === "HIGH_RISK") item.enforcement = "DISABLED";
+      if (isDangerous(item)) item.enforcement = "DISABLED";
     }
     await chrome.storage.session.set({ [assessmentStorageKey]: assessments });
   }
@@ -320,16 +338,23 @@ async function setProtection(enabled) {
 async function installWarningRule(tabId, rawUrl, assessment) {
   const url = sanitizeUrl(rawUrl);
   if (!url || !isDangerous(assessment)) return false;
+  let ruleExpression;
   try {
     const original = new URL(rawUrl);
     const target = new URL(url);
-    // Do not persist a dynamic rule containing a path segment deliberately removed as sensitive.
-    if (original.pathname !== target.pathname) return false;
+    if (assessment.domainDenied) {
+      const ruleHost = target.hostname.toLowerCase().replace(/\.$/, "");
+      const escapedHost = ruleHost.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      ruleExpression = `^https?://${escapedHost}(:[0-9]+)?(/.*)?$`;
+    } else {
+      // Do not persist a dynamic rule containing a path segment deliberately removed as sensitive.
+      if (original.pathname !== target.pathname) return false;
+      const escapedUrl = url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      ruleExpression = `^${escapedUrl}([?#].*)?$`;
+    }
   } catch { return false; }
-  const escaped = url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const regexFilter = `^${escaped}([?#].*)?$`;
   const existing = await chrome.declarativeNetRequest.getDynamicRules();
-  const existingMatch = existing.find((rule) => rule.condition?.regexFilter === regexFilter);
+  const existingMatch = existing.find((rule) => rule.condition?.regexFilter === ruleExpression);
   const usedIds = new Set(existing.filter((rule) => rule.id >= 50_000 && rule.id < 60_000).map((rule) => rule.id));
   let ruleId = existingMatch?.id;
   if (ruleId === undefined) {
@@ -361,9 +386,9 @@ async function installWarningRule(tabId, rawUrl, assessment) {
       removeRuleIds: replaceIds,
       addRules: [{
         id: ruleId,
-        priority: 1,
+        priority: assessment.domainDenied ? 2 : 1,
         action: { type: "redirect", redirect: { url: redirect } },
-        condition: { regexFilter, resourceTypes: ["main_frame"] }
+        condition: { regexFilter: ruleExpression, resourceTypes: ["main_frame"] }
       }]
     });
   } catch (error) {

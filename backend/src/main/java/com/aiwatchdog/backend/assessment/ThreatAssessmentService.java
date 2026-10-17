@@ -14,6 +14,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.net.URI;
 import java.time.Instant;
@@ -29,19 +30,42 @@ public class ThreatAssessmentService {
     private final PolicyEngine policy;
     private final FileShieldService files;
     private final SecurityEventLogger events;
+    private final UrlReputationService urlReputation;
+    private final ConfiguredLocalDomainRuleService domainRules;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public ThreatAssessmentService(MlServiceClient ml, PolicyEngine policy, FileShieldService files,
                                    SecurityEventLogger events) {
+        this(ml, policy, files, events, host -> UrlReputationResult.disabled(host),
+                new ConfiguredLocalDomainRuleService("", ""));
+    }
+
+    @Autowired
+    public ThreatAssessmentService(MlServiceClient ml, PolicyEngine policy, FileShieldService files,
+                                   SecurityEventLogger events, UrlReputationService urlReputation,
+                                   ConfiguredLocalDomainRuleService domainRules) {
         this.ml = ml; this.policy = policy; this.files = files; this.events = events;
+        this.urlReputation = urlReputation;
+        this.domainRules = domainRules;
     }
 
     public ThreatAssessment assessUrl(String url) {
+        return assessUrl(url, true);
+    }
+
+    /** Same assessment semantics as a navigation assessment, without an audit write for unvisited previews. */
+    public ThreatAssessment previewUrl(String url) {
+        return assessUrl(url, false);
+    }
+
+    private ThreatAssessment assessUrl(String url, boolean persistResult) {
         if (url == null || url.isBlank()) throw new InvalidRequestException("URL must not be empty.");
+        URI parsed;
         try {
-            URI parsed = URI.create(url);
+            parsed = URI.create(url);
             if (!("http".equalsIgnoreCase(parsed.getScheme()) || "https".equalsIgnoreCase(parsed.getScheme()))
-                    || parsed.getHost() == null) throw new InvalidRequestException("URL must be a valid HTTP or HTTPS URL.");
+                    || UrlHostSignals.extractAsciiHost(parsed) == null)
+                throw new InvalidRequestException("URL must be a valid HTTP or HTTPS URL.");
         } catch (IllegalArgumentException e) { throw new InvalidRequestException("URL must be a valid HTTP or HTTPS URL."); }
         Map<String,Object> source = new LinkedHashMap<>();
         List<String> explanations = new ArrayList<>(); List<String> errors = new ArrayList<>();
@@ -58,8 +82,45 @@ public class ThreatAssessmentService {
             verdict = Decision.REVIEW; status = "PARTIAL";
             errors.add("URL prediction or policy evaluation failed; no safe verdict was inferred.");
         }
-        return persist(new ThreatAssessment(null, Instant.now().toString(), "URL", redactUrl(url), null,
-                source, verdict.name(), status, explanations, errors, UUID.randomUUID().toString()));
+        String host = UrlHostSignals.extractAsciiHost(parsed);
+        DomainRuleMatch domainRule = domainRules.lookup(host);
+        source.put("localDomainRule", domainRule);
+        if ("DENY".equals(domainRule.action())) {
+            verdict = Decision.BLOCK;
+            explanations.add("An operator-configured exact-host denylist rule matched; policy verdict is BLOCK.");
+        } else if ("ALLOWLIST_EVIDENCE".equals(domainRule.action())) {
+            explanations.add("The hostname matched an operator-configured allowlist entry; this is evidence only and does not override other detections.");
+        }
+        UrlHostSignals hostSignals = UrlHostSignals.inspect(host, parsed.getRawUserInfo() != null);
+        source.put("urlHostSignals", hostSignals);
+        if (!hostSignals.signals().isEmpty()) {
+            explanations.add("Hostname heuristic signals are explainable indicators, not model attribution or a verdict.");
+            hostSignals.signals().forEach(signal -> explanations.add(signal.explanation()));
+        } else {
+            explanations.add("No configured hostname deception heuristic matched; this does not establish that the URL is safe.");
+        }
+        UrlReputationResult reputation;
+        if ("DENY".equals(domainRule.action())) {
+            reputation = new UrlReputationResult("SKIPPED", "not-queried", host,
+                    Instant.now().toString(), null, null, "Local denylist matched; external reputation lookup was skipped.");
+        } else try { reputation = urlReputation.lookup(host); }
+        catch (RuntimeException failure) {
+            reputation = new UrlReputationResult("UNAVAILABLE", "configured-url-provider", host,
+                    Instant.now().toString(), null, null, "Provider lookup failed.");
+        }
+        source.put("urlReputation", reputation);
+        switch (reputation.status()) {
+            case "KNOWN_MALICIOUS" -> explanations.add("URL reputation provider reported this hostname as known malicious; this evidence does not alter the existing model policy verdict.");
+            case "SUSPICIOUS" -> explanations.add("URL reputation provider reported suspicious hostname activity; this evidence does not alter the existing model policy verdict.");
+            case "KNOWN_CLEAN" -> explanations.add("URL reputation provider reported this hostname as known clean; reputation evidence does not lower the model risk.");
+            case "UNKNOWN" -> explanations.add("URL reputation has no record for this hostname; unknown is not clean.");
+            case "SKIPPED" -> explanations.add("External reputation lookup was skipped because a local denylist rule already matched.");
+            case "UNAVAILABLE" -> { explanations.add("URL reputation is unavailable; no safe verdict was inferred."); status = "PARTIAL"; errors.add("URL reputation provider is unavailable."); }
+            default -> explanations.add("Optional URL reputation lookup is disabled.");
+        }
+        ThreatAssessment assessment = new ThreatAssessment(null, Instant.now().toString(), "URL", redactUrl(url), null,
+                source, verdict.name(), status, explanations, errors, UUID.randomUUID().toString());
+        return persistResult ? persist(assessment) : assessment;
     }
 
     public ThreatAssessment assessFile(String path) {
@@ -144,12 +205,13 @@ public class ThreatAssessmentService {
     private String redactUrl(String raw) {
         try {
             URI uri = URI.create(raw);
+            String host = UrlHostSignals.extractAsciiHost(uri);
             String path = uri.getPath() == null ? "" : uri.getPath();
             boolean sensitive = Arrays.stream(path.split("/"))
                     .anyMatch(segment -> SENSITIVE_PATH.matcher(segment).find()
                             || OPAQUE_PATH_SEGMENT.matcher(segment).matches());
             if (sensitive) path = "/";
-            return new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), path, null, null).toASCIIString();
+            return new URI(uri.getScheme(), null, host, uri.getPort(), path, null, null).toASCIIString();
         }
         catch (Exception ignored) { return "[redacted URL]"; }
     }

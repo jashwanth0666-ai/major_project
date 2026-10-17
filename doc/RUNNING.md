@@ -17,6 +17,22 @@ Install or make available on `PATH`:
 - Java 17 or newer for the JavaFX frontend
 - Maven 3.9 or newer, unless using the included Maven wrapper for the backend
 
+## Local API credentials
+
+The launch scripts create a per-user credential file at `%APPDATA%\AIWatchDog\auth\api-tokens.json` if it does not exist and restrict its Windows ACL to the current account and SYSTEM. The file contains separate 256-bit bearer tokens for the JavaFX desktop (`desktop`), browser extension (`extension`), and Spring-to-FastAPI service call (`springToMl`). Spring protects every route except `GET /api/v1/health`; the extension credential can call only the two URL assessment endpoints. FastAPI protects `/predict` and the static PE endpoint with the service credential; `GET /health` remains available for startup checks.
+
+The extension token must be configured once in the extension's **Options** page. After starting the services, open the credential file and copy only the `extension` value into the extension settings:
+
+```powershell
+Get-Content "$env:APPDATA\AIWatchDog\auth\api-tokens.json" -Raw
+```
+
+Do not paste the desktop or service token into the extension. To rotate all three credentials, stop the services and run `.\setup-local-auth.ps1 -Rotate`, then restart the services, recreate the extension token setting, and restart JavaFX so it reloads the desktop credential. Rotation does not modify SQLite data.
+
+For a custom credential location set `AI_WATCHDOG_TOKEN_FILE` before launching every service/client process. The setup script protects the credential file itself and only changes the parent directory ACL for the dedicated default directory. Keep custom parent directories protected by the Windows account ACL.
+
+This bearer-token design protects against unauthenticated callers and limits what the browser extension credential can do. It does not isolate hostile processes running as the same Windows account: those processes can generally read the account's credential file. Keep both services bound to loopback and run as a standard user.
+
 Check the installed tools:
 
 ```powershell
@@ -43,6 +59,13 @@ If PowerShell blocks activation, run the following once for the current user, th
 Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 ```
 
+Before manual service startup, initialize credentials from the repository root. The `start-aiwatchdog.bat` and individual `run-aiwatchdog-*.bat` scripts do this automatically.
+
+```powershell
+cd P:\major_project
+.\setup-local-auth.ps1
+```
+
 ## 2. Start the ML API
 
 Open Terminal 1 and run from the repository root. Do not start this command from the `api` directory.
@@ -66,8 +89,10 @@ To enable the local static PE endpoint, configure `AI_WATCHDOG_PE_APPROVED_ROOTS
 Test a prediction:
 
 ```powershell
+$serviceToken = (Get-Content "$env:APPDATA\AIWatchDog\auth\api-tokens.json" -Raw | ConvertFrom-Json).springToMl
 Invoke-RestMethod -Method Post `
   -Uri http://127.0.0.1:8000/predict `
+  -Headers @{ Authorization = "Bearer $serviceToken" } `
   -ContentType 'application/json' `
   -Body '{"url":"https://example.com"}'
 ```

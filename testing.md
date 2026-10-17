@@ -439,3 +439,102 @@ Prerequisites for manual cases: disposable Chrome or Chromium Edge profile, unpa
 - **Procedure:** Observe actual provider subscriptions and wait for naturally occurring allowlisted events. For deterministic pipeline coverage, separately use synthetic analyzer fixtures; do not change audit policies, generate Defender detections, or use malicious samples. Inspect provider status, `monitor_events`, Activity, and notification preferences.
 - **Expected:** Provider status and last event times come from the real collector; only approved metadata is persisted; the existing Policy Engine receives source-specific mapped risk bands; any BLOCK outcome is clearly a recorded policy decision and does not claim an OS action.
 - **Pass/fail:** PASS if live subscription and deterministic analyzer cases both meet their criteria; mark the live portion BLOCKED if the provider is missing/disabled or no natural event arrives. Do not label missing event traffic a pass or as zero detections.
+
+
+## Phase 4 security hardening and portability (planned, unexecuted)
+
+### SEC-1 — Missing local credentials
+- **Purpose:** Verify requests without a local credential are rejected.
+- **Preconditions/Inputs:** FastAPI/Spring running; no token supplied.
+- **Expected result:** With the credential file absent, Spring protected routes return 503 `LOCAL_AUTH_NOT_CONFIGURED`; with credentials configured, missing/wrong tokens return 401. FastAPI protected routes return 503 when service credentials are unavailable and 401 for a missing/wrong bearer token. No protected response data is returned.
+- **Status:** PLANNED — NOT EXECUTED
+
+### SEC-2 — Invalid/expired/rotated credentials
+- **Purpose:** Verify stale/wrong tokens rejected and rotated accepted.
+- **Preconditions/Inputs:** Valid, expired, and rotated tokens.
+- **Expected result:** Stale/wrong rejected; rotated accepted by Spring and FastAPI after reload. The browser must be updated with the new extension token, and JavaFX restarted to reload its desktop token.
+- **Status:** PLANNED — NOT EXECUTED
+
+### SEC-3 — Cross-origin requests
+- **Purpose:** Block browser-origin privileged requests.
+- **Preconditions/Inputs:** Request with foreign Origin header.
+- **Expected result:** Blocked (CORS/origin check).
+- **Status:** PLANNED — NOT EXECUTED
+
+### SEC-4 — Unauthorized local API requests
+- **Purpose:** Reject non-loopback/unauthenticated callers.
+- **Preconditions/Inputs:** Request from non-loopback or without auth.
+- **Expected result:** Non-loopback binding remains disabled by default. Requests without credentials are rejected even when sent locally; the extension credential receives 403 outside URL analyze/preview routes.
+- **Status:** PLANNED — NOT EXECUTED
+
+### SEC-5 — Service-to-service auth failure
+- **Purpose:** Surface Spring-to-FastAPI auth failure as error.
+- **Preconditions/Inputs:** Mismatched service credentials.
+- **Expected result:** Spring's authenticated `/auth-check` fails, backend health reports ML unavailable/degraded, and prediction returns a gateway/service error; no benign verdict is returned.
+- **Status:** PLANNED — NOT EXECUTED
+
+### SEC-6 — Clean install under different Windows username
+- **Purpose:** No developer-specific paths; per-user config.
+- **Preconditions/Inputs:** Fresh user profile.
+- **Expected result:** Credentials are created under the new user's AppData with an ACL for that user and SYSTEM; scan/watch roots are empty until explicitly configured; no developer-specific paths remain in runtime defaults.
+- **Status:** PLANNED — NOT EXECUTED
+
+### SEC-7 — Missing/inaccessible/removed/invalid scan roots
+- **Purpose:** File Shield rejects bad roots without partial apply.
+- **Preconditions/Inputs:** Invalid/removed approved roots.
+- **Expected result:** Errors reported; no partial apply.
+- **Status:** PLANNED — NOT EXECUTED
+
+### SEC-8 — Settings update rollback
+- **Purpose:** Failed update leaves prior config intact.
+- **Preconditions/Inputs:** Validation/persistence error during update.
+- **Expected result:** Prior config preserved.
+- **Status:** PLANNED — NOT EXECUTED
+
+### SEC-9 — Health-state accuracy
+- **Purpose:** Accurate health during startup/failure/recovery.
+- **Preconditions/Inputs:** Service startup, provider failure, recovery.
+- **Expected result:** Accurate status; no false safe results.
+- **Status:** PLANNED — NOT EXECUTED
+
+### SEC-10 — Browser extension credential scope
+- **Purpose:** Verify the extension uses only its dedicated URL-assessment token.
+- **Preconditions/Inputs:** Configured extension token; valid desktop token; disposable browser profile.
+- **Expected result:** Extension URL visits and search previews work after token configuration through `/api/v1/threat-assessments/url` and `/api/v1/threat-assessments/url/preview`. The extension token is rejected from settings, event history, scan, quarantine, telemetry, legacy analysis routes, and other non-assessment routes. Clearing the extension token makes assessments unavailable, not safe.
+- **Status:** PLANNED — NOT EXECUTED
+
+### SEC-11 — Credential file permissions and rotation
+- **Purpose:** Verify per-user credential initialization, ACL, and rotation behavior.
+- **Preconditions/Inputs:** Disposable Windows user profile; stop all AI WatchDog services before rotation.
+- **Expected result:** Default credential directory/file ACL grants access only to the current user and SYSTEM. Rotation replaces all three credentials; old credentials fail; configured new extension token and restarted desktop/service clients work. No token is written to application logs.
+- **Status:** PLANNED — NOT EXECUTED
+
+### SEC-12 — Optional URL reputation evidence
+- **Purpose:** Confirm hostname-only disclosure, provenance, and unavailable semantics.
+- **Preconditions/Inputs:** Provider disabled; then a disposable HTTPS provider implementing `doc/URL_REPUTATION_PROVIDER.md` with known malicious, clean, suspicious, unknown, delayed, rate-limited, and malformed responses.
+- **Expected result:** Disabled mode makes no provider request. Enabled requests contain only the normalized hostname, never the submitted path/query/fragment. Each result includes provider and checked time; provider observation time and cached age are present when available. 404/204 are `UNKNOWN`; timeout, quota, and malformed responses are `UNAVAILABLE` and make the assessment `PARTIAL`. Neither `UNKNOWN` nor `KNOWN_CLEAN` lowers the model-derived verdict, and the lookup does not silently change the policy verdict.
+- **Status:** PLANNED — NOT EXECUTED
+
+### SEC-13 — URL hostname heuristic signals
+- **Purpose:** Confirm explainable hostname indicators and ensure they do not masquerade as model attribution or silently change policy.
+- **Preconditions/Inputs:** Submit ordinary ASCII, Punycode IDN, mixed Latin/Cyrillic or Latin/Greek label, URL user-information form, and host with more than five labels; compare the advisory flags with the submitted host.
+- **Expected result:** Matching indicators appear under `sources.urlHostSignals` with a check timestamp and explanation. No page/network fetch is made by these heuristics. No matching heuristic never establishes a safe result, and the verdict remains from the existing policy/model path. Unicode hostnames are accepted and assessed after IDN normalization.
+- **Status:** PLANNED — NOT EXECUTED
+
+### SEC-14 — Browser preview and navigation evidence parity
+- **Purpose:** Verify actual navigation and unvisited search preview use the same evidence and policy path.
+- **Preconditions/Inputs:** Configured extension credential; provider disabled and then a controlled optional provider; supported browser and search results page.
+- **Expected result:** Navigation calls `/api/v1/threat-assessments/url`; preview calls `/api/v1/threat-assessments/url/preview`. Both return model, hostname signals, reputation state, and the same model-derived policy semantics. Only the real navigation persists an assessment event. The extension credential cannot access other API routes.
+- **Status:** PLANNED — NOT EXECUTED
+
+### SEC-15 — Local exact-host domain rules
+- **Purpose:** Confirm deny rules take precedence, allow rules do not bypass detections, and browser enforcement reflects the rule source.
+- **Preconditions/Inputs:** Configure one synthetic test hostname in `AI_WATCHDOG_URL_DENYLIST` and another in `AI_WATCHDOG_URL_ALLOWLIST`; restart Spring; submit exact hosts, subdomains, and a host present in both lists.
+- **Expected result:** Exact deny match returns policy `BLOCK` and records `sources.localDomainRule.action=DENY`; if loaded in the extension, it installs a host-wide redirect rule. Exact allow match is evidence only and never changes the model/policy result. Subdomains do not match. A host in both lists is denied. No configured rules are returned in the assessment.
+- **Status:** PLANNED — NOT EXECUTED
+
+### SEC-16 — Reproducible frozen URL model evaluation
+- **Purpose:** Reproduce held-out and unseen-domain metrics and produce a privacy-reduced false-positive/false-negative review queue without training or threshold tuning.
+- **Preconditions/Inputs:** Local Python environment and Phase 4 artifact; repository split datasets. Run `python scripts/phase5_enterprise_eval.py` from the repository root, or use `--sample-size 1000` for a clearly labeled diagnostic only.
+- **Expected result:** Report records model SHA-256, threshold source, full split counts and metrics, domain overlap audit, deterministic sampling parameters, source label counts, and manual review fields. No temporal result is claimed while reliable timestamps are absent; no output is fed into training.
+- **Status:** PLANNED — NOT EXECUTED

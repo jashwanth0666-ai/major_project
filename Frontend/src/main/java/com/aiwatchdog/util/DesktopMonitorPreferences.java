@@ -1,6 +1,5 @@
 package com.aiwatchdog.util;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.prefs.Preferences;
@@ -17,9 +16,7 @@ public final class DesktopMonitorPreferences {
         String env = System.getenv("AI_WATCHDOG_MONITOR_DIRS");
         if (env != null && !env.isBlank()) return List.of(env.split(",")).stream().map(String::trim)
                 .filter(part -> !part.isBlank()).map(Path::of).toList();
-        Path home = Path.of(System.getProperty("user.home"));
-        return List.of("Downloads", "Desktop", "Documents").stream().map(home::resolve)
-                .filter(Files::isDirectory).toList();
+        return List.of();
     }
 
     public static void setRoots(List<Path> roots) {

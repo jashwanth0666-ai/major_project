@@ -15,6 +15,11 @@ public class ThreatAssessmentController {
         return service.assessUrl(request.url());
     }
 
+    @PostMapping("/url/preview")
+    public ThreatAssessment previewUrl(@Valid @RequestBody AnalyzeRequest request) {
+        return service.previewUrl(request.url());
+    }
+
     @PostMapping("/file")
     public ThreatAssessment assessFile(@Valid @RequestBody ThreatAssessmentRequest request) {
         return service.assessFile(request.path());

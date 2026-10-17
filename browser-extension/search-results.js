@@ -211,7 +211,8 @@
 
   function ratingClass(item) {
     if (item.state !== "ASSESSED") return "awd-unknown";
-    if (item.decision === "BLOCK" && item.riskLevel === "HIGH_RISK") return "awd-danger";
+    if (item.decision === "BLOCK" && (item.riskLevel === "HIGH_RISK" || item.domainDenied)) return "awd-danger";
+    if (item.hostnameConcern) return "awd-caution";
     if (item.decision === "WARN" || item.decision === "REVIEW" || item.riskLevel === "SUSPICIOUS") return "awd-caution";
     if (item.decision === "ALLOW" && item.riskLevel === "SAFE") return "awd-safe";
     return "awd-unknown";

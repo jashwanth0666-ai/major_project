@@ -395,7 +395,6 @@ class WatchDogDetector:
                 "risk_score": result["risk_score"],
                 "risk_level": result["risk_level"],
                 "prediction": result["prediction"],
-                "decision": result["decision"],
                 "threshold": result["threshold"],
                 "reasons": " | ".join(result["reasons"]),
             })

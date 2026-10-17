@@ -2,7 +2,8 @@ let blockedUrl = "";
 chrome.tabs.getCurrent((tab) => {
   const ruleId = Number(new URLSearchParams(location.search).get("ruleId"));
   chrome.runtime.sendMessage({ type: "GET_CURRENT_ASSESSMENT", tabId: tab?.id, ruleId }).then((item) => {
-    if (item?.state !== "ASSESSED" || item?.decision !== "BLOCK" || item?.riskLevel !== "HIGH_RISK" || item?.enforcement !== "RULE_APPLIED") {
+    const enforcedBlock = item?.decision === "BLOCK" && (item?.riskLevel === "HIGH_RISK" || item?.domainDenied);
+    if (item?.state !== "ASSESSED" || !enforcedBlock || item?.enforcement !== "RULE_APPLIED") {
       document.querySelector("h1").textContent = "This warning link is unavailable";
       document.getElementById("host").textContent = "No matching active AI WatchDog warning rule was found.";
       document.getElementById("warning").hidden = false;

@@ -46,7 +46,7 @@ Only a basename is accepted. Full local paths and process command-line arguments
 
 ## File monitoring configuration
 
-When the user starts protection from JavaFX, the application watches Downloads, Desktop, and Documents if those directories exist. To select different roots, set `AI_WATCHDOG_MONITOR_DIRS` to comma-separated directory paths before starting JavaFX. `AI_WATCHDOG_MONITOR_EXCLUDE` accepts comma-separated excluded paths. Watch registration includes subdirectories and newly created subdirectories. No admin privileges are required.
+When the user starts monitoring from JavaFX, only explicitly configured folders are watched. A clean install has no default watch roots; choose folders in Settings or set `AI_WATCHDOG_MONITOR_DIRS` to comma-separated paths before starting JavaFX. `AI_WATCHDOG_MONITOR_EXCLUDE` accepts comma-separated excluded paths. Watch registration includes subdirectories and newly created subdirectories. No admin privileges are required.
 
 The desktop monitor emits create and modify events using metadata only. Same-directory delete/create pairs within two seconds are classified as probable renames. Rename detection depends on Windows WatchService events and can be missed. Separately, the opt-in backend script module below reads eligible script files from the existing configured File Shield roots under a strict size cap; it never executes them.
 
@@ -63,7 +63,7 @@ Java `ProcessHandle` is polled every two seconds for new process IDs. `AI_WATCHD
 
 ## Browser extension
 
-The Chromium Manifest V3 extension is in `browser-extension/`. It observes active HTTP/HTTPS tab URLs, removes credentials, query strings, and fragments, and reduces sensitive or long opaque URL paths to `/`. It deduplicates for one minute and posts only to Spring on localhost. It does not read page contents or block navigation. The user must load the unpacked extension into Chrome or Edge; the project does not install it into a browser profile.
+The Chromium Manifest V3 extension is in `browser-extension/`. It observes active HTTP/HTTPS tab URLs, removes credentials, query strings, and fragments, and reduces sensitive or long opaque URL paths to `/`. It deduplicates repeated observations and posts only to Spring on localhost with its scoped bearer token. It does not read page contents. After `HIGH_RISK` plus policy `BLOCK`, it can install a browser redirect warning for later matching navigations; the initial request can start before assessment completes. The user must load the unpacked extension into Chrome or Edge; the project does not install it into a browser profile.
 
 ## Desktop lifecycle and notifications
 

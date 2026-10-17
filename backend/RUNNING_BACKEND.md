@@ -8,6 +8,8 @@ The backend is a Spring Boot application using Maven and Java 21.
 - PowerShell, Command Prompt, or a Unix-like shell
 - The ML API running at `http://127.0.0.1:8000` when ML predictions are needed
 
+Before starting services manually, run `setup-local-auth.ps1` from the repository root. It creates the per-user bearer credentials required by Spring and FastAPI. The root `run-aiwatchdog-backend.bat` and `start-aiwatchdog.bat` scripts initialize them automatically. Configure the extension token separately in the extension Options page; see [the run guide](../doc/RUNNING.md#local-api-credentials).
+
 Check Java from the `backend` directory:
 
 ```powershell

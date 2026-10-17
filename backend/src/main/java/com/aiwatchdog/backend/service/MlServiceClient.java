@@ -2,6 +2,7 @@ package com.aiwatchdog.backend.service;
 
 import com.aiwatchdog.backend.config.MlServiceConfig;
 import com.aiwatchdog.backend.dto.MlPredictionResponse;
+import com.aiwatchdog.backend.security.LocalApiTokenStore;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -13,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -23,10 +25,14 @@ public class MlServiceClient {
         private static final Logger logger = LoggerFactory.getLogger(MlServiceClient.class);
 
         private final RestClient restClient;
+        private final LocalApiTokenStore tokenStore;
 
+        @Autowired
         public MlServiceClient(
                         RestClient.Builder restClientBuilder,
-                        MlServiceConfig mlServiceConfig) {
+                        MlServiceConfig mlServiceConfig,
+                        LocalApiTokenStore tokenStore) {
+                this.tokenStore = tokenStore;
 
                 SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
 
@@ -42,17 +48,23 @@ public class MlServiceClient {
                                 .build();
         }
 
+        public MlServiceClient(RestClient.Builder restClientBuilder, MlServiceConfig mlServiceConfig) {
+                this(restClientBuilder, mlServiceConfig, new LocalApiTokenStore(""));
+        }
+
         public MlPredictionResponse predict(String url) {
 
                 try {
 
                         logger.info("ML request started");
 
-                        MlPredictionResponse response = restClient
+                        var request = restClient
                                         .post()
                                         .uri("/predict")
-                                        .body(new PredictionRequest(url))
-                                        .retrieve()
+                                        .body(new PredictionRequest(url));
+                        String token = tokenStore.token("springToMl");
+                        if (token != null) request.header("Authorization", "Bearer " + token);
+                        MlPredictionResponse response = request.retrieve()
                                         .body(MlPredictionResponse.class);
 
                         if (response == null) {
@@ -95,8 +107,11 @@ public class MlServiceClient {
         /** Calls the already-running FastAPI static analyzer; no model or parser is duplicated here. */
         public JsonNode analyzeFile(String path) {
                 try {
-                        String body = restClient.post().uri("/api/analyze-file")
-                                        .body(new FileAnalysisRequest(path)).retrieve().body(String.class);
+                        var request = restClient.post().uri("/api/analyze-file")
+                                        .body(new FileAnalysisRequest(path));
+                        String token = tokenStore.token("springToMl");
+                        if (token != null) request.header("Authorization", "Bearer " + token);
+                        String body = request.retrieve().body(String.class);
                         if (body == null || body.isBlank())
                                 throw new MlServiceException("PE analyzer returned an empty response.",
                                         MlServiceException.FailureType.MALFORMED_RESPONSE, null);
@@ -129,11 +144,10 @@ public class MlServiceClient {
         public boolean isHealthy() {
 
                 try {
-
-                        restClient
-                                        .get()
-                                        .uri("/health")
-                                        .retrieve()
+                        var request = restClient.get().uri("/auth-check");
+                        String token = tokenStore.token("springToMl");
+                        if (token != null) request.header("Authorization", "Bearer " + token);
+                        request.retrieve()
                                         .toBodilessEntity();
 
                         return true;

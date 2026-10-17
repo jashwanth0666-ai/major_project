@@ -27,6 +27,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 
@@ -37,6 +39,7 @@ public class ApiService implements MonitorEventSubmitter {
     private final HttpClient httpClient;
     private final ObjectMapper mapper;
     private final String baseUrl;
+    private final String localToken;
 
     public ApiService() {
         this(System.getProperty("aiwatchdog.backend.url",
@@ -53,14 +56,14 @@ public class ApiService implements MonitorEventSubmitter {
         this.baseUrl = normalized;
         this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
         this.mapper = new ObjectMapper();
+        this.localToken = loadLocalToken();
     }
 
     public String getBaseUrl() { return baseUrl; }
 
     public AnalyzeResponse analyzeUrl(String url) throws Exception {
         String body = mapper.writeValueAsString(new AnalyzeRequest(url));
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(endpoint("/api/v1/analyze"))
+        HttpRequest request = authorizedRequest("/api/v1/analyze")
                 .header("Content-Type", "application/json")
                 .timeout(Duration.ofSeconds(15))
                 .POST(HttpRequest.BodyPublishers.ofString(body))
@@ -140,7 +143,7 @@ public class ApiService implements MonitorEventSubmitter {
 
     /** Parses the response body even for HTTP 503 so Spring and ML status remain distinct. */
     public ServiceHealth getServiceHealth() throws Exception {
-        HttpRequest request = HttpRequest.newBuilder().uri(endpoint("/api/v1/health"))
+        HttpRequest request = authorizedRequest("/api/v1/health")
                 .timeout(Duration.ofSeconds(5)).GET().build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.body() == null || response.body().isBlank()) {
@@ -187,7 +190,7 @@ public class ApiService implements MonitorEventSubmitter {
     public MonitorEvent submit(String eventType, String action, String resourceName,
                                Long processId, Long sizeBytes) throws Exception {
         var payload = new MonitorEventRequest(eventType, action, resourceName, processId, sizeBytes);
-        HttpRequest request = HttpRequest.newBuilder().uri(endpoint("/api/monitor-events"))
+        HttpRequest request = authorizedRequest("/api/monitor-events")
                 .header("Content-Type", "application/json").timeout(Duration.ofSeconds(10))
                 .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(payload))).build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -202,7 +205,7 @@ public class ApiService implements MonitorEventSubmitter {
     }
 
     private HttpResponse<String> get(String path) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder().uri(endpoint(path)).timeout(Duration.ofSeconds(5)).GET().build();
+        HttpRequest request = authorizedRequest(path).timeout(Duration.ofSeconds(5)).GET().build();
         return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
@@ -211,7 +214,7 @@ public class ApiService implements MonitorEventSubmitter {
     }
 
     private <T> T postJson(String path, Object payload, Class<T> responseType, String method) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder().uri(endpoint(path))
+        HttpRequest request = authorizedRequest(path)
                 .header("Content-Type", "application/json")
                 .timeout("PUT".equals(method) ? Duration.ofSeconds(15) : Duration.ofMinutes(30))
                 .method(method, HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(payload)))
@@ -232,6 +235,31 @@ public class ApiService implements MonitorEventSubmitter {
     }
 
     private URI endpoint(String path) { return URI.create(baseUrl + path); }
+
+    private HttpRequest.Builder authorizedRequest(String path) {
+        HttpRequest.Builder builder = HttpRequest.newBuilder().uri(endpoint(path));
+        if (localToken != null) builder.header("Authorization", "Bearer " + localToken);
+        return builder;
+    }
+
+    private String loadLocalToken() {
+        try {
+            String configured = System.getenv("AI_WATCHDOG_TOKEN_FILE");
+            Path tokenFile;
+            if (configured != null && !configured.isBlank()) tokenFile = Path.of(configured).toAbsolutePath().normalize();
+            else {
+                String appData = System.getenv("APPDATA");
+                tokenFile = appData != null && !appData.isBlank()
+                        ? Path.of(appData, "AIWatchDog", "auth", "api-tokens.json")
+                        : Path.of(System.getProperty("user.home"), ".aiwatchdog", "api-tokens.json");
+            }
+            var token = mapper.readTree(Files.readString(tokenFile)).path("desktop");
+            String value = token.isTextual() ? token.asText().trim() : "";
+            return value.matches("(?i)[a-f0-9]{64,}") ? value : null;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
 
     private static void requireSuccess(HttpResponse<String> response, String message) throws IOException {
         if (response.statusCode() < 200 || response.statusCode() >= 300) {

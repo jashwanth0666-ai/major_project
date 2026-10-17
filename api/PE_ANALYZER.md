@@ -13,19 +13,23 @@ python -m pip install -r requirements-api.txt
 PE analysis is unavailable until at least one approved root is configured. The paths use the platform path-list separator (`;` on Windows):
 
 ```powershell
-$env:AI_WATCHDOG_PE_APPROVED_ROOTS = 'C:\Users\jashw\Downloads'
+$env:AI_WATCHDOG_PE_APPROVED_ROOTS = "$env:USERPROFILE\Downloads"
 $env:AI_WATCHDOG_PE_MAX_FILE_SIZE_BYTES = '52428800'
 $env:PYTHONPATH = "$PWD\scripts"
 python -m uvicorn api.server:app --host 127.0.0.1 --port 8000
 ```
+
+Initialize local API credentials from the repository root before starting FastAPI; see [local API credentials](../doc/RUNNING.md#local-api-credentials). The launch scripts do this automatically.
 
 The default maximum size is 50 MiB. It can be configured from 1 byte through 200 MiB. The API listens on loopback as configured in `api/config.py`; keep it local because this API accepts local paths. Use narrow approved roots. A symlink or junction that resolves outside those roots is rejected. Paths must be absolute and may not contain `..` components.
 
 ## Request
 
 ```powershell
+$serviceToken = (Get-Content "$env:APPDATA\AIWatchDog\auth\api-tokens.json" -Raw | ConvertFrom-Json).springToMl
 Invoke-RestMethod -Method Post `
   -Uri http://127.0.0.1:8000/api/analyze-file `
+  -Headers @{ Authorization = "Bearer $serviceToken" } `
   -ContentType 'application/json' `
   -Body '{"path":"C:\\Users\\you\\Downloads\\sample.exe"}'
 ```

@@ -507,6 +507,10 @@ public class MainController {
                 String baseDetail = watchedDirectories > 0
                         ? "Local monitoring active · " + watchedDirectories + " folders"
                         : "Process monitoring active · No configured folders available";
+                FileSystemMonitorService.HealthSnapshot fileHealth = file.getHealthSnapshot();
+                if (fileHealth.registrationFailures() > 0) {
+                    baseDetail += " · " + fileHealth.registrationFailures() + " folder registration errors";
+                }
                 final String detail = backendAvailable ? baseDetail : baseDetail + " · Event upload unavailable";
                 Platform.runLater(() -> setMonitoringStatus(true, detail));
             } catch (Exception error) {
@@ -590,8 +594,21 @@ public class MainController {
         boolean windowsDegraded = windowsTelemetry != null && windowsTelemetry.enabled()
                 && !"RUNNING".equals(windowsTelemetry.state());
         if (desktopMonitoring || backendMonitoring) {
-            sidebarProtectionTitle.setText(windowsDegraded ? "Monitoring degraded" : "Monitoring active");
+            FileSystemMonitorService.HealthSnapshot fileHealth = fileMonitor != null && fileMonitor.isRunning()
+                    ? fileMonitor.getHealthSnapshot() : null;
+            ProcessMonitorService.HealthSnapshot processHealth = processMonitor != null && processMonitor.isRunning()
+                    ? processMonitor.getHealthSnapshot() : null;
+            boolean fileDegraded = fileHealth != null && (fileHealth.registrationFailures() > 0
+                    || fileHealth.overflowEvents() > 0 || fileHealth.droppedUploads() > 0
+                    || fileHealth.uploadFailures() > 0);
+            boolean processDegraded = processHealth != null && (processHealth.processAccessFailures() > 0
+                    || processHealth.pollFailures() > 0 || processHealth.droppedUploads() > 0
+                    || processHealth.uploadFailures() > 0);
+            sidebarProtectionTitle.setText(windowsDegraded || fileDegraded || processDegraded
+                    ? "Monitoring degraded" : "Monitoring active");
             String active = describeActiveMonitors(desktopMonitoring, backendMonitoring);
+            if (fileHealth != null) active += " · " + fileMonitorSummary(fileHealth);
+            if (processHealth != null) active += " · " + processMonitorSummary(processHealth);
             if (backendSettings == null && desktopMonitoring) active += " · backend watcher status unavailable";
             active += " · " + windowsTelemetrySummary(windowsTelemetry);
             sidebarProtectionDescription.setText(active);
@@ -616,6 +633,31 @@ public class MainController {
         if (!health.supported()) return "Windows event collection unsupported on this operating system";
         if (!health.enabled()) return "Windows Defender/Security event collection disabled";
         return "Windows event collection " + valueOr(health.state(), "UNKNOWN");
+    }
+
+    private String fileMonitorSummary(FileSystemMonitorService.HealthSnapshot health) {
+        String summary = health.watchedDirectories() + " folders watched";
+        if (health.registrationFailures() > 0 || health.overflowEvents() > 0 || health.droppedUploads() > 0
+                || health.uploadFailures() > 0) {
+            summary += " · degraded: " + health.registrationFailures() + " registration errors, "
+                    + health.overflowEvents() + " watcher overflows, " + health.droppedUploads()
+                    + " dropped uploads, " + health.uploadFailures() + " upload failures";
+        }
+        if (health.queuedUploads() > 0) summary += " · " + health.queuedUploads() + " uploads queued";
+        return summary;
+    }
+
+    private String processMonitorSummary(ProcessMonitorService.HealthSnapshot health) {
+        String summary = health.observedProcesses() + " processes observed · " + health.observedStarts()
+                + " starts detected";
+        if (health.processAccessFailures() > 0 || health.pollFailures() > 0 || health.droppedUploads() > 0
+                || health.uploadFailures() > 0) {
+            summary += " · degraded: " + health.processAccessFailures() + " access errors, "
+                    + health.pollFailures() + " poll errors, " + health.droppedUploads()
+                    + " dropped uploads, " + health.uploadFailures() + " upload failures";
+        }
+        if (health.queuedUploads() > 0) summary += " · " + health.queuedUploads() + " uploads queued";
+        return summary;
     }
 
     private String describeActiveMonitors(boolean desktopMonitoring, boolean backendMonitoring) {

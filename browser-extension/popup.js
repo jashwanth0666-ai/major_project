@@ -13,7 +13,9 @@ function classify(item) {
   if (item.state === "PAUSED") return ["gray", "Protection paused"];
   if (item.state === "SEARCH_PAGE") return ["gray", "Search results page"];
   if (item.state !== "ASSESSED") return ["gray", "Unknown / not assessed"];
+  if (item.domainDenied && item.decision === "BLOCK") return ["red", item.enforcement === "DISABLED" ? "Denied by local domain rule — protection paused" : item.enforcement === "RULE_APPLIED" ? "Denied by local domain rule — warning active" : "Denied by local domain rule — warning unavailable"];
   if (item.decision === "BLOCK" && item.riskLevel === "HIGH_RISK") return ["red", item.enforcement === "DISABLED" ? "Dangerous — protection paused" : item.enforcement === "RULE_APPLIED" ? "Dangerous — browser warning active" : "Dangerous — warning unavailable"];
+  if (item.hostnameConcern) return ["yellow", "Caution advised — hostname evidence"];
   if (["WARN", "REVIEW"].includes(item.decision) || item.riskLevel === "SUSPICIOUS") return ["yellow", "Caution advised"];
   if (item.decision === "ALLOW" && item.riskLevel === "SAFE") return ["green", "Low risk from available checks"];
   return ["gray", "Unknown / not assessed"];
@@ -37,6 +39,11 @@ async function refresh() {
   const state = await send({ type: "GET_PROTECTION_STATE" });
   protection.checked = state?.enabled !== false;
   document.getElementById("protection-description").textContent = protection.checked ? "Navigation checks and supported search ratings are on." : "Checks and browser warning rules are paused.";
+  const credential = await chrome.storage.local.get("localApiToken");
+  if (typeof credential.localApiToken !== "string" || !/^[a-f0-9]{64,}$/i.test(credential.localApiToken.trim())) {
+    document.getElementById("backend").textContent = "Local API access is not configured. Use the button below to add the extension token.";
+    return;
+  }
   const health = await send({ type: "GET_HEALTH" });
   document.getElementById("backend").textContent = health?.spring_boot ? `Spring Boot: ${health.spring_boot} · ML service: ${health.ml_service || "status unavailable"}` : `Local backend unavailable (${health?.state || "connection error"}).`;
 }
@@ -48,6 +55,7 @@ protection.addEventListener("change", async () => {
   if (!result?.ok) await refresh(); else await refresh();
 });
 document.getElementById("report").addEventListener("click", () => { if (activeTab?.id !== undefined) void send({ type: "OPEN_REPORT", tabId: activeTab.id }); });
+document.getElementById("configure").addEventListener("click", () => chrome.runtime.openOptionsPage());
 document.getElementById("recheck").addEventListener("click", async (event) => {
   const button = event.currentTarget;
   button.disabled = true;

@@ -8,10 +8,23 @@ function rating(item) {
   if (item.state === "PAUSED") return ["gray", "Protection paused"];
   if (item.state === "SEARCH_PAGE") return ["gray", "Search results page — destinations checked separately"];
   if (item.state !== "ASSESSED") return ["gray", "Unknown / not assessed"];
+  if (item.domainDenied && item.decision === "BLOCK") return ["red", item.enforcement === "DISABLED" ? "Denied by local domain rule — protection paused" : item.enforcement === "RULE_APPLIED" ? "Denied by local domain rule — warning rule applied" : "Denied by local domain rule — warning unavailable"];
   if (item.decision === "BLOCK" && item.riskLevel === "HIGH_RISK") return ["red", item.enforcement === "DISABLED" ? "High risk — protection paused" : item.enforcement === "RULE_APPLIED" ? "High risk — browser warning rule applied" : "High risk — browser warning unavailable"];
+  if (item.hostnameConcern) return ["yellow", "Caution advised — hostname evidence"];
   if (["WARN", "REVIEW"].includes(item.decision) || item.riskLevel === "SUSPICIOUS") return ["yellow", "Caution advised"];
   if (item.decision === "ALLOW" && item.riskLevel === "SAFE") return ["green", "Low risk from available checks"];
   return ["gray", "Unknown / not assessed"];
+}
+function enforcementSummary(item) {
+  if (item?.domainDenied && item?.decision === "BLOCK") {
+    if (item.enforcement === "RULE_APPLIED") return "Browser enforcement: a host-wide redirect rule was installed for this exact hostname. The first visit may begin loading before assessment completes.";
+    if (item.enforcement === "DISABLED") return "Browser enforcement: protection was paused and its dynamic warning rules were removed.";
+    return "Browser enforcement: the local domain deny rule returned BLOCK, but a browser warning rule could not be installed.";
+  }
+  if (item?.decision === "BLOCK" && item?.riskLevel === "HIGH_RISK" && item.enforcement === "RULE_APPLIED") return "Browser enforcement: a dynamic navigation redirect rule was installed for the assessed URL path. The first visit may begin loading before assessment completes.";
+  if (item?.decision === "BLOCK" && item?.riskLevel === "HIGH_RISK" && item.enforcement === "DISABLED") return "Browser enforcement: protection was paused and its dynamic navigation rules were removed.";
+  if (item?.decision === "BLOCK" && item?.riskLevel === "HIGH_RISK") return "Browser enforcement: the policy returned BLOCK, but a navigation rule could not be installed for this URL.";
+  return "Browser enforcement: no navigation block is active for this result.";
 }
 async function render() {
   const [item, health] = await Promise.all([
@@ -27,7 +40,7 @@ async function render() {
   const ml = item?.state === "ASSESSED" && Number.isFinite(item.probability) ? `Phishing probability: ${(item.probability * 100).toFixed(1)}% · Policy risk score: ${item.riskScore ?? "unavailable"} · Model threshold: ${item.threshold ?? "unavailable"}` : "Model assessment: unavailable or not yet completed.";
   document.getElementById("ml").textContent = ml;
   document.getElementById("backend").textContent = health?.spring_boot ? `Backend: Spring Boot ${health.spring_boot} · ML service ${health.ml_service || "status unavailable"}` : `Backend unavailable (${health?.state || "connection error"}).`;
-  document.getElementById("enforcement").textContent = item?.decision === "BLOCK" && item?.riskLevel === "HIGH_RISK" && item.enforcement === "RULE_APPLIED" ? "Browser enforcement: a dynamic navigation redirect rule was installed for the assessed URL path. The first visit may begin loading before assessment completes." : item?.decision === "BLOCK" && item?.riskLevel === "HIGH_RISK" && item.enforcement === "DISABLED" ? "Browser enforcement: protection was paused and its dynamic navigation rules were removed." : item?.decision === "BLOCK" && item?.riskLevel === "HIGH_RISK" ? "Browser enforcement: the policy returned BLOCK, but a navigation rule could not be installed for this URL." : "Browser enforcement: no navigation block is active for this result.";
+  document.getElementById("enforcement").textContent = enforcementSummary(item);
   const list = document.getElementById("reasons"); list.replaceChildren();
   const reasons = Array.isArray(item?.reasons) ? item.reasons.slice(0, 12) : [];
   if (!reasons.length) reasons.push(item?.state === "UNAVAILABLE" ? "The local backend could not provide an assessment." : "No assessment reasons are available.");

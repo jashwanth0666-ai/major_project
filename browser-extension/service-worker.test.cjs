@@ -6,7 +6,7 @@ const vm = require("node:vm");
 
 function loadWorker(fetchImpl = async () => { throw new Error("unexpected request"); }) {
   const listeners = {};
-  const local = {};
+  const local = { localApiToken: "a".repeat(64) };
   const session = {};
   let dynamicRules = [];
   const requests = [];
@@ -81,7 +81,8 @@ test("search preview uses the non-persisting endpoint, strips queries, and caps 
   const results = await harness.worker.previewResults(urls);
   assert.equal(results.length, 8);
   assert.equal(harness.requests.length, 8);
-  assert.ok(harness.requests.every((request) => request.endpoint.endsWith("/api/v1/analyze/preview")));
+  assert.ok(harness.requests.every((request) => request.endpoint.endsWith("/api/v1/threat-assessments/url/preview")));
+  assert.ok(harness.requests.every((request) => request.options.headers.Authorization === `Bearer ${"a".repeat(64)}`));
   assert.ok(harness.requests.every((request) => !JSON.parse(request.options.body).url.includes("?")));
 });
 

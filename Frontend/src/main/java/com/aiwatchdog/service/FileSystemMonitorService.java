@@ -16,10 +16,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -33,17 +33,34 @@ public final class FileSystemMonitorService implements AutoCloseable {
     private final Map<Path, Long> recentDeletes = new ConcurrentHashMap<>();
     private final List<Path> exclusions;
     private final List<Path> roots;
-    private final ExecutorService sender = new ThreadPoolExecutor(2, 2, 0, TimeUnit.MILLISECONDS,
+    private final ThreadPoolExecutor sender = new ThreadPoolExecutor(2, 2, 0, TimeUnit.MILLISECONDS,
             new ArrayBlockingQueue<>(256), task -> {
         Thread thread = new Thread(task, "aiwatchdog-file-event-sender");
         thread.setDaemon(true);
         return thread;
-    }, new ThreadPoolExecutor.DiscardOldestPolicy());
+    }, new ThreadPoolExecutor.AbortPolicy());
+    private final AtomicLong observedEvents = new AtomicLong();
+    private final AtomicLong overflowEvents = new AtomicLong();
+    private final AtomicLong registrationFailures = new AtomicLong();
+    private final AtomicLong uploadFailures = new AtomicLong();
+    private final AtomicLong droppedUploads = new AtomicLong();
+    private final AtomicLong lastEventEpochMillis = new AtomicLong();
     private WatchService watcher;
     private Thread worker;
     private volatile boolean running;
 
     public boolean isRunning() { return running; }
+
+    public HealthSnapshot getHealthSnapshot() {
+        return new HealthSnapshot(running, roots.size(), directories.size(), observedEvents.get(),
+                overflowEvents.get(), registrationFailures.get(), uploadFailures.get(), droppedUploads.get(),
+                sender.getQueue().size(), 256, lastEventEpochMillis.get());
+    }
+
+    public record HealthSnapshot(boolean running, int configuredRoots, int watchedDirectories,
+                                 long observedEvents, long overflowEvents, long registrationFailures,
+                                 long uploadFailures, long droppedUploads, int queuedUploads,
+                                 int uploadQueueCapacity, long lastEventEpochMillis) {}
 
     public FileSystemMonitorService(MonitorEventSubmitter eventSubmitter, Consumer<MonitorEvent> eventConsumer) {
         this(eventSubmitter, eventConsumer, configuredRoots(),
@@ -70,9 +87,9 @@ public final class FileSystemMonitorService implements AutoCloseable {
             if (!Files.isDirectory(root) || excluded(root)) continue;
             try (Stream<Path> paths = Files.walk(root)) {
                 paths.filter(Files::isDirectory).filter(path -> !excluded(path)).forEach(path -> {
-                    try { register(path); } catch (IOException ignored) { }
+                    try { register(path); } catch (IOException ignored) { registrationFailures.incrementAndGet(); }
                 });
-            }
+            } catch (IOException ignored) { registrationFailures.incrementAndGet(); }
         }
         if (directories.isEmpty()) {
             watcher.close();
@@ -95,7 +112,12 @@ public final class FileSystemMonitorService implements AutoCloseable {
             Path directory = directories.get(key);
             if (directory != null) {
                 for (WatchEvent<?> event : key.pollEvents()) {
-                    if (event.kind() == StandardWatchEventKinds.OVERFLOW) continue;
+                    if (event.kind() == StandardWatchEventKinds.OVERFLOW) {
+                        overflowEvents.incrementAndGet();
+                        continue;
+                    }
+                    observedEvents.addAndGet(event.count());
+                    lastEventEpochMillis.set(System.currentTimeMillis());
                     Object context = event.context();
                     if (!(context instanceof Path relative)) continue;
                     Path path = directory.resolve(relative).normalize();
@@ -116,7 +138,7 @@ public final class FileSystemMonitorService implements AutoCloseable {
                     }
                 }
             }
-            if (!key.reset()) directories.remove(key);
+            if (!key.reset() && directories.remove(key) != null) registrationFailures.incrementAndGet();
         }
     }
 
@@ -140,9 +162,9 @@ public final class FileSystemMonitorService implements AutoCloseable {
         if (excluded(root)) return;
         try (Stream<Path> paths = Files.walk(root)) {
             paths.filter(Files::isDirectory).filter(path -> !excluded(path)).forEach(path -> {
-                try { register(path); } catch (IOException ignored) { }
+                try { register(path); } catch (IOException ignored) { registrationFailures.incrementAndGet(); }
             });
-        } catch (IOException ignored) { }
+        } catch (IOException ignored) { registrationFailures.incrementAndGet(); }
     }
 
     private void register(Path directory) throws IOException {
@@ -166,14 +188,18 @@ public final class FileSystemMonitorService implements AutoCloseable {
         try { size = Files.readAttributes(path, BasicFileAttributes.class).size(); }
         catch (IOException ignored) { }
         Long fileSize = size;
-        sender.submit(() -> {
+        try {
+            sender.execute(() -> {
             try {
                 MonitorEvent result = eventSubmitter.submit("FILE", action, name, null, fileSize);
                 eventConsumer.accept(result);
             } catch (Exception ignored) {
-                // The next event is retried normally; the UI reports service state separately.
+                uploadFailures.incrementAndGet();
             }
-        });
+            });
+        } catch (RejectedExecutionException ignored) {
+            droppedUploads.incrementAndGet();
+        }
     }
 
     private boolean excluded(Path path) {

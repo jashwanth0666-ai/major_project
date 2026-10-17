@@ -11,6 +11,7 @@
     "https://*/*"
   ],
   "action": { "default_title": "AI WatchDog", "default_popup": "popup.html" },
+  "options_ui": { "page": "options.html", "open_in_tab": true },
   "background": {
     "service_worker": "service-worker.js"
   },

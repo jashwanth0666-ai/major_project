@@ -117,3 +117,6 @@ data/dataset_report.txt
 convert_svg.py
 trash/
 scripts/
+!scripts/
+scripts/*
+!scripts/phase5_enterprise_eval.py

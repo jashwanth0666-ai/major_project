@@ -4,11 +4,11 @@ This optional Manifest V3 extension connects supported Chromium browsers to the 
 
 ## What it does
 
-- Checks sanitized HTTP/HTTPS destinations after an active tab finishes navigation and records those real visits through `POST /api/v1/analyze`.
+- Checks sanitized HTTP/HTTPS destinations after an active tab finishes navigation through `POST /api/v1/threat-assessments/url`. The shared assessment adds optional reputation and hostname signals, then records the real visit.
 - Injects result-link indicators on Google Search (`google.com`, `google.co.uk`, `google.ca`, `google.com.au`), Bing (`bing.com`), and DuckDuckGo (`duckduckgo.com` and its HTML results host). Other detected Google search URLs are still excluded from ordinary URL analysis, but do not receive result indicators. Search text and result-page URLs are not sent to the URL model.
-- Rates up to eight distinct result destinations at a time using `POST /api/v1/analyze/preview`. Preview calls use the same model and policy as navigation analysis, but do not create a `monitor_events`/URL audit entry for an unvisited result. The content script reads link targets only; it does not collect page text, titles, cookies, or form values.
+- Rates up to eight distinct result destinations at a time using `POST /api/v1/threat-assessments/url/preview`. Preview calls use the same model, policy, optional reputation lookup, and hostname signals as navigation analysis, but do not write an audit event for an unvisited result. The content script reads link targets only; it does not collect page text, titles, cookies, or form values.
 - Shows a toolbar popup and site report with the actual returned risk level, policy decision, reasons, assessment time, and backend health. Green means the existing model and policy returned `SAFE` and `ALLOW`; it is a low-risk signal, not a guarantee. Missing or failed assessments remain Unknown/unavailable.
-- For a `HIGH_RISK` assessment with policy `BLOCK`, installs a Chrome `declarativeNetRequest` rule for the assessed URL and redirects matching later navigations to an AI WatchDog warning page. If the rule cannot be installed, is disabled, or cannot safely represent a redacted path, the UI reports that enforcement is unavailable.
+- For a `HIGH_RISK` assessment with policy `BLOCK`, installs a Chrome `declarativeNetRequest` rule for the assessed URL. A local exact-host denylist `BLOCK` installs a host-wide rule for that hostname. Matching later navigations redirect to an AI WatchDog warning page. If the rule cannot be installed, is disabled, or cannot safely represent a redacted path, the UI reports that enforcement is unavailable.
 - Keeps at most 128 active warning rules and evicts the oldest AI WatchDog rules first; the rule and warning details are reconciled when the extension worker starts.
 - Provides a persisted protection switch. Turning it off disables new checks and removes the extension's dynamic warning rules.
 
@@ -18,9 +18,11 @@ The browser must send a URL to the local backend and wait for inference before t
 
 The rule is scoped to the normalized assessed URL path. Query parameters and fragments are removed before analysis. Credentials, long opaque path segments, and paths containing common secret markers are reduced to the origin; for these redacted paths the extension does not install a rule because that could block unrelated locations or retain a secret. The first visit warning may thus be unavailable in that case.
 
-This project has no external URL reputation provider, typo-domain protection, or browser download-content scanning. Downloads are not fetched, inspected, or changed. File Shield remains a separate local file feature. Policy outcomes other than `BLOCK` do not install a navigation rule, and there is no proceed action on a BLOCK warning.
+URL reputation is an optional hostname-only lookup against an operator-configured HTTPS provider and is disabled by default. Local hostname heuristics identify a limited set of IDN, mixed-script, user-information, and deep-subdomain signals; they do not provide comprehensive typo-domain or visual similarity detection. Optional local domain lists can force `BLOCK` for exact host matches; allowlist entries are evidence only. See [domain rule configuration](../doc/URL_DOMAIN_RULES.md). Browser download-content scanning is not implemented. Downloads are not fetched, inspected, or changed. File Shield remains a separate local file feature. Policy outcomes other than `BLOCK` do not install a navigation rule, and there is no proceed action on a BLOCK warning.
 
 ## Permissions and privacy
+
+The extension requires its own local API credential. The root launch scripts provision separate per-user credentials for JavaFX, the extension, and the Spring-to-FastAPI connection. Open the extension popup's **Configure local API access** page and paste only the `extension` value from `%APPDATA%\AIWatchDog\auth\api-tokens.json`. The extension credential is scoped by Spring to URL analysis and preview endpoints. It is stored in the browser profile's extension storage; do not share that browser profile with untrusted users. Rotation is described in [the run guide](../doc/RUNNING.md#local-api-credentials).
 
 The manifest requests:
 
@@ -29,7 +31,7 @@ The manifest requests:
 - `declarativeNetRequest` to create and remove actual browser navigation redirect rules after confirmed BLOCK decisions.
 - HTTP and HTTPS host access so the browser can redirect matching navigations and run the result-link reader on supported search pages. This broad site-access permission is disclosed by Chrome/Edge when the extension is loaded. Backend requests are restricted in code to `127.0.0.1:8080` and `localhost:8080`.
 
-Before a URL reaches Spring, the extension removes credentials, query parameters, and fragments. It reduces likely secret or opaque path segments to `/`. Search destinations are normalized in the same way. No browsing URL is sent to an external service. Local warning-rule details contain only the sanitized URL and returned evidence; they are removed when protection is turned off. Current tab assessments use browser-session storage.
+Before a URL reaches Spring, the extension removes credentials, query parameters, and fragments. It reduces likely secret or opaque path segments to `/`. Search destinations are normalized in the same way. The full URL is not sent to an external reputation service; when the optional provider is enabled, Spring sends only the normalized hostname to its configured HTTPS endpoint. Local warning-rule details contain only the sanitized URL and returned evidence; they are removed when protection is turned off. Current tab assessments use browser-session storage.
 
 ## Load for development
 
@@ -41,8 +43,9 @@ Only Chrome and Chromium-based Edge are targeted. The project does not install t
 
 ## Backend API
 
-- `POST /api/v1/analyze` — same existing API contract; assesses and persists an actual navigation event.
-- `POST /api/v1/analyze/preview` — same response schema and model/policy path, without writing an event; intended for unvisited search destinations.
+- `POST /api/v1/threat-assessments/url` — unified assessment evidence for an actual navigation; persists an audit event.
+- `POST /api/v1/threat-assessments/url/preview` — same evidence and decision path without writing an event; intended for unvisited search destinations.
+- `POST /api/v1/analyze` and `/api/v1/analyze/preview` — legacy model/policy response routes remain available to other local clients.
 - `GET /api/v1/health` — reports Spring and FastAPI availability. A degraded response can still report Spring `UP` while ML is `DOWN`.
 
-No API keys or optional provider configuration are required.
+No external provider API key is required for local URL assessment. A local extension credential is required for browser assessment requests.

@@ -1,11 +1,13 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="extension.css"><title>AI WatchDog</title></head>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="extension.css"><title>AI WatchDog</title></head>
 <body>
   <div class="brand">AI WatchDog</div><h1>Website protection</h1>
-  <section class="panel"><div id="hostname" class="muted">Checking current tab…</div><p><span id="rating" class="status gray">Unknown</span></p><div id="summary" class="muted">No assessment available for this tab.</div><div id="timestamp" class="muted"></div>
-  <ul id="reasons"></ul><div id="search-note" class="notice" hidden>Search results are rated individually. The search terms and results page are not sent for URL analysis.</div></section>
-  <section class="panel"><div class="row"><div><strong>Protection</strong><div id="protection-description" class="muted">Checking state…</div></div><input id="protection" class="switch" type="checkbox" aria-label="Enable browser protection"></div>
-    <p id="backend" class="muted">Checking local backend…</p><div class="actions"><button id="report" class="secondary">Site report</button><button id="recheck">Check again</button></div></section>
-  <p class="notice">Ratings use the configured AI WatchDog model and policy only. No reputation provider or browser download scanning is configured.</p>
+  <section class="panel"><div id="hostname" class="muted">Checking current tab...</div><p><span id="rating" class="status gray">Unknown</span></p><div id="summary" class="muted">No assessment available for this tab.</div><div id="timestamp" class="muted"></div>
+  <ul id="reasons"></ul><div id="search-note" class="notice" hidden>Search result destinations are checked separately. Search terms are not sent for analysis.</div></section>
+  <section class="panel"><div class="row"><div><strong>Protection</strong><div id="protection-description" class="muted">Checking state...</div></div><input id="protection" class="switch" type="checkbox" aria-label="Enable browser protection"></div>
+    <p id="backend" class="muted">Checking local backend...</p><div class="actions"><button id="report" class="secondary">Site report</button><button id="recheck">Check again</button></div><button id="configure" class="secondary wide">Configure local API access</button></section>
+  <p class="notice">Ratings use the AI WatchDog model and policy with available hostname evidence. Reputation lookup is optional and browser download scanning is not available.</p>
   <script src="popup.js"></script>
-</body></html>
+</body>
+</html>

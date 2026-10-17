@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="extension.css">
+  <title>AI WatchDog local API access</title>
+</head>
+<body class="options-page">
+  <main class="panel">
+    <div class="brand">AI WatchDog</div>
+    <h1>Local API access</h1>
+    <p class="muted">Paste the browser extension credential from your protected local credentials file. The extension stores this value in its browser profile and sends it only to the local AI WatchDog service.</p>
+    <label for="token">Extension token</label>
+    <input id="token" type="password" autocomplete="off" spellcheck="false">
+    <div class="actions"><button id="save">Save token</button><button id="clear" class="secondary">Clear</button></div>
+    <p id="status" role="status" class="muted"></p>
+  </main>
+  <script src="options.js"></script>
+</body>
+</html>
