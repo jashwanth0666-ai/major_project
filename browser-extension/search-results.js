@@ -1,4 +1,5 @@
 (() => {
+  console.log("[AI WatchDog] search-results.js v1.1.3 active");
   const badgeClass = "ai-watchdog-rating";
   let timer;
   let requestActive = false;
@@ -69,6 +70,7 @@
         const url = resultUrl(anchor);
         if (!url || seen.has(url)) continue;
         if (anchor.dataset.awdRatedUrl === url) continue;
+        anchor.querySelectorAll(`.${badgeClass}`).forEach((b) => b.remove());
         if (anchor.nextElementSibling?.classList.contains(badgeClass)) anchor.nextElementSibling.remove();
         seen.add(url);
         found.push({ anchor, url });
@@ -102,36 +104,79 @@
     const url = resultUrl(anchor);
     if (!url) return;
     anchor.dataset.awdRatedUrl = url;
+
+    // Clean up any existing badge associated with this anchor
+    anchor.querySelectorAll(`.${badgeClass}`).forEach((b) => b.remove());
     if (anchor.nextElementSibling?.classList.contains(badgeClass)) anchor.nextElementSibling.remove();
+
     const badge = document.createElement("span");
     badge.className = `${badgeClass} ${ratingClass(assessment)}`;
     badge.setAttribute("role", "img");
     badge.setAttribute("aria-label", ratingLabel(assessment));
     badge.setAttribute("dir", "ltr");
+
+    // Explicitly reset rotation, transformation, orientation, and layout properties
+    badge.style.setProperty("display", "inline-flex", "important");
+    badge.style.setProperty("flex-direction", "row", "important");
+    badge.style.setProperty("align-items", "center", "important");
+    badge.style.setProperty("vertical-align", "middle", "important");
+    badge.style.setProperty("margin", "0 0 0 8px", "important");
     badge.style.setProperty("direction", "ltr", "important");
-    badge.style.setProperty("unicode-bidi", "isolate", "important");
     badge.style.setProperty("writing-mode", "horizontal-tb", "important");
     badge.style.setProperty("text-orientation", "mixed", "important");
     badge.style.setProperty("transform", "none", "important");
+    badge.style.setProperty("rotate", "0deg", "important");
+    badge.style.setProperty("scale", "1", "important");
+    badge.style.setProperty("cursor", "default", "important");
+
+    badge.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+
     const shadow = badge.attachShadow({ mode: "open" });
     const style = document.createElement("style");
     style.textContent = `
       :host {
         all: initial !important;
         direction: ltr !important;
-        unicode-bidi: isolate !important;
         display: inline-flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
         vertical-align: middle !important;
-        margin: 3px 0 3px 8px !important;
+        margin: 0 0 0 8px !important;
         padding: 2px 7px !important;
         border: 1px solid !important;
         border-radius: 999px !important;
         white-space: nowrap !important;
-        font: 600 11px/1.5 system-ui, sans-serif !important;
+        font: 600 11px/1.5 system-ui, -apple-system, sans-serif !important;
+        writing-mode: horizontal-tb !important;
+        transform: none !important;
+        rotate: 0deg !important;
+        scale: 1 !important;
+        cursor: default !important;
       }
-      .content { display: inline-flex; align-items: center; gap: 4px; direction: ltr; unicode-bidi: isolate; }
-      img { display: block; flex: 0 0 13px; width: 13px; height: 13px; }
-      bdi { direction: ltr; unicode-bidi: isolate; }
+      .content {
+        display: inline-flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 4px !important;
+        direction: ltr !important;
+        writing-mode: horizontal-tb !important;
+        transform: none !important;
+        rotate: 0deg !important;
+        scale: 1 !important;
+      }
+      .content span {
+        direction: ltr !important;
+        writing-mode: horizontal-tb !important;
+        transform: none !important;
+        rotate: 0deg !important;
+        scale: 1 !important;
+        font-family: system-ui, -apple-system, sans-serif !important;
+        font-size: 11px !important;
+        font-weight: 600 !important;
+      }
+      img { display: block; flex: 0 0 13px; width: 13px; height: 13px; transform: none !important; rotate: 0deg !important; }
       :host(.awd-safe) { color: #176b3a !important; background: #e7f6ec !important; border-color: currentColor !important; }
       :host(.awd-caution) { color: #855600 !important; background: #fff3cd !important; border-color: currentColor !important; }
       :host(.awd-danger) { color: #a21c28 !important; background: #fde8e9 !important; border-color: currentColor !important; }
@@ -143,12 +188,17 @@
     icon.setAttribute("aria-hidden", "true");
     const content = document.createElement("span");
     content.className = "content";
-    const label = document.createElement("bdi");
-    label.dir = "ltr";
+    const label = document.createElement("span");
+    label.setAttribute("dir", "ltr");
     label.textContent = ratingText(assessment);
     content.append(icon, label);
     shadow.append(style, content);
-    anchor.insertAdjacentElement("afterend", badge);
+
+    // Target the heading inside anchor (for Google), or anchor itself (Bing / DuckDuckGo)
+    // to keep the badge beside the title text and avoid Google's rotated breadcrumb/3-dots slot
+    const targetHeading = anchor.querySelector("h3, h2") || anchor;
+    const appendTarget = targetHeading.querySelector(":scope > div, :scope > span") || targetHeading;
+    appendTarget.appendChild(badge);
   }
 
   function ratingIcon(item) {

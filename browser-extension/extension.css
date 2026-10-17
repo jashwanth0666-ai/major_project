@@ -20,3 +20,14 @@ ul { margin: 8px 0 0; padding-left: 20px; overflow-wrap: anywhere; }
 .switch { width: 42px; height: 24px; accent-color: #11645f; }
 .wide { width: 100%; }
 .page-shell { max-width: 760px; margin: 6vh auto; padding: 28px; }
+/* AI WatchDog: prevent accidental mirrored text */
+.status,
+.status *,
+.search-result,
+.search-result *,
+.brand,
+h1,
+p {
+    direction: ltr;
+    unicode-bidi: isolate;
+}

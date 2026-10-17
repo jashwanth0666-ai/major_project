@@ -496,17 +496,18 @@ public class MainController {
                     Platform.runLater(() -> setMonitoringStatus(false, "Local monitoring stopped"));
                     return;
                 }
-                ServiceHealth health = apiService.getServiceHealth();
-                if (!health.isBackendAvailable()) throw new IllegalStateException("Spring Boot is unavailable");
                 FileSystemMonitorService file = new FileSystemMonitorService(apiService, event -> onMonitorEvent());
                 ProcessMonitorService process = new ProcessMonitorService(apiService, event -> onMonitorEvent());
                 fileMonitor = file;
                 processMonitor = process;
                 int watchedDirectories = file.start();
                 process.start();
-                String detail = watchedDirectories > 0
-                        ? "Monitoring active · " + watchedDirectories + " folders"
+                ServiceHealth health = safeLoad(apiService::getServiceHealth);
+                boolean backendAvailable = health != null && health.isBackendAvailable();
+                String baseDetail = watchedDirectories > 0
+                        ? "Local monitoring active · " + watchedDirectories + " folders"
                         : "Process monitoring active · No configured folders available";
+                final String detail = backendAvailable ? baseDetail : baseDetail + " · Event upload unavailable";
                 Platform.runLater(() -> setMonitoringStatus(true, detail));
             } catch (Exception error) {
                 FileSystemMonitorService file = fileMonitor;
