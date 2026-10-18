@@ -222,7 +222,7 @@ At the selected threshold of **0.15**, the threshold-selection data achieved:
 | FPR | 0.0540* |
 | FNR | 0.0919* |
 
-\*The values above are the final held-out test results and are included here as the deployment operating-point reference. The exact threshold-selection metrics are stored in `data/phase4/threshold_results.csv`.
+\*The values above are the final held-out test results and are included here as the deployment operating-point reference. The exact threshold-selection metrics are stored in `ml_model/phase4/threshold_results.csv`.
 
 ---
 
@@ -437,7 +437,7 @@ This preserves the validity of the final evaluation.
 Phase 4 generates the following files:
 
 ```text
-data/
+ml_model/
 └── phase4/
     ├── threshold_results.csv
     ├── calibration_results.csv

@@ -355,22 +355,22 @@ Phase 5 follows the evaluation discipline established in earlier phases:
 ### Scripts
 
 ``` text
-phase5_inference.py
+api/inference/detector.py
 phase5_validation.py
 ```
 
 ### Generated validation outputs
 
 ``` text
-data/phase5/validation_test_sample.csv
-data/phase5/validation_unseen_sample.csv
-data/phase5/phase5_validation_report.txt
+ml_model/phase5/validation_test_sample.csv
+ml_model/phase5/validation_unseen_sample.csv
+ml_model/phase5/phase5_validation_report.txt
 ```
 
 ### Primary model dependency
 
 ``` text
-data/phase4/xgboost_calibrated.joblib
+ml_model/phase4/xgboost_calibrated.joblib
 ```
 
 The exact model artifact path should be verified against the actual

@@ -15,7 +15,6 @@ Environment:
 Documented commands used:
 
 ```powershell
-$env:PYTHONPATH = "$PWD\scripts"
 python -m uvicorn api.server:app --host 127.0.0.1 --port 8000
 ```
 

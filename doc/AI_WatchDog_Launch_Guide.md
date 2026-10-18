@@ -10,7 +10,7 @@ JavaFX desktop application
 Spring Boot backend
     -> POST http://127.0.0.1:8000/predict
 FastAPI ML model service
-    -> verified data/phase4/xgboost_calibrated.joblib
+    -> verified ml_model/phase4/xgboost_calibrated.joblib
 ```
 
 The JavaFX frontend calls only Spring Boot. The backend validates the URL, calls the ML service, evaluates the policy engine, and returns the combined result. The frontend does not call the ML service or access the model/database directly.
@@ -23,7 +23,7 @@ The JavaFX frontend calls only Spring Boot. The backend validates the URL, calls
 - Maven 3.9 or newer. The backend includes `backend/mvnw.cmd`; the frontend uses installed Maven.
 - Python 3.10 or newer; the verified environment uses Python 3.13.12.
 - Packages from `requirements-api.txt`: FastAPI, Uvicorn, Pydantic, joblib, scikit-learn, XGBoost, pandas, and NumPy.
-- Model file: `data/phase4/xgboost_calibrated.joblib`.
+- Model file: `ml_model/phase4/xgboost_calibrated.joblib`.
 - No password, API key, token, database, or external credential is required by the current configuration.
 
 Configuration:
@@ -31,7 +31,8 @@ Configuration:
 - ML service: `api/config.py`, default `127.0.0.1:8000`.
 - Backend: `backend/src/main/resources/application.properties`, port `8080`, ML URL `http://127.0.0.1:8000`.
 - Frontend backend URL: `Frontend/src/main/java/com/aiwatchdog/service/ApiService.java`, `http://localhost:8080/api/v1`.
-- ML imports `scripts/phase5_inference.py`, so `PYTHONPATH` must include `scripts`.
+- ML imports the runtime detector from `api/inference/detector.py`; start
+  Uvicorn from the repository root so the `api` package is importable.
 
 ## C. Project Structure
 
@@ -39,9 +40,9 @@ Configuration:
 major_project/
 |-- api/ (config.py, integrity.py, server.py)
 |-- backend/ (pom.xml, mvnw.cmd, Spring Boot source and tests)
-|-- data/phase4/ (model and risk_engine_config.json)
+|-- ml_model/phase4/ (model and risk_engine_config.json)
 |-- Frontend/ (pom.xml, JavaFX source, FXML, CSS, icons)
-|-- scripts/phase5_inference.py
+|-- api/inference/detector.py
 |-- requirements-api.txt
 |-- RUNNING.md
 `-- AI_WatchDog_Launch_Guide.md
@@ -72,8 +73,8 @@ python -m pip install -r requirements-api.txt
 If PowerShell blocks activation, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once, then activate again. Confirm the model artifact exists:
 
 ```powershell
-Test-Path data\phase4\xgboost_calibrated.joblib
-Get-FileHash data\phase4\xgboost_calibrated.joblib -Algorithm SHA256
+Test-Path ml_model\phase4\xgboost_calibrated.joblib
+Get-FileHash ml_model\phase4\xgboost_calibrated.joblib -Algorithm SHA256
 ```
 
 The expected model hash is configured in `api/config.py`. Do not replace the model without updating the intentional model-release configuration.
@@ -89,7 +90,6 @@ Directory: `P:\major_project_final\major_project`
 ```powershell
 cd P:\major_project_final\major_project
 if (Test-Path .venv\Scripts\Activate.ps1) { .\.venv\Scripts\Activate.ps1 }
-$env:PYTHONPATH = "$PWD\scripts"
 python -m uvicorn api.server:app --host 127.0.0.1 --port 8000
 ```
 
@@ -178,7 +178,7 @@ Activate `.venv` and run `python -m pip install -r requirements-api.txt`.
 
 ### Model missing or loading fails
 
-Confirm `data\\phase4\\xgboost_calibrated.joblib` exists and its SHA-256 matches `api/config.py`. ML `/health` returns HTTP `503` with the failure detail if loading or integrity verification fails.
+Confirm `ml_model\\phase4\\xgboost_calibrated.joblib` exists and its SHA-256 matches `api/config.py`. ML `/health` returns HTTP `503` with the failure detail if loading or integrity verification fails.
 
 ### Port already in use
 
@@ -193,7 +193,7 @@ Reuse a healthy project process when possible. Do not stop unrelated processes. 
 
 ### Spring Boot cannot connect to ML
 
-Check `http://127.0.0.1:8000/health`, start ML from the repository root, and confirm `PYTHONPATH` contains `P:\major_project_final\major_project\scripts`. The backend ML URL is in `backend/src/main/resources/application.properties`.
+Check `http://127.0.0.1:8000/health` and start ML from the repository root. The backend ML URL is in `backend/src/main/resources/application.properties`.
 
 ### JavaFX cannot connect to Spring Boot
 

@@ -94,7 +94,7 @@ during master-dataset construction.
 The final dataset was saved as:
 
 ``` text
-data/phishing_master.csv
+ml_model/phishing_master.csv
 ```
 
 ------------------------------------------------------------------------

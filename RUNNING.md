@@ -72,7 +72,6 @@ Open Terminal 1 and run from the repository root. Do not start this command from
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
-$env:PYTHONPATH = "$PWD\scripts"
 python -m uvicorn api.server:app --host 127.0.0.1 --port 8000
 ```
 
@@ -134,7 +133,7 @@ In each terminal running a service, press `Ctrl+C`.
 
 ### ML API reports `503 NOT_READY`
 
-Start it from `P:\major_project`, confirm that `data\phase4\xgboost_calibrated.joblib` exists, and check that the installed Python packages came from `requirements-api.txt`.
+Start it from `P:\major_project`, confirm that `ml_model\phase4\xgboost_calibrated.joblib` exists, and check that the installed Python packages came from `requirements-api.txt`.
 
 ### Backend cannot connect to the ML API
 

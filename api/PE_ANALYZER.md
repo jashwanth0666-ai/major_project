@@ -15,7 +15,6 @@ PE analysis is unavailable until at least one approved root is configured. The p
 ```powershell
 $env:AI_WATCHDOG_PE_APPROVED_ROOTS = "$env:USERPROFILE\Downloads"
 $env:AI_WATCHDOG_PE_MAX_FILE_SIZE_BYTES = '52428800'
-$env:PYTHONPATH = "$PWD\scripts"
 python -m uvicorn api.server:app --host 127.0.0.1 --port 8000
 ```
 
@@ -103,7 +102,5 @@ The sum is clamped to 0–100. A group contributes once regardless of the number
 From the repository root, with the virtual environment installed from `requirements-api.txt`:
 
 ```powershell
-$env:PYTHONPATH = "$PWD\scripts"
 python -m unittest discover -s tests -v
-python -m unittest test_phase5_feature_parity -v
 ```

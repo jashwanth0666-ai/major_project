@@ -6,9 +6,9 @@ AI WatchDog is a local Windows security monitoring prototype with a JavaFX deskt
 
 - `Frontend/`: JavaFX UI. It talks to Spring Boot over REST and does not access SQLite or FastAPI directly.
 - `backend/`: Spring Boot REST API, URL policy, event history, file/process engines, and SQLite persistence.
-- `api/` and `scripts/`: FastAPI inference service and validated model pipeline.
+- `api/`: FastAPI inference service, runtime URL inference, and PE analysis.
 - `browser-extension/`: optional Chromium MV3 extension for supported search-result ratings, local URL analysis, and policy-controlled browser warning redirects.
-- `data/phase4/`: calibrated model and its risk configuration.
+- `ml_model/phase4/`: calibrated model and its risk configuration.
 
 File and process monitoring use metadata heuristics. The app records ALLOW/REVIEW/WARN/BLOCK policy results; it does not block file access or terminate processes. It is not antivirus, EDR, or a kernel monitor.
 
@@ -57,8 +57,7 @@ mvn test
 Python model feature parity test:
 
 ```powershell
-cd scripts
-..\.venv\Scripts\python.exe -m unittest test_phase5_feature_parity -v
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
 For acceptance details, see the [implementation report](doc/AI_WatchDog_COMPLETE_IMPLEMENTATION_REPORT.md), [current system audit](doc/AI_WatchDog_Current_System_Audit.md), and [final acceptance report](doc/AI_WatchDog_FINAL_ACCEPTANCE_REPORT.md).

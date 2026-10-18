@@ -19,7 +19,7 @@ from .config import (
 from .integrity import ModelIntegrityError, verify_model
 from .pe_analyzer.router import router as pe_analysis_router
 
-from .phase5_inference import WatchDogDetector
+from .inference.detector import WatchDogDetector
 
 
 class PredictRequest(BaseModel):

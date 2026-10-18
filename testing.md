@@ -535,6 +535,9 @@ Prerequisites for manual cases: disposable Chrome or Chromium Edge profile, unpa
 
 ### SEC-16 — Reproducible frozen URL model evaluation
 - **Purpose:** Reproduce held-out and unseen-domain metrics and produce a privacy-reduced false-positive/false-negative review queue without training or threshold tuning.
-- **Preconditions/Inputs:** Local Python environment and Phase 4 artifact; repository split datasets. Run `python scripts/phase5_enterprise_eval.py` from the repository root, or use `--sample-size 1000` for a clearly labeled diagnostic only.
+- **Preconditions/Inputs:** Local Python environment and Phase 4 artifact. The
+  enterprise evaluator referenced by older acceptance notes is not present in
+  this checkout; use the runtime detector CLI for bounded batch inference:
+  `python -m api.inference.detector --batch INPUT.csv --output OUTPUT.csv`.
 - **Expected result:** Report records model SHA-256, threshold source, full split counts and metrics, domain overlap audit, deterministic sampling parameters, source label counts, and manual review fields. No temporal result is claimed while reliable timestamps are absent; no output is fed into training.
 - **Status:** PLANNED — NOT EXECUTED

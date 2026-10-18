@@ -15,8 +15,6 @@ from unittest.mock import patch
 import pefile
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
-
 from api.pe_analyzer.service import (  # noqa: E402
     StaticPEAnalyzer,
     detect_sensitive_imports,
@@ -88,8 +86,12 @@ def asgi_post(application, path: str, body: dict) -> tuple[int, bytes]:
         "type": "http", "asgi": {"version": "3.0", "spec_version": "2.3"},
         "http_version": "1.1", "method": "POST", "scheme": "http",
         "path": path, "raw_path": path.encode(), "query_string": b"", "root_path": "",
-        "headers": [(b"host", b"testserver"), (b"content-type", b"application/json"),
-                    (b"content-length", str(len(raw_body)).encode())],
+        "headers": [
+            (b"host", b"testserver"),
+            (b"authorization", b"Bearer " + (b"a" * 64)),
+            (b"content-type", b"application/json"),
+            (b"content-length", str(len(raw_body)).encode()),
+        ],
         "client": ("testclient", 50000), "server": ("testserver", 80),
     }
     asyncio.run(application(scope, receive, send))
@@ -252,6 +254,9 @@ class StaticPEAnalyzerApiTests(unittest.TestCase):
         self.patch = patch("api.pe_analyzer.router.analyzer", self.analyzer)
         self.patch.start()
         self.addCleanup(self.patch.stop)
+        self.auth_patch = patch("api.server._service_token", return_value="a" * 64)
+        self.auth_patch.start()
+        self.addCleanup(self.auth_patch.stop)
 
     def test_analyze_file_endpoint_returns_structured_result(self):
         path = self.root / "api-sample.dll"

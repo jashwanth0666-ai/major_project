@@ -17,8 +17,7 @@ env/
 ENV/
 
 # Java / Maven
-backend/target/
-target/
+**/target/
 *.class
 
 # IDE
@@ -58,16 +57,16 @@ credentials/
 # ML DEVELOPMENT DATA - NOT REQUIRED FOR DEPLOYMENT
 # ============================================================
 
-data/analysis/
-data/phase2/
-data/phase3/
-data/phase3_5/
-data/phase5/
-data/splits/
-data/phishing_master.csv
+ml_model/analysis/
+ml_model/phase2/
+ml_model/phase3/
+ml_model/phase3_5/
+ml_model/phase5/
+ml_model/splits/
+ml_model/phishing_master.csv
 
 # Benchmark models
-data/phase3/models/
+ml_model/phase3/models/
 
 # ============================================================
 # Keep ONLY Phase 4 deployment artifacts
@@ -79,47 +78,40 @@ data/phase3/models/
 *.pickle
 
 # Un-ignore the production/deployment model
-!data/phase4/
-!data/phase4/xgboost_calibrated.joblib
+!ml_model/phase4/
+!ml_model/phase4/xgboost_calibrated.joblib
 
 # Keep Risk Engine configuration
-!data/phase4/risk_engine_config.json
+!ml_model/phase4/risk_engine_config.json
 
 # Runtime/generated output
 runtime/
 output/
 results/
 
-!data/phase4/
-!data/phase4/xgboost_calibrated.joblib
-!data/phase4/risk_engine_config.json
+!ml_model/phase4/
+!ml_model/phase4/xgboost_calibrated.joblib
+!ml_model/phase4/risk_engine_config.json
 
-data/analysis/
-data/phase2/
-data/phase3/
-data/phase3_5/
-data/phase5/
-data/splits/
-data/phishing_master.csv
+ml_model/analysis/
+ml_model/phase2/
+ml_model/phase3/
+ml_model/phase3_5/
+ml_model/phase5/
+ml_model/splits/
+ml_model/phishing_master.csv
 
 *.joblib
 *.pkl
 *.pickle
 
-!data/phase4/
-!data/phase4/xgboost_calibrated.joblib
-!data/phase4/risk_engine_config.json
+!ml_model/phase4/
+!ml_model/phase4/xgboost_calibrated.joblib
+!ml_model/phase4/risk_engine_config.json
 
-data/label_conflicts.csv
+ml_model/label_conflicts.csv
 datasets/
-data/dataset_report.txt
-
-convert_svg.py
-trash/
-scripts/
-!scripts/
-scripts/*
-!scripts/phase5_enterprise_eval.py
+ml_model/dataset_report.txt
 
 # Java / Maven
 **/target/

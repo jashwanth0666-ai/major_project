@@ -6,6 +6,7 @@ import com.aiwatchdog.backend.fileshield.reputation.SqliteHashReputationAdapter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.DriverManager;
 
@@ -15,11 +16,13 @@ class SqliteHashReputationAdapterTest {
     @TempDir Path temp;
     private static final String HASH = "a".repeat(64);
 
-    @Test void missingHashIsUnknownAndMissingDatabaseIsLookupError() throws Exception {
+    @Test void createsMissingDatabaseAndTreatsMissingHashAsUnknown() throws Exception {
         Path db = temp.resolve("reputation.db"); createDb(db);
         var adapter = new SqliteHashReputationAdapter(props(db));
         assertEquals(ReputationStatus.UNKNOWN, adapter.lookup("b".repeat(64)).status());
-        assertEquals(ReputationStatus.LOOKUP_ERROR, new SqliteHashReputationAdapter(props(temp.resolve("absent.db"))).lookup(HASH).status());
+        Path absent = temp.resolve("absent.db");
+        assertEquals(ReputationStatus.UNKNOWN, new SqliteHashReputationAdapter(props(absent)).lookup(HASH).status());
+        assertTrue(Files.isRegularFile(absent));
     }
 
     @Test void returnsValidatedRecordAndRejectsMalformedHash() throws Exception {

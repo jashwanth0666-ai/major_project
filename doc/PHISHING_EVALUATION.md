@@ -1,18 +1,22 @@
 # Frozen URL model evaluation
 
-`scripts/phase5_enterprise_eval.py` evaluates the checked-in Phase 4 calibrated artifact on the full held-out `test.csv` and `unseen_domain_test.csv` splits. It uses the production `phase5_inference` feature extractor in batches. The default operating threshold comes from `data/phase4/risk_engine_config.json`; the script does not train, calibrate, tune, or modify the model.
+The enterprise evaluation script described by earlier project reports is not
+present in this checkout. The checked-in Phase 4 calibrated artifact remains
+available for runtime and bounded batch inference through
+`api/inference/detector.py`. The detector does not train, calibrate, tune, or
+modify the model.
 
 From the repository root in PowerShell:
 
 ```powershell
-.\.venv\Scripts\python.exe .\scripts\phase5_enterprise_eval.py
+.\.venv\Scripts\python.exe -m api.inference.detector --batch .\INPUT.csv --output .\ml_model\phase5\predictions.csv
 ```
 
 For a quick deterministic diagnostic, add `--sample-size 1000`. This is stratified by label with seed 42 and must not be reported as a full-split result. `--threshold` supports sensitivity analysis only; the selected value and override are recorded, and the risk-engine configuration is never changed.
 
 ## Outputs
 
-Artifacts are written to the ignored local directory `data/phase5/enterprise_evaluation/`:
+Artifacts are written to the ignored local directory `ml_model/phase5/enterprise_evaluation/`:
 
 - `evaluation_report.md` and `evaluation_summary.json`: model hash, threshold provenance, full split metrics, row-level Wilson intervals, calibration error, and temporal-evaluation state.
 - `predictions_*.csv`: one scored row per evaluated URL, with credentials, query strings, fragments, and sensitive/opaque path segments removed from the review URL. A SHA-256 of the original URL supports local joining.

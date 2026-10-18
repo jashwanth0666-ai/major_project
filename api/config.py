@@ -9,7 +9,7 @@ API_PORT = int(os.getenv("AI_WATCHDOG_API_PORT", "8000"))
 
 MODEL_PATH = PROJECT_ROOT / os.getenv(
     "AI_WATCHDOG_MODEL_PATH",
-    "data/phase4/xgboost_calibrated.joblib",
+    "ml_model/phase4/xgboost_calibrated.joblib",
 )
 
 # Frozen SHA-256 for the approved Phase 4 calibrated model.

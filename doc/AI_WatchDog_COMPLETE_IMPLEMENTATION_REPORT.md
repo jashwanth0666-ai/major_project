@@ -143,7 +143,7 @@ Loopback binding, pinned model checksum, API timeouts, URL audit redaction, brow
 - Live monitor integration suite: 2 tests passed with FastAPI and Spring running.
 - Python feature parity: 4 passed with pinned scikit-learn 1.8.0.
 - Browser extension: 2 Node tests passed.
-- Total: 44 test executions passed. Backend and frontend builds succeeded; Maven reported six existing JavaFX dependency model warnings. Commands: backend `cd backend; .\mvnw.cmd clean test`; frontend `cd Frontend; mvn test`; monitor integration `cd Frontend; mvn '-Dtest=MonitorServicesIntegrationIT' test`; Python `cd scripts; ..\.venv\Scripts\python.exe -m unittest test_phase5_feature_parity -v`; extension `node --test browser-extension\service-worker.test.cjs`.
+- Total: 44 test executions passed. Backend and frontend builds succeeded; Maven reported six existing JavaFX dependency model warnings. Commands: backend `cd backend; .\mvnw.cmd clean test`; frontend `cd Frontend; mvn test`; monitor integration `cd Frontend; mvn '-Dtest=MonitorServicesIntegrationIT' test`; Python `.\.venv\Scripts\python.exe -m unittest discover -s tests -v`; extension `node --test browser-extension\service-worker.test.cjs`.
 
 ## 27. End-to-End Verification
 

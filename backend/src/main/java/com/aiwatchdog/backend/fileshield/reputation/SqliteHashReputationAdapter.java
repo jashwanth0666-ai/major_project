@@ -21,16 +21,42 @@ import java.time.Instant;
 @Service
 public class SqliteHashReputationAdapter implements HashReputationService {
     private static final Pattern SHA256 = Pattern.compile("[a-fA-F0-9]{64}");
+    private static final String CREATE_SCHEMA = """
+            CREATE TABLE IF NOT EXISTS hash_reputation (
+              sha256 TEXT PRIMARY KEY,
+              reputation TEXT NOT NULL,
+              source TEXT NOT NULL,
+              description TEXT,
+              updated_at TEXT NOT NULL
+            )
+            """;
     private final FileShieldProperties properties;
     private final ConfiguredThreatIntelProvider threatIntel;
 
     @Autowired
     public SqliteHashReputationAdapter(FileShieldProperties properties, ConfiguredThreatIntelProvider threatIntel) {
         this.properties = properties; this.threatIntel = threatIntel;
+        initializeDatabase();
     }
 
     public SqliteHashReputationAdapter(FileShieldProperties properties) {
         this(properties, null);
+    }
+
+    private void initializeDatabase() {
+        Path database = properties.getReputationDatabasePath().toAbsolutePath().normalize();
+        try {
+            Path parent = database.getParent();
+            if (parent != null) Files.createDirectories(parent);
+            try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + database);
+                 var statement = connection.createStatement()) {
+                statement.execute(CREATE_SCHEMA);
+            }
+        } catch (SQLException | RuntimeException exception) {
+            throw new IllegalStateException("Failed to initialize file reputation database", exception);
+        } catch (java.io.IOException exception) {
+            throw new IllegalStateException("Failed to create file reputation database directory", exception);
+        }
     }
 
     @Override
@@ -50,6 +76,7 @@ public class SqliteHashReputationAdapter implements HashReputationService {
 
     @Override
     public List<ReputationProviderStatus> providerStatuses() {
+        initializeDatabase();
         Path database = properties.getReputationDatabasePath().toAbsolutePath().normalize();
         boolean available = false;
         String error = null;
@@ -67,7 +94,6 @@ public class SqliteHashReputationAdapter implements HashReputationService {
     }
 
     private HashReputation lookupLocal(String sha256, Path database) {
-        if (!Files.isRegularFile(database)) return new HashReputation(ReputationStatus.LOOKUP_ERROR, "local-sqlite", "Reputation database is unavailable.");
         String url = "jdbc:sqlite:" + database;
         String sql = "SELECT reputation, source, description FROM hash_reputation WHERE sha256 = ?";
         SQLiteConfig config = new SQLiteConfig();

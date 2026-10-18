@@ -117,7 +117,7 @@ The first source slice now covers **Phase 0 plus local control-plane authenticat
 This is not per-process Windows identity: same-account processes can generally read the user's token file. The token system reduces unauthenticated/browser-origin access and limits the extension role; it does not defend against a compromised local account. Manual user testing remains pending. No tests or application runs were performed during implementation.
 ## Source map
 
-- URL ML and feature pipeline: `api/server.py`, `scripts/phase5_inference.py`, `data/phase4/risk_engine_config.json`.
+- URL ML and feature pipeline: `api/server.py`, `api/inference/detector.py`, `ml_model/phase4/risk_engine_config.json`.
 - URL policy and API orchestration: `backend/src/main/java/com/aiwatchdog/backend/service/AnalysisService.java`, `backend/src/main/java/com/aiwatchdog/backend/policy/PolicyEngineImpl.java`, `backend/src/main/java/com/aiwatchdog/backend/controller/AnalyzeController.java`.
 - Browser assessment and redirect rules: `browser-extension/service-worker.js`, `browser-extension/README.md`.
 - File inspection, reputation, and quarantine: `backend/src/main/java/com/aiwatchdog/backend/fileshield/`, `api/pe_analyzer/`.

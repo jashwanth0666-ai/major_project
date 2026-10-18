@@ -7,13 +7,13 @@ Purpose:
     single-URL and batch inference without retraining.
 
 Expected Phase 4 artifact:
-    data/phase4/xgboost_calibrated.joblib
+    ml_model/phase4/xgboost_calibrated.joblib
 
 Run:
-    python phase5_inference.py "https://example.com/login"
+    python -m api.inference.detector "https://example.com/login"
 
 Batch:
-    python phase5_inference.py --batch data/splits/test.csv --output data/phase5/predictions.csv
+    python -m api.inference.detector --batch ml_model/splits/test.csv --output ml_model/phase5/predictions.csv
 
 The model expects the exact 25 features selected in Phase 2/Phase 4.
 """
@@ -36,9 +36,9 @@ import pandas as pd
 # Configuration
 # ---------------------------------------------------------------------
 
-BASE_DIR = Path(__file__).resolve().parent
-MODEL_PATH = BASE_DIR / "data" / "phase4" / "xgboost_calibrated.joblib"
-DEFAULT_OUTPUT = BASE_DIR / "data" / "phase5" / "predictions.csv"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+MODEL_PATH = PROJECT_ROOT / "ml_model" / "phase4" / "xgboost_calibrated.joblib"
+DEFAULT_OUTPUT = PROJECT_ROOT / "ml_model" / "phase5" / "predictions.csv"
 
 THRESHOLD = 0.15
 
