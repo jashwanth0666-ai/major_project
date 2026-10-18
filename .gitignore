@@ -120,3 +120,24 @@ scripts/
 !scripts/
 scripts/*
 !scripts/phase5_enterprise_eval.py
+
+# Java / Maven
+**/target/
+*.class
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# IDE and operating system
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp

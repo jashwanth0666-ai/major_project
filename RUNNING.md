@@ -46,7 +46,7 @@ mvn --version
 Run this once from the repository root:
 
 ```powershell
-cd P:\major_project
+
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
