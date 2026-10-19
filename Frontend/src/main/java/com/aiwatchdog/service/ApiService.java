@@ -20,6 +20,7 @@ import com.aiwatchdog.model.WindowsTelemetrySettingsUpdate;
 import com.aiwatchdog.model.QuarantineHistory;
 import com.aiwatchdog.model.QuarantineOperation;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
