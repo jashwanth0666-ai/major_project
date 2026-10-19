@@ -62,10 +62,15 @@ public final class ProcessMonitorService implements AutoCloseable {
     }
 
     private void snapshotExistingProcesses() {
-        ProcessHandle.allProcesses().forEach(process -> {
-            try { knownProcesses.put(process.pid(), process.info().startInstant().orElse(Instant.EPOCH)); }
-            catch (RuntimeException ignored) { processAccessFailures.incrementAndGet(); }
-        });
+        try {
+            ProcessHandle.allProcesses().forEach(process -> {
+                try { knownProcesses.put(process.pid(), process.info().startInstant().orElse(Instant.EPOCH)); }
+                catch (RuntimeException ignored) { processAccessFailures.incrementAndGet(); }
+            });
+        } catch (RuntimeException ignored) {
+            // Process enumeration can be restricted by the OS; file monitoring should still start.
+            pollFailures.incrementAndGet();
+        }
         observedProcesses.set(knownProcesses.size());
         lastPollEpochMillis.set(System.currentTimeMillis());
     }

@@ -180,25 +180,28 @@ public class FileShieldSettingsService {
 
     private FileShieldSettingsResponse response() {
         Path database = properties.getReputationDatabasePath().toAbsolutePath().normalize();
-        String message = "Reputation database is unavailable.";
-        boolean usable = false;
-        if (Files.isRegularFile(database)) {
-            SQLiteConfig config = new SQLiteConfig();
-            config.setReadOnly(true);
-            try (var connection = DriverManager.getConnection("jdbc:sqlite:" + database, config.toProperties());
-                 var query = connection.prepareStatement("SELECT sha256, reputation, source, description FROM hash_reputation LIMIT 0")) {
-                query.executeQuery().close();
-                usable = true;
-                message = "Database is readable and has the expected table. Hashes absent from it may be checked against enabled providers; UNKNOWN is not a clean verdict.";
-            } catch (Exception ignored) {
-                message = "Database is missing, unreadable, or does not have the expected hash_reputation table and columns.";
-            }
-        }
         List<ReputationProviderStatus> providers;
         try { providers = reputation == null ? List.of() : reputation.providerStatuses(); }
         catch (RuntimeException failure) {
             providers = List.of(new ReputationProviderStatus("reputation-status", "UNAVAILABLE",
                     failure.getClass().getSimpleName(), java.time.Instant.now()));
+        }
+        String message = "Reputation database is unavailable.";
+        boolean usable = false;
+        long entryCount = 0;
+        if (Files.isRegularFile(database)) {
+            SQLiteConfig config = new SQLiteConfig();
+            config.setReadOnly(true);
+            try (var connection = DriverManager.getConnection("jdbc:sqlite:" + database, config.toProperties());
+                 var query = connection.prepareStatement("SELECT COUNT(*) FROM hash_reputation")) {
+                try (var result = query.executeQuery()) { if (result.next()) entryCount = result.getLong(1); }
+                usable = true;
+                message = "Database is ready with " + entryCount + " reputation entr" + (entryCount == 1 ? "y" : "ies")
+                        + (entryCount == 0 ? ". No hash signatures are loaded yet." : ".")
+                        + " Hashes absent from it may be checked against enabled providers; UNKNOWN is not a clean verdict.";
+            } catch (Exception ignored) {
+                message = "Database is missing, unreadable, or does not have the expected hash_reputation table and columns.";
+            }
         }
         return new FileShieldSettingsResponse(
                 properties.isEnabled(),
@@ -207,7 +210,7 @@ public class FileShieldSettingsService {
                 database.toString(), properties.isMonitoringEnabled(), properties.isRecursiveMonitoring(),
                 properties.getMaxMonitoringDepth(), properties.getMaxFileSize(),
                 properties.getMaxFilesPerDirectoryScan(), properties.getMaxDirectoryDepth(), watcher.isRunning(),
-                usable, message, quarantine == null ? "" : quarantine.defaultDirectory(), providers);
+                usable, message, quarantine == null ? "" : quarantine.defaultDirectory(), providers, entryCount);
     }
 
     private static Path defaultSettingsPath() {

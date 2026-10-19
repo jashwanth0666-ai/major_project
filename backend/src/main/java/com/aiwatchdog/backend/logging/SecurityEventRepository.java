@@ -33,6 +33,9 @@ public interface SecurityEventRepository {
     /** Aggregate counts for persisted unified assessments, without loading event rows. */
     AssessmentStats getAssessmentStats();
 
+    /** Full-period aggregate-only phishing insights, with feedback linked to its URL assessment. */
+    InsightPeriodMetrics getInsightPeriodMetrics(java.time.Instant startInclusive, java.time.Instant endExclusive);
+
     /**
      * Returns all events matching the given risk level (SAFE/LOW_RISK/SUSPICIOUS/HIGH_RISK), newest first.
      */

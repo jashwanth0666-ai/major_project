@@ -5,6 +5,7 @@ import com.aiwatchdog.model.FileShieldSettingsUpdate;
 import com.aiwatchdog.model.NotificationPreferences;
 import com.aiwatchdog.model.WindowsTelemetrySettings;
 import com.aiwatchdog.model.WindowsTelemetrySettingsUpdate;
+import com.aiwatchdog.model.ApiPermissionCapabilities;
 import com.aiwatchdog.service.ApiService;
 import com.aiwatchdog.util.DesktopMonitorPreferences;
 import com.aiwatchdog.util.ThemeManager;
@@ -35,8 +36,9 @@ public final class SettingsController {
     @FXML private CheckBox fileShieldEnabled, backendMonitoringEnabled, recursiveMonitoring;
     @FXML private Spinner<Integer> monitoringDepth, maxFilesPerScan, scanDepth;
     @FXML private Spinner<Integer> maxFileSizeMb;
-    @FXML private Label backendSettingsStatus, reputationDatabaseStatus, settingsMessage;
+    @FXML private Label backendSettingsStatus, reputationDatabaseStatus, fileShieldSettingsMessage, localMonitorSettingsMessage;
     @FXML private Label accessCredentialStatus;
+    @FXML private Label permissionCapabilitiesStatus;
     @FXML private CheckBox notificationsEnabled, warnNotificationsEnabled, blockNotificationsEnabled;
     @FXML private Label notificationPreferencesStatus;
     @FXML private Button saveNotificationPreferencesButton;
@@ -87,6 +89,7 @@ public final class SettingsController {
         loadBackendSettings();
         loadNotificationPreferences();
         loadWindowsTelemetrySettings();
+        loadPermissionCapabilities();
     }
 
     public void setLocalMonitoringApplyHandler(Consumer<List<Path>> handler) {
@@ -95,6 +98,7 @@ public final class SettingsController {
 
     @FXML private void showFileShield() { show(fileShieldTab, fileShieldPane); }
     @FXML private void showLocalMonitor() { show(localMonitorTab, localMonitorPane); }
+    public void openLocalMonitorSettings() { showLocalMonitor(); }
     @FXML private void showAccessControl() { show(accessControlTab, accessControlPane); }
     @FXML private void showAppearance() { show(appearanceTab, appearancePane); }
     @FXML private void showAbout() { show(aboutTab, aboutPane); }
@@ -134,12 +138,16 @@ public final class SettingsController {
 
     @FXML private void browseReputationDatabase() {
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Choose the local hash reputation database");
+        chooser.setTitle("Choose where the local hash reputation database should be created");
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("SQLite database", "*.db", "*.sqlite", "*.sqlite3"));
         File current = Path.of(reputationDatabasePath.getText().isBlank() ? "file_reputation.db" : reputationDatabasePath.getText()).toFile();
         if (current.getParentFile() != null && current.getParentFile().isDirectory()) chooser.setInitialDirectory(current.getParentFile());
-        File selected = chooser.showOpenDialog(ownerWindow());
-        if (selected != null) reputationDatabasePath.setText(selected.toPath().toAbsolutePath().normalize().toString());
+        chooser.setInitialFileName(current.getName());
+        File selected = chooser.showSaveDialog(ownerWindow());
+        if (selected != null) {
+            String name = selected.getName().contains(".") ? selected.getName() : selected.getName() + ".db";
+            reputationDatabasePath.setText(selected.toPath().resolveSibling(name).toAbsolutePath().normalize().toString());
+        }
     }
 
     private void loadBackendSettings() {
@@ -160,6 +168,29 @@ public final class SettingsController {
         task.setOnSucceeded(event -> displayNotificationPreferences(task.getValue()));
         task.setOnFailed(event -> notificationPreferencesStatus.setText(
                 "Notification preferences unavailable: " + message(task.getException())));
+        executor.execute(task);
+    }
+
+    private void loadPermissionCapabilities() {
+        if (permissionCapabilitiesStatus == null) return;
+        permissionCapabilitiesStatus.setText("Loading enforced API permissions from Spring Boot…");
+        Task<ApiPermissionCapabilities> task = new Task<>() {
+            @Override protected ApiPermissionCapabilities call() throws Exception { return api.getPermissionCapabilities(); }
+        };
+        task.setOnSucceeded(event -> {
+            ApiPermissionCapabilities capabilities = task.getValue();
+            String desktop = capabilities.desktop().configured() ? "Configured" : "Not configured";
+            String extension = capabilities.browserExtension().configured() ? "Configured" : "Not configured";
+            String scopes = capabilities.desktop().permissions().stream().map(value -> "• " + value)
+                    .reduce((left, right) -> left + "\n" + right).orElse("No desktop scopes reported.");
+            String extensionScopes = capabilities.browserExtension().permissions().stream().map(value -> "• " + value)
+                    .reduce((left, right) -> left + "\n" + right).orElse("No extension scopes reported.");
+            permissionCapabilitiesStatus.setText("Desktop credential: " + desktop + "\n" + scopes
+                    + "\n\nBrowser extension credential: " + extension + "\n" + extensionScopes
+                    + "\n\n" + capabilities.enforcement() + " " + capabilities.windowsPrivileges());
+        });
+        task.setOnFailed(event -> permissionCapabilitiesStatus.setText(
+                "Could not read permission scopes: " + message(task.getException())));
         executor.execute(task);
     }
 
@@ -322,33 +353,33 @@ public final class SettingsController {
     }
 
     @FXML
-    private void saveSettings() {
+    private void saveFileShieldSettings() {
         if (backendMonitoringEnabled.isSelected() && watchDirectoriesList.getItems().isEmpty()) {
-            settingsMessage.setText("Add at least one backend monitored folder or turn monitoring off.");
+            fileShieldSettingsMessage.setText("Add at least one backend watched folder, or turn continuous scanning off.");
             return;
         }
         if (reputationDatabasePath.getText().isBlank()) {
-            settingsMessage.setText("Enter the path to a trusted SQLite reputation database. Without a readable database, scans return LOOKUP_ERROR.");
+            fileShieldSettingsMessage.setText("Choose where to create the local reputation database.");
             return;
         }
-        settingsMessage.setText("Applying settings…");
+        fileShieldSettingsMessage.setText("Saving File Shield settings and initializing the local database…");
         FileShieldSettingsUpdate request = new FileShieldSettingsUpdate(
                 fileShieldEnabled.isSelected(), List.copyOf(approvedRootsList.getItems()), List.copyOf(watchDirectoriesList.getItems()),
                 reputationDatabasePath.getText().trim(), backendMonitoringEnabled.isSelected(),
                 recursiveMonitoring.isSelected(), monitoringDepth.getValue(),
                 maxFileSizeMb.getValue() * 1024L * 1024L, maxFilesPerScan.getValue(), scanDepth.getValue());
-        saveLocalMonitorRoots();
         Task<FileShieldSettings> task = new Task<>() {
             @Override protected FileShieldSettings call() throws Exception { return api.updateFileShieldSettings(request); }
         };
         task.setOnSucceeded(event -> {
             FileShieldSettings applied = task.getValue();
             displayBackendSettings(applied);
-            settingsMessage.setText(applied.reputationDatabaseUsable()
-                    ? "Backend settings applied and desktop monitoring folders saved. Unlisted hashes show UNKNOWN."
-                    : "Backend settings applied and desktop monitoring folders saved. Reputation lookup will show LOOKUP_ERROR until the selected database is readable and has the expected table.");
+            fileShieldSettingsMessage.setText(applied.reputationDatabaseUsable()
+                    ? "File Shield settings saved. Local database ready; " + applied.reputationEntryCount()
+                    + " hash entries. Unlisted hashes remain UNKNOWN unless a threat-intelligence source is enabled."
+                    : "Settings saved, but the database could not be opened. Check its folder permissions and path.");
         });
-        task.setOnFailed(event -> settingsMessage.setText("Desktop monitor folders were saved, but backend File Shield settings were not applied: " + message(task.getException())));
+        task.setOnFailed(event -> fileShieldSettingsMessage.setText("File Shield settings were not applied: " + message(task.getException())));
         executor.execute(task);
     }
 
@@ -357,6 +388,19 @@ public final class SettingsController {
         List<Path> paths = roots.stream().map(Path::of).toList();
         DesktopMonitorPreferences.setRoots(paths);
         localMonitoringApply.accept(paths);
+    }
+
+    @FXML private void saveLocalMonitorSettings() {
+        List<Path> roots = localMonitorRootsList.getItems().stream().map(Path::of).toList();
+        Path inaccessible = roots.stream().filter(path -> !java.nio.file.Files.isDirectory(path)).findFirst().orElse(null);
+        if (inaccessible != null) {
+            localMonitorSettingsMessage.setText("Folder is unavailable: " + inaccessible + ". Remove it or choose an accessible folder.");
+            return;
+        }
+        saveLocalMonitorRoots();
+        localMonitorSettingsMessage.setText(roots.isEmpty()
+                ? "Saved. File monitoring is off until you add a folder; process monitoring can still run."
+                : "Saved " + roots.size() + " local folder(s). Start monitoring from the dashboard to apply them.");
     }
 
     private List<String> loadLocalRoots() {

@@ -11,12 +11,18 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.Set;
 
 /** Protects every Spring route except the read-only liveness/health endpoint. */
 @Component
 @ConditionalOnProperty(name = "ai-watchdog.security.enabled", havingValue = "true", matchIfMissing = true)
 public final class LocalApiAuthenticationFilter extends OncePerRequestFilter {
     private static final String TOKEN_HEADER = "Authorization";
+    private static final Set<String> EXTENSION_PERMISSIONS = Set.of(
+            "GET /api/v1/domain-whitelist",
+            "POST /api/v1/threat-assessments/url",
+            "POST /api/v1/threat-assessments/url/preview",
+            "POST /api/v1/threat-assessments/feedback");
     private final LocalApiTokenStore tokens;
 
     public LocalApiAuthenticationFilter(LocalApiTokenStore tokens) { this.tokens = tokens; }
@@ -48,14 +54,9 @@ public final class LocalApiAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         if ("extension".equals(role)
-                && !("GET".equals(request.getMethod())
-                && "/api/v1/domain-whitelist".equals(request.getRequestURI())
-                || "POST".equals(request.getMethod())
-                && ("/api/v1/threat-assessments/url".equals(request.getRequestURI())
-                || "/api/v1/threat-assessments/url/preview".equals(request.getRequestURI())
-                || "/api/v1/threat-assessments/feedback".equals(request.getRequestURI())))) {
+                && !EXTENSION_PERMISSIONS.contains(request.getMethod() + " " + request.getRequestURI())) {
             reject(response, HttpServletResponse.SC_FORBIDDEN, "INSUFFICIENT_SCOPE",
-                    "The browser extension credential can assess URLs, read configured domain exceptions, and submit assessment feedback only.");
+                    "This browser-extension credential is limited to URL checks, domain-exception reads, and feedback. Use the desktop app for other actions.");
             return;
         }
         chain.doFilter(request, response);

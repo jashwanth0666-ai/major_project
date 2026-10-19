@@ -13,6 +13,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * SQLite-backed implementation of {@link SecurityEventRepository}.
@@ -182,6 +184,67 @@ public class SqliteSecurityEventRepository implements SecurityEventRepository {
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to calculate threat assessment statistics", e);
         }
+    }
+
+    @Override
+    public InsightPeriodMetrics getInsightPeriodMetrics(Instant startInclusive, Instant endExclusive) {
+        String start = startInclusive.toString();
+        String end = endExclusive.toString();
+        String aggregateSql = "SELECT COUNT(*) AS total,"
+                + " SUM(CASE WHEN json_extract(details_json,'$.sources.urlModel.prediction')='PHISHING' THEN 1 ELSE 0 END) AS phishing,"
+                + " SUM(CASE WHEN json_extract(details_json,'$.sources.urlModel.risk_level')='HIGH_RISK' THEN 1 ELSE 0 END) AS high_risk,"
+                + " SUM(CASE WHEN json_extract(details_json,'$.sources.urlModel.risk_level')='SUSPICIOUS' THEN 1 ELSE 0 END) AS suspicious,"
+                + " SUM(CASE WHEN decision='BLOCK' THEN 1 ELSE 0 END) AS blocked,"
+                + " SUM(CASE WHEN decision='REVIEW' THEN 1 ELSE 0 END) AS review,"
+                + " AVG(CAST(json_extract(details_json,'$.sources.urlModel.phishing_probability') AS REAL)) AS mean_score"
+                + " FROM security_events WHERE event_type='THREAT_ASSESSMENT' AND subject_type='URL' AND julianday(timestamp)>=julianday(?) AND julianday(timestamp)<julianday(?)";
+        long total, phishing, highRisk, suspicious, blocked, review;
+        Double mean;
+        try (Connection conn = connect(); PreparedStatement ps = conn.prepareStatement(aggregateSql)) {
+            ps.setString(1, start); ps.setString(2, end);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next(); total = rs.getLong("total"); phishing = rs.getLong("phishing");
+                highRisk = rs.getLong("high_risk"); suspicious = rs.getLong("suspicious");
+                blocked = rs.getLong("blocked"); review = rs.getLong("review");
+                double score = rs.getDouble("mean_score"); mean = rs.wasNull() ? null : score;
+            }
+        } catch (SQLException e) { throw new IllegalStateException("Failed to aggregate URL insight metrics", e); }
+
+        Map<String, Long> signals = new LinkedHashMap<>();
+        String signalSql = "SELECT json_extract(signal.value,'$.code') AS code,COUNT(*) AS count"
+                + " FROM security_events e,json_each(e.details_json,'$.sources.urlHostSignals.signals') signal"
+                + " WHERE e.event_type='THREAT_ASSESSMENT' AND e.subject_type='URL' AND julianday(e.timestamp)>=julianday(?) AND julianday(e.timestamp)<julianday(?)"
+                + " GROUP BY code ORDER BY count DESC LIMIT 8";
+        try (Connection conn = connect(); PreparedStatement ps = conn.prepareStatement(signalSql)) {
+            ps.setString(1, start); ps.setString(2, end);
+            try (ResultSet rs = ps.executeQuery()) { while (rs.next()) signals.put(rs.getString("code"), rs.getLong("count")); }
+        } catch (SQLException e) { throw new IllegalStateException("Failed to aggregate URL host signals", e); }
+
+        long feedbackCount = 0, falsePositives = 0, falseNegatives = 0, correct = 0;
+        List<String> feedbackAssessmentIds = new ArrayList<>();
+        String feedbackSql = "SELECT json_extract(f.details_json,'$.label') AS label,"
+                + " json_extract(a.details_json,'$.assessmentId') AS assessment_id"
+                + " FROM security_events f JOIN security_events a"
+                + " ON json_extract(a.details_json,'$.assessmentId')=f.subject_id"
+                + " WHERE f.event_type='URL_FEEDBACK' AND a.event_type='THREAT_ASSESSMENT' AND a.subject_type='URL'"
+                + " AND julianday(f.timestamp)>=julianday(?) AND julianday(f.timestamp)<julianday(?)"
+                + " AND julianday(a.timestamp)>=julianday(?) AND julianday(a.timestamp)<julianday(?) ORDER BY f.id DESC";
+        try (Connection conn = connect(); PreparedStatement ps = conn.prepareStatement(feedbackSql)) {
+            ps.setString(1, start); ps.setString(2, end); ps.setString(3, start); ps.setString(4, end);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    feedbackCount++;
+                    String label = rs.getString("label");
+                    boolean needsReview = "FALSE_POSITIVE".equals(label) || "FALSE_NEGATIVE".equals(label);
+                    if ("FALSE_POSITIVE".equals(label)) falsePositives++;
+                    else if ("FALSE_NEGATIVE".equals(label)) falseNegatives++;
+                    else if ("CORRECT".equals(label)) correct++;
+                    if (needsReview && feedbackAssessmentIds.size() < 5) feedbackAssessmentIds.add(rs.getString("assessment_id"));
+                }
+            }
+        } catch (SQLException e) { throw new IllegalStateException("Failed to link feedback with URL assessments", e); }
+        return new InsightPeriodMetrics(total, phishing, highRisk, suspicious, blocked, review, mean,
+                feedbackCount, falsePositives, falseNegatives, correct, signals, feedbackAssessmentIds);
     }
 
     @Override

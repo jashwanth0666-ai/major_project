@@ -13,6 +13,9 @@ import com.aiwatchdog.model.SecurityEvent;
 import com.aiwatchdog.model.SecurityEventStats;
 import com.aiwatchdog.model.ServiceHealth;
 import com.aiwatchdog.model.ThreatAssessmentResult;
+import com.aiwatchdog.model.ThreatAssessmentExplanation;
+import com.aiwatchdog.model.AiInsightsResponse;
+import com.aiwatchdog.model.ApiPermissionCapabilities;
 import com.aiwatchdog.model.NotificationPreferences;
 import com.aiwatchdog.model.WindowsTelemetryHealth;
 import com.aiwatchdog.model.WindowsTelemetrySettings;
@@ -209,6 +212,19 @@ public class ApiService implements MonitorEventSubmitter {
         HttpResponse<String> response = get("/api/security-events/assessments/stats");
         requireSuccess(response, "Assessment statistics request failed");
         return readBody(response, AssessmentStats.class, "Backend returned no assessment statistics");
+    }
+
+    public AiInsightsResponse getAiInsights(String period) throws Exception {
+        String encoded = java.net.URLEncoder.encode(period, java.nio.charset.StandardCharsets.UTF_8);
+        HttpResponse<String> response = get("/api/v1/threat-assessments/insights?period=" + encoded);
+        requireSuccess(response, "AI insights request failed");
+        return readBody(response, AiInsightsResponse.class, "Backend returned no AI insights");
+    }
+
+    public ApiPermissionCapabilities getPermissionCapabilities() throws Exception {
+        HttpResponse<String> response = get("/api/v1/security/permissions");
+        requireSuccess(response, "Permission capability request failed");
+        return readBody(response, ApiPermissionCapabilities.class, "Backend returned no permission capabilities");
     }
 
     public List<MonitorEvent> getRecentMonitorEvents() throws Exception {

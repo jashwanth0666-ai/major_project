@@ -71,7 +71,26 @@ public class SqliteHashReputationAdapter implements HashReputationService {
         HashReputation remote = threatIntel.lookup(sha256);
         if (remote.status() == ReputationStatus.LOOKUP_ERROR) return remote;
         if (remote.status() == ReputationStatus.UNKNOWN && local.status() == ReputationStatus.LOOKUP_ERROR) return local;
+        if (remote.status() == ReputationStatus.KNOWN_CLEAN || remote.status() == ReputationStatus.KNOWN_MALICIOUS
+                || remote.status() == ReputationStatus.SUSPICIOUS) {
+            cacheTrustedResult(sha256, remote, database);
+        }
         return remote;
+    }
+
+    private void cacheTrustedResult(String sha256, HashReputation result, Path database) {
+        String sql = "INSERT OR REPLACE INTO hash_reputation (sha256, reputation, source, description, updated_at) VALUES (?, ?, ?, ?, ?)";
+        try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + database);
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, sha256.toLowerCase(Locale.ROOT));
+            statement.setString(2, result.status().name());
+            statement.setString(3, result.source());
+            statement.setString(4, result.description());
+            statement.setString(5, Instant.now().toString());
+            statement.executeUpdate();
+        } catch (SQLException | RuntimeException ignored) {
+            // Preserve the provider result for this request even if local caching is unavailable.
+        }
     }
 
     @Override

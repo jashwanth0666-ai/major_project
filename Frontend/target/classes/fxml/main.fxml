@@ -285,6 +285,9 @@
                         <Label fx:id="dashLiveShieldText" text="Live Shield Paused" styleClass="wd-live-text"/>
                       </HBox>
                     </HBox>
+                    <Button fx:id="dashLiveShieldToggle" text="Start monitoring" onAction="#toggleLocalMonitoring" styleClass="stitch-btn-secondary, wd-btn, wd-tonal, wd-btn--tonal"/>
+                    <Label fx:id="dashMonitorStatus" text="Monitoring is off. Start it here or configure watched folders in Settings." styleClass="breakdown-sub" wrapText="true"/>
+                    <Button text="Manage monitored folders" onAction="#navigateLocalMonitoringSettings" styleClass="stitch-btn-secondary, wd-btn, wd-tonal, wd-btn--tonal"/>
                   </VBox>
 
                   <!-- Col 3: Right Threat Breakdown (340px) -->
@@ -1067,7 +1070,7 @@
               <HBox alignment="CENTER_LEFT">
                 <VBox spacing="3">
                   <Label text="AI Insights" styleClass="page-header-title"/>
-                  <Label text="Understand threat patterns and improve your browsing protection across all network activities." styleClass="page-header-subtitle"/>
+                  <Label text="Explore phishing assessments and operator feedback recorded by your protection system." styleClass="page-header-subtitle"/>
                 </VBox>
                 <Region HBox.hgrow="ALWAYS"/>
                 <HBox spacing="10" alignment="CENTER">
@@ -1097,7 +1100,7 @@
                   <!-- Model Accuracy -->
                   <VBox fx:id="insightCard0" GridPane.columnIndex="0" styleClass="metric-card, wd-insight-card">
                     <HBox alignment="CENTER_LEFT">
-                      <Label text="MODEL ACCURACY (VERIFIED)" styleClass="info-label" style="-fx-font-size: 10px;"/>
+                      <Label text="AVERAGE PHISHING SCORE" styleClass="info-label" style="-fx-font-size: 10px;"/>
                       <Region HBox.hgrow="ALWAYS"/>
                       <FontIcon fx:id="insightIcon0" iconLiteral="fth-check-circle" iconSize="14" iconColor="#10B981"/>
                     </HBox>
@@ -1105,7 +1108,7 @@
                       <Label fx:id="insightCount0" text="N/A" styleClass="metric-value"/>
                       <Label fx:id="insightTrend0" text="Unavailable" styleClass="metric-trend-up"/>
                     </HBox>
-                    <Label text="Backend validated model metric" styleClass="breakdown-sub" style="-fx-font-size: 10px;"/>
+                    <Label text="Mean model score where output is available in the selected window" styleClass="breakdown-sub" style="-fx-font-size: 10px;" wrapText="true"/>
                     <Region styleClass="wd-ln, wd-ln-green"/>
                   </VBox>
 
@@ -1120,22 +1123,22 @@
                       <Label fx:id="insightCount1" text="0" styleClass="metric-value"/>
                       <Label fx:id="insightTrend1" text="Unavailable" styleClass="metric-trend-red"/>
                     </HBox>
-                    <Label text="URLs predicted as phishing by the backend" styleClass="breakdown-sub" style="-fx-font-size: 10px;"/>
+                    <Label text="Full-window URL predictions labeled phishing" styleClass="breakdown-sub" style="-fx-font-size: 10px;" wrapText="true"/>
                     <Region styleClass="wd-ln, wd-ln-red"/>
                   </VBox>
 
                   <!-- False Positive Rate -->
                   <VBox fx:id="insightCard2" GridPane.columnIndex="2" styleClass="metric-card, wd-insight-card">
                     <HBox alignment="CENTER_LEFT">
-                      <Label text="FALSE POSITIVE RATE" styleClass="info-label" style="-fx-font-size: 10px;"/>
+                      <Label text="USER FEEDBACK" styleClass="info-label" style="-fx-font-size: 10px;"/>
                       <Region HBox.hgrow="ALWAYS"/>
                       <FontIcon fx:id="insightIcon2" iconLiteral="fth-sliders" iconSize="14" iconColor="#10B981"/>
                     </HBox>
                     <HBox alignment="BASELINE_LEFT" spacing="6">
-                      <Label fx:id="insightCount2" text="N/A" styleClass="metric-value"/>
-                      <Label fx:id="insightTrend2" text="Unavailable" styleClass="metric-trend-up"/>
+                      <Label fx:id="insightCount2" text="0" styleClass="metric-value"/>
+                      <Label fx:id="insightTrend2" text="Stored user labels" styleClass="metric-trend-up"/>
                     </HBox>
-                    <Label text="Not provided by the current backend API" styleClass="breakdown-sub" style="-fx-font-size: 10px;"/>
+                    <Label text="Human-submitted labels linked to assessments" styleClass="breakdown-sub" style="-fx-font-size: 10px;" wrapText="true"/>
                     <Region styleClass="wd-ln, wd-ln-green"/>
                   </VBox>
 
@@ -1150,7 +1153,7 @@
                       <Label fx:id="insightCount3" text="0" styleClass="metric-value"/>
                       <Label fx:id="insightTrend3" text="Backend count" styleClass="metric-trend-up" style="-fx-text-fill: #3B6DF0;"/>
                     </HBox>
-                    <Label text="URL analyses recorded by the backend" styleClass="breakdown-sub" style="-fx-font-size: 10px;"/>
+                    <Label text="All stored URL assessments in the selected period" styleClass="breakdown-sub" style="-fx-font-size: 10px;" wrapText="true"/>
                     <Region styleClass="wd-ln, wd-ln-blue"/>
                   </VBox>
                 </GridPane>
@@ -1175,60 +1178,59 @@
                     <!-- Suspicious domains -->
                     <VBox spacing="4">
                       <HBox alignment="CENTER_LEFT">
-                        <Label text="Suspicious domains" styleClass="feature-key" style="-fx-font-weight: 600;"/>
+                        <Label text="Brand look-alike signals" styleClass="feature-key" style="-fx-font-weight: 600;"/>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Label text="Not provided by the current backend API" styleClass="metric-label" style="-fx-font-weight: 600;"/>
+                        <Label fx:id="insightPattern0" text="0" styleClass="metric-label" style="-fx-font-weight: 600;"/>
                       </HBox>
-                      <ProgressBar progress="0" maxWidth="Infinity" styleClass="custom-progress-bar, bar-amber"/>
+                      <ProgressBar fx:id="insightPatternBar0" progress="0" maxWidth="Infinity" styleClass="custom-progress-bar, bar-amber"/>
                     </VBox>
 
                     <!-- Lookalike domains -->
                     <VBox spacing="4">
                       <HBox alignment="CENTER_LEFT">
-                        <Label text="Lookalike domains" styleClass="feature-key" style="-fx-font-weight: 600;"/>
+                        <Label text="IDN and confusable hosts" styleClass="feature-key" style="-fx-font-weight: 600;"/>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Label text="Not provided by the current backend API" styleClass="metric-label" style="-fx-font-weight: 600;"/>
+                        <Label fx:id="insightPattern1" text="0" styleClass="metric-label" style="-fx-font-weight: 600;"/>
                       </HBox>
-                      <ProgressBar progress="0" maxWidth="Infinity" styleClass="custom-progress-bar, bar-red"/>
+                      <ProgressBar fx:id="insightPatternBar1" progress="0" maxWidth="Infinity" styleClass="custom-progress-bar, bar-red"/>
                     </VBox>
 
                     <!-- Excessive URL parameters -->
                     <VBox spacing="4">
                       <HBox alignment="CENTER_LEFT">
-                        <Label text="Excessive URL parameters" styleClass="feature-key" style="-fx-font-weight: 600;"/>
+                        <Label text="Deep subdomain chains" styleClass="feature-key" style="-fx-font-weight: 600;"/>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Label text="Not provided by the current backend API" styleClass="metric-label" style="-fx-font-weight: 600;"/>
+                        <Label fx:id="insightPattern2" text="0" styleClass="metric-label" style="-fx-font-weight: 600;"/>
                       </HBox>
-                      <ProgressBar progress="0" maxWidth="Infinity" styleClass="custom-progress-bar, bar-blue"/>
+                      <ProgressBar fx:id="insightPatternBar2" progress="0" maxWidth="Infinity" styleClass="custom-progress-bar, bar-blue"/>
                     </VBox>
 
                     <!-- IP-based URLs -->
                     <VBox spacing="4">
                       <HBox alignment="CENTER_LEFT">
-                        <Label text="IP-based URLs" styleClass="feature-key" style="-fx-font-weight: 600;"/>
+                        <Label text="URL user-info indicators" styleClass="feature-key" style="-fx-font-weight: 600;"/>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Label text="Not provided by the current backend API" styleClass="metric-label" style="-fx-font-weight: 600;"/>
+                        <Label fx:id="insightPattern3" text="0" styleClass="metric-label" style="-fx-font-weight: 600;"/>
                       </HBox>
-                      <ProgressBar progress="0" maxWidth="Infinity" styleClass="custom-progress-bar, bar-red"/>
+                      <ProgressBar fx:id="insightPatternBar3" progress="0" maxWidth="Infinity" styleClass="custom-progress-bar, bar-red"/>
                     </VBox>
 
                     <!-- Shortened URLs -->
                     <VBox spacing="4">
                       <HBox alignment="CENTER_LEFT">
-                        <Label text="Shortened URLs" styleClass="feature-key" style="-fx-font-weight: 600;"/>
+                        <Label text="Hostname signal observations" styleClass="feature-key" style="-fx-font-weight: 600;"/>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Label text="Not provided by the current backend API" styleClass="metric-label" style="-fx-font-weight: 600;"/>
+                        <Label fx:id="insightPattern4" text="0" styleClass="metric-label" style="-fx-font-weight: 600;"/>
                       </HBox>
-                      <ProgressBar progress="0" maxWidth="Infinity" styleClass="custom-progress-bar, bar-cyan"/>
+                      <ProgressBar fx:id="insightPatternBar4" progress="0" maxWidth="Infinity" styleClass="custom-progress-bar, bar-cyan"/>
                     </VBox>
                   </VBox>
 
                   <!-- Dominant Vector Card -->
                   <HBox alignment="CENTER_LEFT" spacing="10" styleClass="pill-badge, badge-live-shield" style="-fx-padding: 8px 14px;">
                     <FontIcon iconLiteral="fth-info" iconSize="14" iconColor="#2563EB"/>
-                    <Label text="Threat signals are not included in the current backend summary API" styleClass="wd-dominant-vector-text" HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="insightDominantSignal" text="Hostname signals are explainable indicators, not model attribution." styleClass="wd-dominant-vector-text" HBox.hgrow="ALWAYS" wrapText="true"/>
                     <Region HBox.hgrow="ALWAYS"/>
-                    <Button text="Active Filter" styleClass="wd-btn, wd-chip, wd-btn--chip, wd-on, wd-dbtn" style="-fx-cursor: hand; -fx-padding: 2px 10px; -fx-font-size: 11px;"/>
                   </HBox>
                 </VBox>
 
@@ -1238,43 +1240,18 @@
                   <VBox styleClass="stitch-card" spacing="12">
                     <HBox alignment="CENTER_LEFT" spacing="8">
                       <FontIcon iconLiteral="fth-zap" iconSize="16" iconColor="#2563EB"/>
-                      <Label text="AI Recommendations" styleClass="wd-section-title"/>
+                      <Label text="AI-Generated Insights" styleClass="wd-section-title"/>
+                      <Region HBox.hgrow="ALWAYS"/>
+                      <Button text="Generate" onAction="#refreshAiInsights" styleClass="stitch-btn-secondary, wd-btn, wd-tonal, wd-btn--tonal"/>
                     </HBox>
-
-                    <!-- Rec 1 -->
-                    <HBox alignment="CENTER_LEFT" spacing="10" styleClass="table-row-item, wd-rec-row">
-                      <StackPane styleClass="metric-icon-circle, icon-green-bg" prefWidth="28" prefHeight="28">
-                        <FontIcon iconLiteral="fth-shield" iconSize="14" iconColor="#10B981"/>
-                      </StackPane>
-                      <VBox spacing="1" HBox.hgrow="ALWAYS">
-                        <Label text="Review suspicious domains before opening them" styleClass="wd-rec-title"/>
-                        <Label text="3 flagged domains await verification" styleClass="breakdown-sub" style="-fx-font-size: 10px;"/>
-                      </VBox>
-                      <Button text="Review" onAction="#navigateThreatCenter" styleClass="stitch-btn-secondary, wd-btn, wd-tonal, wd-btn--tonal, wd-dbtn" style="-fx-font-size: 11px; -fx-padding: 4px 10px;"/>
-                    </HBox>
-
-                    <!-- Rec 2 -->
-                    <HBox alignment="CENTER_LEFT" spacing="10" styleClass="table-row-item, wd-rec-row">
-                      <StackPane styleClass="metric-icon-circle, icon-blue-bg" prefWidth="28" prefHeight="28">
-                        <FontIcon iconLiteral="fth-radio" iconSize="14" iconColor="#2563EB"/>
-                      </StackPane>
-                      <VBox spacing="1" HBox.hgrow="ALWAYS">
-                        <Label text="Enable URL protection for every browsing session" styleClass="wd-rec-title"/>
-                        <Label text="Active defense covers real-time HTTP/HTTPS traffic" styleClass="breakdown-sub" style="-fx-font-size: 10px;"/>
-                      </VBox>
-                      <Button text="Configure" onAction="#navigateSettings" styleClass="stitch-btn-secondary, wd-btn, wd-tonal, wd-btn--tonal, wd-dbtn" style="-fx-font-size: 11px; -fx-padding: 4px 10px;"/>
-                    </HBox>
-
-                    <!-- Rec 3 -->
-                    <HBox alignment="CENTER_LEFT" spacing="10" styleClass="table-row-item, wd-rec-row">
-                      <StackPane styleClass="metric-icon-circle, icon-amber-bg" prefWidth="28" prefHeight="28">
-                        <FontIcon iconLiteral="fth-alert-triangle" iconSize="14" iconColor="#F59E0B"/>
-                      </StackPane>
-                      <VBox spacing="1" HBox.hgrow="ALWAYS">
-                        <Label text="Pay attention to high-risk login pages and shortened links" styleClass="wd-rec-title"/>
-                        <Label text="Spoofed authentication endpoints detected" styleClass="breakdown-sub" style="-fx-font-size: 10px;"/>
-                      </VBox>
-                      <Button text="Details" onAction="#navigateThreatCenter" styleClass="stitch-btn-secondary, wd-btn, wd-tonal, wd-btn--tonal, wd-dbtn" style="-fx-font-size: 11px; -fx-padding: 4px 10px;"/>
+                    <Label fx:id="aiInsightSource" text="Generated from full-period aggregate telemetry" styleClass="breakdown-sub"/>
+                    <Label fx:id="aiInsightMetadata" text="Period sample and generation time will appear here." styleClass="breakdown-sub" wrapText="true"/>
+                    <Label fx:id="aiInsightSummary" text="Open this section to generate an insight from recent phishing assessments and feedback." styleClass="wd-rec-title" wrapText="true"/>
+                    <Label fx:id="aiInsightEvidence" text="Evidence will be shown here." styleClass="breakdown-sub" wrapText="true"/>
+                    <Button fx:id="aiInsightReviewButton" text="Review linked feedback case" onAction="#reviewInsightFeedback" visible="false" managed="false" styleClass="stitch-btn-secondary, wd-btn, wd-tonal, wd-btn--tonal"/>
+                    <HBox spacing="8" alignment="TOP_LEFT" styleClass="table-row-item">
+                      <FontIcon iconLiteral="fth-shield" iconSize="14" iconColor="#10B981"/>
+                      <Label fx:id="aiInsightAction" text="Recommendations are informational and do not change detection or policy." styleClass="breakdown-sub" wrapText="true" HBox.hgrow="ALWAYS"/>
                     </HBox>
                   </VBox>
 

@@ -37,9 +37,9 @@
 
       <StackPane HBox.hgrow="ALWAYS" alignment="TOP_LEFT">
         <VBox fx:id="accessControlPane" spacing="14" visible="false" managed="false">
-          <Label text="Access Control" styleClass="panel-title"/>
-          <Label text="Current response policy" styleClass="feature-val"/>
-          <Label text="These are the desktop app’s current URL risk responses. They guide warnings and block decisions; they do not grant or revoke Windows, file, or account permissions." styleClass="breakdown-sub" wrapText="true"/>
+          <Label text="Permissions and access" styleClass="panel-title"/>
+          <Label text="Layer 1 · phishing response" styleClass="feature-val"/>
+          <Label text="These actions decide how AI WatchDog responds to a URL. They do not change Windows file or account permissions." styleClass="breakdown-sub" wrapText="true"/>
           <GridPane hgap="12" vgap="10">
             <columnConstraints><ColumnConstraints percentWidth="30"/><ColumnConstraints percentWidth="25"/><ColumnConstraints percentWidth="45"/></columnConstraints>
             <Label text="Risk result" styleClass="feature-val" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
@@ -51,11 +51,13 @@
             <Label text="PHISHING" GridPane.columnIndex="0" GridPane.rowIndex="4"/><Label text="Block" GridPane.columnIndex="1" GridPane.rowIndex="4"/><Label text="Block the assessed URL in supported app flows." wrapText="true" GridPane.columnIndex="2" GridPane.rowIndex="4"/>
           </GridPane>
           <Separator/>
-          <Label text="Local service protection" styleClass="feature-val"/>
+          <Separator/>
+          <Label text="Layer 2 · local API credentials" styleClass="feature-val"/>
           <Label fx:id="accessCredentialStatus" text="Checking local desktop credential…" styleClass="breakdown-sub" wrapText="true"/>
-          <Label text="Spring Boot protects API routes with separate desktop and browser-extension credentials. Run setup-local-auth.ps1 from the project folder to create or repair the per-user credential file. Use -Rotate only when you intend to replace credentials; the extension token must then be updated in its Options page." styleClass="breakdown-sub" wrapText="true"/>
-          <Label text="This is a single-user local client model. There are no user accounts or configurable roles. Keep the backend on loopback and protect the credential file; local API tokens do not defend against malware already running as your Windows user." styleClass="breakdown-sub" wrapText="true"/>
-          <Label text="These policy responses are best effort. They do not enforce operating-system access controls or replace endpoint protection." styleClass="breakdown-sub" wrapText="true"/>
+          <Label fx:id="permissionCapabilitiesStatus" text="Spring Boot will show which permissions each local client credential can use." styleClass="breakdown-sub" wrapText="true"/>
+          <Label text="To repair missing credentials, run setup-local-auth.ps1 from the project folder and restart both services. Rotate credentials only if needed; rotation also requires updating the extension token in its Options page." styleClass="breakdown-sub" wrapText="true"/>
+          <Label text="Layer 3 · Windows permissions" styleClass="feature-val"/>
+          <Label text="Windows controls access to protected folders and Security event logs. Some telemetry needs administrator-managed audit policies. The app reports provider access and never changes Windows policy automatically." styleClass="breakdown-sub" wrapText="true"/>
         </VBox>
 
         <VBox fx:id="fileShieldPane" spacing="14">
@@ -80,10 +82,11 @@
           <Separator/>
           <Label text="SHA-256 reputation database" styleClass="feature-val"/>
           <HBox spacing="8" alignment="CENTER_LEFT">
-            <TextField fx:id="reputationDatabasePath" promptText="Path to an existing SQLite reputation database" HBox.hgrow="ALWAYS"/>
-            <Button text="Browse…" onAction="#browseReputationDatabase" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary"/>
+            <TextField fx:id="reputationDatabasePath" promptText="Local database path (created automatically)" HBox.hgrow="ALWAYS"/>
+            <Button text="Choose or create…" onAction="#browseReputationDatabase" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary"/>
           </HBox>
           <Label fx:id="reputationDatabaseStatus" text="Database, provider, and quarantine status will appear here." wrapText="true" styleClass="breakdown-sub"/>
+          <Label text="The SQLite file and table are created automatically at this path. Reputation entries are added only when imported or returned by an enabled threat-intelligence provider; an empty database reports unknown hashes as UNKNOWN." styleClass="breakdown-sub" wrapText="true"/>
 
           <Separator/>
           <HBox alignment="CENTER_LEFT" spacing="10">
@@ -119,7 +122,8 @@
             <Label text="Folder scan depth" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
             <Spinner fx:id="scanDepth" prefWidth="100" editable="true" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
           </GridPane>
-          <Label text="Changes apply immediately and are saved for the next backend start. Reputation data is read only; this app does not create or download signatures." styleClass="breakdown-sub" wrapText="true"/>
+          <Label fx:id="fileShieldSettingsMessage" text="Changes are saved to your local profile." styleClass="breakdown-sub" wrapText="true"/>
+          <Button text="Save File Shield settings" onAction="#saveFileShieldSettings" styleClass="stitch-btn-primary, wd-btn, wd-primary, wd-btn--primary"/>
         </VBox>
 
         <VBox fx:id="localMonitorPane" spacing="14" visible="false" managed="false">
@@ -130,6 +134,8 @@
             <Button text="Add folder…" onAction="#addLocalMonitorRoot" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary"/>
             <Button text="Remove selected" onAction="#removeLocalMonitorRoot" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary"/>
           </HBox>
+          <Label fx:id="localMonitorSettingsMessage" text="Folder selection is saved per Windows user." styleClass="breakdown-sub" wrapText="true"/>
+          <Button text="Save local monitoring folders" onAction="#saveLocalMonitorSettings" styleClass="stitch-btn-primary, wd-btn, wd-primary, wd-btn--primary"/>
           <Label text="The desktop watcher observes names, sizes, and file changes. It does not read content or run a reputation scan." styleClass="breakdown-sub" wrapText="true"/>
           <Separator/>
           <Label text="Windows security telemetry" styleClass="panel-title"/>
@@ -170,11 +176,6 @@
           <Label text="Monitoring and policy decisions are best effort. They do not block operating-system file access, terminate processes, or replace endpoint protection." styleClass="breakdown-sub" wrapText="true"/>
         </VBox>
       </StackPane>
-    </HBox>
-    <Separator/>
-    <HBox alignment="CENTER_LEFT" spacing="10">
-      <Label fx:id="settingsMessage" text="Choose settings, then apply changes." styleClass="breakdown-sub" wrapText="true" HBox.hgrow="ALWAYS"/>
-      <Button text="Apply Settings" onAction="#saveSettings" styleClass="stitch-btn-primary, wd-btn, wd-primary, wd-btn--primary"/>
     </HBox>
   </VBox>
 </VBox>

@@ -6,6 +6,9 @@ import com.aiwatchdog.model.MonitorEvent;
 import com.aiwatchdog.model.SecurityEvent;
 import com.aiwatchdog.model.SecurityEventStats;
 import com.aiwatchdog.model.ServiceHealth;
+import com.aiwatchdog.model.ThreatAssessmentExplanation;
+import com.aiwatchdog.model.AiInsightsResponse;
+import com.aiwatchdog.model.InsightPeriodMetrics;
 import com.aiwatchdog.service.ApiService;
 import com.aiwatchdog.service.BrowserMonitorService;
 import com.aiwatchdog.service.FileSystemMonitorService;
@@ -49,6 +52,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -144,6 +148,8 @@ public class MainController {
     @FXML private HBox dashLiveShieldBox;
     @FXML private FontIcon dashLiveShieldIcon;
     @FXML private Label dashLiveShieldText;
+    @FXML private Button dashLiveShieldToggle;
+    @FXML private Label dashMonitorStatus;
     @FXML private Label sidebarProtectionTitle;
     @FXML private Label sidebarProtectionDescription;
 
@@ -248,7 +254,13 @@ public class MainController {
     @FXML private FontIcon insightIcon0, insightIcon1, insightIcon2, insightIcon3;
     @FXML private Label insightCount0, insightCount1, insightCount2, insightCount3;
     @FXML private Label insightTrend0, insightTrend1, insightTrend2, insightTrend3;
+    @FXML private Label aiInsightSummary, aiInsightEvidence, aiInsightAction, aiInsightSource, aiInsightMetadata;
+    @FXML private Button aiInsightReviewButton;
+    private List<String> latestAiInsightFeedbackIds = List.of();
+    @FXML private Label insightPattern0, insightPattern1, insightPattern2, insightPattern3, insightPattern4, insightDominantSignal;
+    @FXML private ProgressBar insightPatternBar0, insightPatternBar1, insightPatternBar2, insightPatternBar3, insightPatternBar4;
     private com.aiwatchdog.ui.dashboard.DashboardCardsHelper insightsCardsHelper;
+    private int aiInsightRequestId;
 
     // Secure Access
     @FXML private VBox secureAccessContainer;
@@ -277,6 +289,7 @@ public class MainController {
     private volatile SystemTraySupport systemTraySupport;
     private volatile ServiceHealth latestBackendHealth;
     private volatile FileShieldSettings latestFileShieldSettings;
+    private volatile String latestFileShieldSettingsError;
     private volatile NotificationPreferences latestNotificationPreferences;
     private volatile WindowsTelemetryHealth latestWindowsTelemetryHealth;
     private boolean initialUrlEventSnapshotLoaded;
@@ -366,20 +379,6 @@ public class MainController {
         setupSidebarCollapsible();
         setupSecureAccessUpgrades();
         if (settingsViewController != null) settingsViewController.setLocalMonitoringApplyHandler(this::applyLocalMonitorSettings);
-        if (dashLiveShieldBox != null) {
-            dashLiveShieldBox.setOnMouseClicked(event -> toggleLocalMonitoring());
-            dashLiveShieldBox.setCursor(javafx.scene.Cursor.HAND);
-            dashLiveShieldBox.setFocusTraversable(true);
-            dashLiveShieldBox.setAccessibleRole(javafx.scene.AccessibleRole.BUTTON);
-            dashLiveShieldBox.setAccessibleText("Toggle local file and process monitoring");
-            Tooltip.install(dashLiveShieldBox, new Tooltip("Click to start or stop local file and process monitoring"));
-            dashLiveShieldBox.setOnKeyPressed(event -> {
-                if (event.getCode() == javafx.scene.input.KeyCode.ENTER || event.getCode() == javafx.scene.input.KeyCode.SPACE) {
-                    toggleLocalMonitoring();
-                    event.consume();
-                }
-            });
-        }
         updateRiskGauge(0, "UNKNOWN", false);
         startDashboardTelemetryAnimations();
         animateThreatBreakdown();
@@ -432,6 +431,7 @@ public class MainController {
         if (insightsTimeFilter != null) {
             insightsTimeFilter.getItems().addAll("Last 24 hours", "Last 7 days", "Last 30 days");
             insightsTimeFilter.setValue("Last 7 days");
+            insightsTimeFilter.setOnAction(event -> loadAiInsights());
         }
         // Populate Activity and Threat Center from Spring's persisted event APIs.
         renderThreatTable();
@@ -454,7 +454,13 @@ public class MainController {
         if (closed || !refreshInFlight.compareAndSet(false, true)) return;
         try {
             ServiceHealth health = apiService.getServiceHealth();
-            FileShieldSettings fileShieldSettings = safeLoad(apiService::getFileShieldSettings);
+            FileShieldSettings fileShieldSettings = null;
+            String fileShieldSettingsError = null;
+            try {
+                fileShieldSettings = apiService.getFileShieldSettings();
+            } catch (Exception error) {
+                fileShieldSettingsError = valueOr(error.getMessage(), error.getClass().getSimpleName());
+            }
             NotificationPreferences notificationPreferences = safeLoad(apiService::getNotificationPreferences);
             WindowsTelemetryHealth windowsTelemetryHealth = safeLoad(apiService::getWindowsTelemetryHealth);
             List<SecurityEvent> urlEvents = safeLoad(apiService::getRecentEvents);
@@ -463,16 +469,19 @@ public class MainController {
             List<SecurityEvent> assessments = safeLoad(apiService::getRecentAssessments);
             AssessmentStats assessmentStats = safeLoad(apiService::getAssessmentStats);
             List<SecurityEvent> feedbackEvents = safeLoad(apiService::getRecentFeedback);
+            latestFileShieldSettingsError = fileShieldSettingsError;
+            FileShieldSettings resolvedFileShieldSettings = fileShieldSettings;
             Platform.runLater(() -> {
                 latestBackendHealth = health;
-                latestFileShieldSettings = fileShieldSettings;
+                latestFileShieldSettings = resolvedFileShieldSettings;
                 if (notificationPreferences != null) latestNotificationPreferences = notificationPreferences;
                 latestWindowsTelemetryHealth = windowsTelemetryHealth;
-                updateSidebarProtectionStatus(health, fileShieldSettings, windowsTelemetryHealth);
+                updateSidebarProtectionStatus(health, resolvedFileShieldSettings, windowsTelemetryHealth);
                 applyBackendSnapshot(health, urlEvents, monitorEvents, stats, assessments, assessmentStats, feedbackEvents);
                 notifyForNewThreatEvents(urlEvents, monitorEvents, assessments);
             });
         } catch (Exception error) {
+            latestFileShieldSettingsError = valueOr(error.getMessage(), "Spring Boot health request failed");
             Platform.runLater(() -> {
                 latestBackendHealth = null;
                 latestFileShieldSettings = null;
@@ -491,8 +500,12 @@ public class MainController {
 
     @FunctionalInterface private interface BackendRead<T> { T get() throws Exception; }
 
-    private void toggleLocalMonitoring() {
+    @FXML private void toggleLocalMonitoring() {
         if (closed || !monitorChanging.compareAndSet(false, true)) return;
+        if (dashLiveShieldToggle != null) {
+            dashLiveShieldToggle.setDisable(true);
+            dashLiveShieldToggle.setText(fileMonitor != null || processMonitor != null ? "Stopping…" : "Starting…");
+        }
         Thread worker = new Thread(() -> {
             try {
                 FileSystemMonitorService currentFile = fileMonitor;
@@ -515,7 +528,7 @@ public class MainController {
                 boolean backendAvailable = health != null && health.isBackendAvailable();
                 String baseDetail = watchedDirectories > 0
                         ? "Local monitoring active · " + watchedDirectories + " folders"
-                        : "Process monitoring active · No configured folders available";
+                        : "Process monitoring active · No folders selected, so file change monitoring is off. Add folders in Settings.";
                 FileSystemMonitorService.HealthSnapshot fileHealth = file.getHealthSnapshot();
                 if (fileHealth.registrationFailures() > 0) {
                     baseDetail += " · " + fileHealth.registrationFailures() + " folder registration errors";
@@ -530,9 +543,10 @@ public class MainController {
                 fileMonitor = null;
                 processMonitor = null;
                 Platform.runLater(() -> setMonitoringStatus(false,
-                        "Monitoring unavailable · " + valueOr(error.getMessage(), "Backend connection failed")));
+                        "Could not start monitoring: " + friendlyMonitorError(error)));
             } finally {
                 monitorChanging.set(false);
+                Platform.runLater(() -> { if (dashLiveShieldToggle != null) dashLiveShieldToggle.setDisable(false); });
             }
         }, "aiwatchdog-monitor-control");
         worker.setDaemon(true);
@@ -570,8 +584,19 @@ public class MainController {
             if (dashLiveShieldIcon != null) dashLiveShieldIcon.setIconColor(Color.web(running ? "#10B981" : "#64748B"));
         }
         if (dashLiveShieldText != null) dashLiveShieldText.setText(running ? "Live Shield Active" : "Live Shield Paused");
+        if (dashLiveShieldText != null && running && (fileMonitor == null || !fileMonitor.isRunning()))
+            dashLiveShieldText.setText("Process Monitor Active");
+        if (dashLiveShieldToggle != null) dashLiveShieldToggle.setText(running ? "Stop monitoring" : "Start monitoring");
+        if (dashMonitorStatus != null) dashMonitorStatus.setText(message);
         updateSidebarProtectionStatus(latestBackendHealth, latestFileShieldSettings, latestWindowsTelemetryHealth);
         notifyUser(message);
+    }
+
+    private static String friendlyMonitorError(Exception error) {
+        String detail = valueOr(error.getMessage(), "No detail was returned.");
+        if (error instanceof java.io.IOException || detail.toLowerCase(Locale.ROOT).contains("access denied"))
+            return detail + " Check folder access, or choose another folder in Settings → Local Monitoring.";
+        return detail + " Review Settings → Local Monitoring and confirm your selected folders still exist.";
     }
 
     public void setSystemTraySupport(SystemTraySupport support) {
@@ -629,8 +654,10 @@ public class MainController {
             sidebarProtectionDescription.setText(windowsTelemetrySummary(windowsTelemetry));
         } else if (backendSettings == null) {
             sidebarProtectionTitle.setText("Monitor status unavailable");
-            sidebarProtectionDescription.setText("Spring Boot and URL analysis online · File Shield watcher state unavailable · "
-                    + windowsTelemetrySummary(windowsTelemetry));
+            String cause = valueOr(latestFileShieldSettingsError,
+                    "File Shield settings were not returned by Spring Boot");
+            sidebarProtectionDescription.setText("Spring Boot and URL analysis online · File Shield watcher state unavailable: "
+                    + cause + " · " + windowsTelemetrySummary(windowsTelemetry));
         } else {
             sidebarProtectionTitle.setText("Services online");
             sidebarProtectionDescription.setText("URL analysis is online · " + windowsTelemetrySummary(windowsTelemetry));
@@ -782,15 +809,6 @@ public class MainController {
             activityCardsHelper.countUp(activityCount2, totalBlocked);
             activityCardsHelper.countUp(activityCount3, totalAllowed);
         }
-        if (insightCount0 != null) insightCount0.setText("N/A");
-        if (insightCount2 != null) insightCount2.setText("N/A");
-        if (insightsCardsHelper != null) {
-            insightsCardsHelper.countUp(insightCount1, toCount(stats.phishingCount()));
-            insightsCardsHelper.countUp(insightCount3, totalScanned);
-        } else {
-            setCount(insightCount1, stats.phishingCount());
-            setCount(insightCount3, totalScanned);
-        }
         if (!statsAvailable) {
             for (Label label : new Label[]{dashScannedCount, dashThreatsBlockedCount, dashInReviewCount,
                     dashAllowedCount, threatBlockedCount, threatInReviewCount, threatHighRiskCount,
@@ -805,7 +823,7 @@ public class MainController {
         updateBreakdown(dashHighRiskProgress, dashHighRiskPercent, stats.highRiskCount(), totalRiskEvents);
         if (!statsAvailable) {
             for (Label label : new Label[]{dashSafePercent, dashSuspiciousPercent, dashPotentialPercent,
-                    dashHighRiskPercent, threatSafeCount, insightCount1, insightCount3}) {
+                    dashHighRiskPercent, threatSafeCount}) {
                 if (label != null) label.setText("N/A");
             }
             for (ProgressBar bar : new ProgressBar[]{dashSafeProgress, dashSuspiciousProgress,
@@ -1427,8 +1445,134 @@ public class MainController {
     }
     @FXML public void navigateInsights() {
         selectNav(navInsightsBtn, insightsPage);
+        loadAiInsights();
+    }
+
+    @FXML public void refreshAiInsights() { loadAiInsights(); }
+
+    private void loadAiInsights() {
+        if (closed || aiInsightSummary == null) return;
+        String period = insightsTimeFilter == null ? "Last 7 days" : insightsTimeFilter.getValue();
+        int requestId = ++aiInsightRequestId;
+        aiInsightSummary.setText("Analyzing recent phishing assessments and feedback…");
+        if (aiInsightSource != null) aiInsightSource.setText("Generating");
+        backendRefresh.execute(() -> {
+            try {
+                AiInsightsResponse response = apiService.getAiInsights(period);
+                Platform.runLater(() -> {
+                    if (closed || requestId != aiInsightRequestId) return;
+                    ThreatAssessmentExplanation insight = response.insight();
+                    aiInsightSummary.setText(insight.summary());
+                    if (aiInsightEvidence != null) aiInsightEvidence.setText(insight.supportingEvidence() == null
+                            || insight.supportingEvidence().isEmpty() ? "No supporting aggregate evidence returned."
+                            : String.join(" · ", insight.supportingEvidence()));
+                    if (aiInsightAction != null) aiInsightAction.setText(insight.recommendedAction());
+                    if (aiInsightSource != null) aiInsightSource.setText(insight.fallbackUsed()
+                            ? "Rules based · LLM unavailable or disabled" : "Generated by configured LLM");
+                    InsightPeriodMetrics current = response.current();
+                    InsightPeriodMetrics previous = response.previous();
+                    if (aiInsightMetadata != null && current != null && previous != null) {
+                        String errorShare = current.feedbackLabels() == 0 ? "no feedback-labeled outcomes"
+                                : String.format(Locale.ROOT, "user-reported error share %.1f%% (%d/%d labels)",
+                                100.0 * (current.reportedFalsePositives() + current.reportedFalseNegatives())
+                                        / current.feedbackLabels(),
+                                current.reportedFalsePositives() + current.reportedFalseNegatives(), current.feedbackLabels());
+                        aiInsightMetadata.setText("Full history · current/previous samples: " + current.urlAssessments()
+                                + "/" + previous.urlAssessments() + " · phishing prediction change: "
+                                + signedDelta(current.phishingPredictions() - previous.phishingPredictions())
+                                + " · " + errorShare + " · "
+                                + current.reportedFalsePositives() + "/" + current.reportedFalseNegatives()
+                                + " reported FP/FN · generated " + formatEventTime(response.generatedAt()));
+                    }
+                    if (current != null) {
+                        if (insightCount0 != null) insightCount0.setText(current.meanPhishingScore() == null
+                                ? "—" : String.format(Locale.ROOT, "%.1f%%", current.meanPhishingScore() * 100.0));
+                        if (insightTrend0 != null) insightTrend0.setText("Mean model score");
+                        if (insightTrend1 != null) insightTrend1.setText(period);
+                        if (insightTrend2 != null) insightTrend2.setText("User-submitted labels");
+                        if (insightTrend3 != null) insightTrend3.setText(period);
+                        if (insightsCardsHelper != null) {
+                            insightsCardsHelper.countUp(insightCount1, toCount(current.phishingPredictions()));
+                            insightsCardsHelper.countUp(insightCount2, toCount(current.feedbackLabels()));
+                            insightsCardsHelper.countUp(insightCount3, toCount(current.urlAssessments()));
+                        } else {
+                            setCount(insightCount1, current.phishingPredictions());
+                            setCount(insightCount2, current.feedbackLabels());
+                            setCount(insightCount3, current.urlAssessments());
+                        }
+                    }
+                    latestAiInsightFeedbackIds = current == null || current.feedbackAssessmentIds() == null
+                            ? List.of() : current.feedbackAssessmentIds();
+                    if (aiInsightReviewButton != null) {
+                        aiInsightReviewButton.setVisible(!latestAiInsightFeedbackIds.isEmpty());
+                        aiInsightReviewButton.setManaged(!latestAiInsightFeedbackIds.isEmpty());
+                    }
+                    if (current != null) updateInsightPatterns(current);
+                });
+            } catch (Exception failure) {
+                Platform.runLater(() -> {
+                    if (closed || requestId != aiInsightRequestId) return;
+                    aiInsightSummary.setText("AI insights could not be loaded from Spring Boot.");
+                    if (aiInsightEvidence != null) aiInsightEvidence.setText("Check backend availability and try again.");
+                    if (aiInsightAction != null) aiInsightAction.setText("");
+                    if (aiInsightSource != null) aiInsightSource.setText("Unavailable");
+                });
+            }
+        });
+    }
+
+    @FXML public void reviewInsightFeedback() {
+        if (latestAiInsightFeedbackIds.isEmpty()) return;
+        navigateActivity();
+        if (activityEventFilter != null) activityEventFilter.setValue("All Events");
+        if (activityTimeFilter != null && insightsTimeFilter != null) activityTimeFilter.setValue(insightsTimeFilter.getValue());
+        if (activitySearchInput != null) activitySearchInput.setText(latestAiInsightFeedbackIds.get(0));
+        filterActivityLog();
+    }
+
+    private void updateInsightPatterns(InsightPeriodMetrics metrics) {
+        Map<String, Long> counts = metrics.signalCounts() == null ? java.util.Map.of() : metrics.signalCounts();
+        long lookalikes = signalCount(counts, "BRAND_LOOKALIKE_DOMAIN", "IDN_BRAND_HOMOGRAPH",
+                "BRAND_NAME_IN_SUBDOMAIN", "BRAND_NAME_IN_DOMAIN");
+        long idn = signalCount(counts, "IDN_PUNYCODE", "MIXED_CONFUSABLE_SCRIPT");
+        long deepSubdomains = signalCount(counts, "DEEP_SUBDOMAIN_CHAIN");
+        long userInfo = signalCount(counts, "USERINFO_PRESENT");
+        long allSignals = counts.values().stream().mapToLong(Long::longValue).sum();
+        long total = metrics.urlAssessments();
+        setCount(insightPattern0, lookalikes);
+        setCount(insightPattern1, idn);
+        setCount(insightPattern2, deepSubdomains);
+        setCount(insightPattern3, userInfo);
+        setCount(insightPattern4, allSignals);
+        setInsightProgress(insightPatternBar0, lookalikes, total);
+        setInsightProgress(insightPatternBar1, idn, total);
+        setInsightProgress(insightPatternBar2, deepSubdomains, total);
+        setInsightProgress(insightPatternBar3, userInfo, total);
+        setInsightProgress(insightPatternBar4, allSignals, total);
+        String dominant = counts.entrySet().stream().max(Map.Entry.comparingByValue())
+                .map(entry -> entry.getKey().replace('_', ' ').toLowerCase(Locale.ROOT)
+                        + " (" + entry.getValue() + ")").orElse("No hostname signals recorded");
+        if (insightDominantSignal != null) insightDominantSignal.setText("Most frequent recorded host signal: " + dominant
+                + ". Signals are supporting indicators, not model attribution.");
+    }
+
+    private static long signalCount(Map<String, Long> counts, String... codes) {
+        long total = 0;
+        for (String code : codes) total += counts.getOrDefault(code, 0L);
+        return total;
+    }
+
+    private static String signedDelta(long value) { return value > 0 ? "+" + value : Long.toString(value); }
+
+    private static void setInsightProgress(ProgressBar bar, long count, long total) {
+        if (bar != null) bar.setProgress(total <= 0 ? 0 : Math.min(1.0, (double) count / total));
     }
     @FXML public void navigateSettings() { selectNav(navSettingsBtn, settingsPage); }
+
+    @FXML public void navigateLocalMonitoringSettings() {
+        navigateSettings();
+        if (settingsViewController != null) settingsViewController.openLocalMonitorSettings();
+    }
 
     private void setActiveNav(ButtonBase target) {
         if (target == null && !navItems.isEmpty()) {
