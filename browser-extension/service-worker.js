@@ -8,19 +8,62 @@ const recentlyAssessedNavigation = new Map();
 const navigationPending = new Set();
 const previewCache = new Map();
 const pageSignalsCache = new Map();
+const redirectChains = new Map();
 const protectionStateKey = "browserProtectionEnabled";
 const assessmentStorageKey = "tabAssessments";
 const blockedAssessmentStorageKey = "blockedAssessments";
+const domainWhitelistSyncAlarm = "aiwatchdog-domain-whitelist-sync";
 let protectionEnabled = true;
 const protectionReady = new Promise((resolve) => chrome.storage.local.get(protectionStateKey, (value) => {
   protectionEnabled = value[protectionStateKey] !== false;
   void reconcileWarningRules().then(resolve).catch(resolve);
 }));
 
+if (chrome.alarms) {
+  chrome.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === domainWhitelistSyncAlarm) void syncDomainWhitelistRules().catch(() => {});
+  });
+  chrome.runtime.onInstalled?.addListener(() => chrome.alarms.create(domainWhitelistSyncAlarm, { periodInMinutes: 1 }));
+  chrome.runtime.onStartup?.addListener(() => chrome.alarms.create(domainWhitelistSyncAlarm, { periodInMinutes: 1 }));
+  void protectionReady.then(() => {
+    chrome.alarms.create(domainWhitelistSyncAlarm, { periodInMinutes: 1 });
+    return syncDomainWhitelistRules();
+  }).catch(() => {});
+}
+
 chrome.tabs.onActivated.addListener(({ tabId }) => {
   chrome.tabs.get(tabId, (tab) => {
     if (!chrome.runtime.lastError && tab?.status === "complete" && tab?.url) void analyzeNavigation(tab);
   });
+});
+
+chrome.webNavigation?.onBeforeNavigate?.addListener((details) => {
+  if (details.frameId !== 0) return;
+  const host = navigationHost(details.url);
+  if (!host) return;
+  const previous = redirectChains.get(details.tabId);
+  const hosts = previous?.navigationId === details.navigationId ? previous.hosts : [host];
+  redirectChains.set(details.tabId, { navigationId: details.navigationId, hosts: hosts.slice(-6) });
+});
+
+chrome.webNavigation?.onBeforeRedirect?.addListener((details) => {
+  if (details.frameId !== 0) return;
+  const host = navigationHost(details.redirectUrl);
+  if (!host) return;
+  const current = redirectChains.get(details.tabId);
+  const chain = current?.navigationId === details.navigationId ? current.hosts : [];
+  if (chain.at(-1) !== host) chain.push(host);
+  redirectChains.set(details.tabId, { navigationId: details.navigationId, hosts: chain.slice(-6) });
+});
+
+chrome.webNavigation?.onCommitted?.addListener((details) => {
+  if (details.frameId !== 0) return;
+  const host = navigationHost(details.url);
+  if (!host) return;
+  const current = redirectChains.get(details.tabId);
+  const chain = current?.navigationId === details.navigationId ? current.hosts : [];
+  if (chain.at(-1) !== host) chain.push(host);
+  redirectChains.set(details.tabId, { navigationId: details.navigationId, hosts: chain.slice(-6) });
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
@@ -33,6 +76,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 
 chrome.tabs.onRemoved.addListener((tabId) => {
   navigationPending.delete(tabId);
+  redirectChains.delete(tabId);
   for (const key of recentlyAssessedNavigation.keys()) if (key.startsWith(`${tabId}:`)) recentlyAssessedNavigation.delete(key);
   void chrome.storage.session.get(assessmentStorageKey).then((stored) => {
     const assessments = stored[assessmentStorageKey] || {};
@@ -66,7 +110,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   if (message.type === "GET_CURRENT_ASSESSMENT") {
     if (!extensionPage) { sendResponse({ state: "UNKNOWN" }); return false; }
-    void (Number.isInteger(message.ruleId) ? getBlockedAssessment(message.ruleId) : getCurrentAssessment(message.tabId ?? sender.tab?.id)).then(sendResponse);
+    void protectionReady.then(async () => {
+      await syncDomainWhitelistRules().catch(() => {});
+      return Number.isInteger(message.ruleId) ? getBlockedAssessment(message.ruleId) : getCurrentAssessment(message.tabId ?? sender.tab?.id);
+    }).then(sendResponse);
     return true;
   }
   if (message.type === "RECHECK_CURRENT") {
@@ -124,6 +171,24 @@ function sanitizeUrl(rawUrl) {
   } catch { return null; }
 }
 
+function navigationHost(rawUrl) {
+  try {
+    const url = new URL(rawUrl);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    return url.hostname.toLowerCase().replace(/\.$/, "").slice(0, 253) || null;
+  } catch { return null; }
+}
+
+function getRedirectHosts(tabId, rawUrl) {
+  const finalHost = navigationHost(rawUrl);
+  const current = redirectChains.get(tabId);
+  const chain = current?.hosts || [];
+  if (finalHost && chain.at(-1) !== finalHost) chain.push(finalHost);
+  const bounded = chain.slice(-6);
+  if (Number.isInteger(tabId) && current) redirectChains.set(tabId, { ...current, hosts: bounded });
+  return [...new Set(bounded)];
+}
+
 function isSearchResultsPage(rawUrl) {
   try {
     const url = new URL(rawUrl);
@@ -148,7 +213,7 @@ async function callApi(path, payload) {
     try {
       const response = await fetch(`${base}${path}`, {
         method: payload ? "POST" : "GET",
-        headers: payload ? { "Content-Type": "application/json", "Authorization": `Bearer ${token.trim()}` } : undefined,
+        headers: { "Authorization": `Bearer ${token.trim()}`, ...(payload ? { "Content-Type": "application/json" } : {}) },
         body: payload ? JSON.stringify(payload) : undefined,
         signal: controller.signal
       });
@@ -180,6 +245,11 @@ async function analyzeNavigation(tab, force = false) {
   }
   const key = `${tab.id}:${url}`;
   const pageSignals = getPageSignals(tab.id, url);
+  const redirectHosts = getRedirectHosts(tab.id, tab.url);
+  const assessmentSignals = pageSignals || redirectHosts.length > 1
+    ? { ...(pageSignals || { passwordFormCount: 0, crossOriginPasswordFormCount: 0,
+      insecurePasswordFormCount: 0, hiddenFrameCount: 0, crossOriginFrameCount: 0 }), redirectHosts }
+    : null;
   const previous = await getCurrentAssessment(tab.id);
   if (!force && ["ASSESSED", "UNAVAILABLE"].includes(previous?.state) && previous.url === url && Date.now() - previous.timestamp < 10_000) return;
   const last = recentlyAssessedNavigation.get(key);
@@ -188,7 +258,7 @@ async function analyzeNavigation(tab, force = false) {
   const work = (async () => {
     let assessment;
     try {
-      const response = await callApi(NAVIGATION_ENDPOINT, { url, ...(pageSignals ? { pageSignals } : {}) });
+      const response = await callApi(NAVIGATION_ENDPOINT, { url, ...(assessmentSignals ? { pageSignals: assessmentSignals } : {}) });
       assessment = normalizeAssessment(response, url, "ASSESSED");
       recentlyAssessedNavigation.set(key, Date.now());
       while (recentlyAssessedNavigation.size > 512) recentlyAssessedNavigation.delete(recentlyAssessedNavigation.keys().next().value);
@@ -221,7 +291,9 @@ function normalizeAssessment(response, url, state) {
     state,
     assessmentId: typeof response.assessmentId === "string" ? response.assessmentId : null,
     correlationId: typeof response.correlationId === "string" ? response.correlationId : null,
-    url: sanitizeUrl(model.url || response.url || response.subjectId) || url,
+    // Keep the extension's sanitized submitted URL for display; the model result URL
+    // is intentionally host-only and would otherwise hide the destination path.
+    url: sanitizeUrl(url) || sanitizeUrl(response.sources?.submittedUrl || response.url || response.subjectId),
     decision,
     riskLevel,
     prediction: typeof model.prediction === "string" ? model.prediction : "UNKNOWN",
@@ -229,8 +301,13 @@ function normalizeAssessment(response, url, state) {
     riskScore: Number.isFinite(model.risk_score) ? model.risk_score : null,
     threshold: Number.isFinite(model.threshold) ? model.threshold : null,
     reasons: [...evidenceReasons, ...modelReasons].filter((item) => typeof item === "string").slice(0, 12),
-    evidence: response.sources && typeof response.sources === "object" ? response.sources : null,
+    evidence: (() => {
+      if (!response.sources || typeof response.sources !== "object") return null;
+      const { submittedUrl, ...safeSources } = response.sources;
+      return safeSources;
+    })(),
     domainDenied: response.sources?.localDomainRule?.action === "DENY",
+    domainAllowlisted: response.sources?.localDomainRule?.action === "ALLOWLIST_EXCEPTION",
     hostnameConcern: ["KNOWN_MALICIOUS", "SUSPICIOUS"].includes(response.sources?.urlReputation?.status)
       || (Array.isArray(response.sources?.urlHostSignals?.signals)
         && response.sources.urlHostSignals.signals.some((signal) => signal?.severity === "HIGH")),
@@ -249,6 +326,10 @@ function sanitizePageSignals(raw) {
     if (!Number.isInteger(value) || value < 0 || value > 50) return null;
     safe[name] = value;
   }
+  safe.redirectHosts = Array.isArray(raw.redirectHosts)
+    ? [...new Set(raw.redirectHosts.slice(0, 6).filter((host) => typeof host === "string"
+      && host.length <= 253 && /^[a-z0-9.-]+$/i.test(host)).map((host) => host.toLowerCase().replace(/\.$/, "")))].slice(0, 6)
+    : [];
   return safe;
 }
 
@@ -271,6 +352,7 @@ async function receivePageSignals(tab, rawSignals) {
   const tabNow = await chrome.tabs.get(tab.id);
   if (!tabNow?.url || sanitizeUrl(tabNow.url) !== url) return;
   const key = `${tab.id}:${url}`;
+  signals.redirectHosts = getRedirectHosts(tab.id, tab.url);
   pageSignalsCache.set(key, { signals, timestamp: Date.now() });
   while (pageSignalsCache.size > 256) pageSignalsCache.delete(pageSignalsCache.keys().next().value);
 
@@ -305,7 +387,47 @@ async function submitFeedback(tabId, ruleId, assessmentId, label) {
 }
 
 function isDangerous(item) {
-  return item?.decision === "BLOCK" && (item?.riskLevel === "HIGH_RISK" || item?.domainDenied === true);
+  return item?.decision === "BLOCK";
+}
+
+async function syncDomainWhitelistRules() {
+  if (!protectionEnabled) return;
+  const entries = await callApi("/api/v1/domain-whitelist");
+  if (!Array.isArray(entries)) return;
+  const allowlistedHosts = new Set(entries.map((domain) => navigationHost(`https://${domain}`)).filter(Boolean));
+  const stored = await chrome.storage.local.get(blockedAssessmentStorageKey);
+  const blocked = stored[blockedAssessmentStorageKey] || {};
+  const rules = await chrome.declarativeNetRequest.getDynamicRules();
+  const activeIds = new Set(rules.map((rule) => String(rule.id)));
+  const removeIds = [];
+  for (const [id, item] of Object.entries(blocked)) {
+    const host = navigationHost(item?.url || "");
+    if (!activeIds.has(id) || !host || !allowlistedHosts.has(host) || hasIndependentBlockEvidence(item)) continue;
+    removeIds.push(Number(id));
+    delete blocked[id];
+  }
+  if (removeIds.length) {
+    await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: removeIds });
+    await chrome.storage.local.set({ [blockedAssessmentStorageKey]: blocked });
+  }
+
+  for (const [url, entry] of previewCache) {
+    const host = navigationHost(url);
+    if (entry.result?.domainAllowlisted !== allowlistedHosts.has(host)) previewCache.delete(url);
+  }
+  if (typeof chrome.tabs.query === "function") chrome.tabs.query({}, (tabs) => {
+    for (const tab of tabs || []) {
+      if (!Number.isInteger(tab.id) || !navigationHost(tab.url || "")) continue;
+      const host = navigationHost(tab.url);
+      void getCurrentAssessment(tab.id).then((assessment) => {
+        if (assessment?.domainAllowlisted !== allowlistedHosts.has(host)) void analyzeNavigation(tab, true);
+      }).catch(() => {});
+    }
+  });
+}
+
+function hasIndependentBlockEvidence(item) {
+  return item?.domainDenied === true || item?.evidence?.urlReputation?.status === "KNOWN_MALICIOUS";
 }
 
 async function previewResults(rawUrls) {
@@ -406,6 +528,8 @@ async function setProtection(enabled) {
       if (isDangerous(item)) item.enforcement = "DISABLED";
     }
     await chrome.storage.session.set({ [assessmentStorageKey]: assessments });
+  } else {
+    await syncDomainWhitelistRules().catch(() => {});
   }
   chrome.tabs.query({}, (tabs) => {
     for (const tab of tabs || []) {

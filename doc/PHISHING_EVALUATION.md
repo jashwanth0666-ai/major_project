@@ -1,30 +1,29 @@
 # Frozen URL model evaluation
 
-The enterprise evaluation script described by earlier project reports is not
-present in this checkout. The checked-in Phase 4 calibrated artifact remains
-available for runtime and bounded batch inference through
-`api/inference/detector.py`. The detector does not train, calibrate, tune, or
-modify the model.
+The checked-in Phase 4 calibrated artifact can be compared across three
+inference representations using `api/inference/evaluate_url_representations.py`:
+the submitted full URL, the production-safe path representation (queries,
+fragments, sensitive paths, and opaque path segments removed), and
+scheme-plus-host only. This is evaluation only; the script does not train,
+calibrate, tune, or modify the model.
 
 From the repository root in PowerShell:
 
 ```powershell
-.\.venv\Scripts\python.exe -m api.inference.detector --batch .\INPUT.csv --output .\ml_model\phase5\predictions.csv
+.\.venv\Scripts\python.exe -m api.inference.evaluate_url_representations `
+  --training-data .\ml_model\splits\train.csv `
+  --evaluation-data .\ml_model\splits\validation.csv `
+  --output .\ml_model\phase5\validation_representation.json
 ```
 
-For a quick deterministic diagnostic, add `--sample-size 1000`. This is stratified by label with seed 42 and must not be reported as a full-split result. `--threshold` supports sensitivity analysis only; the selected value and override are recorded, and the risk-engine configuration is never changed.
+The evaluator requires hostname-disjoint training and evaluation CSVs and reports precision, recall, F1, false-positive/negative rates, Brier score, and expected calibration error for all three representations. It includes the dataset and model hashes in its JSON output. It does not emit row-level URLs. The threshold stays fixed at the production threshold (`0.31`); the script does not select a replacement threshold.
 
 ## Outputs
 
-Artifacts are written to the ignored local directory `ml_model/phase5/enterprise_evaluation/`:
-
-- `evaluation_report.md` and `evaluation_summary.json`: model hash, threshold provenance, full split metrics, row-level Wilson intervals, calibration error, and temporal-evaluation state.
-- `predictions_*.csv`: one scored row per evaluated URL, with credentials, query strings, fragments, and sensitive/opaque path segments removed from the review URL. A SHA-256 of the original URL supports local joining.
-- `domain_review_*.csv`: per-domain counts and error rates for domains with at least 20 rows, to identify clusters requiring label review.
-- `label_review_queue_*.csv`: bounded false-positive and false-negative queues with blank reviewer adjudication fields. The script does not assume labels have been reviewed or move reviewed rows into training.
-- `source_label_counts_*.csv`: label distribution by source when the split includes that metadata.
-
-Precision, recall, and FPR intervals use Wilson binomial intervals over rows; they do not model within-domain correlation. Per-domain summaries provide additional context. The split overlap audit is copied into the JSON report when available.
+Use `--output PATH.json` to save a report. The validation, held-out test, and
+unseen-domain splits are available under `ml_model/splits/`; do not select a
+threshold using the held-out test split. Run validation and unseen-domain
+comparisons first, and reserve the test split for final reporting.
 
 ## Temporal limitation
 

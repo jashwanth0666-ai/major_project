@@ -1,6 +1,7 @@
 package com.aiwatchdog.backend.assessment;
 
 import java.net.IDN;
+import java.text.Normalizer;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.HashMap;
 
 /** Explainable hostname-only heuristics. These signals are not a probability or verdict. */
 public record UrlHostSignals(String status, String host, String checkedAt, List<Signal> signals) {
@@ -29,6 +31,8 @@ public record UrlHostSignals(String status, String host, String checkedAt, List<
             Map.entry("openai", Set.of("openai.com")));
     private static final Set<String> MULTI_LABEL_SUFFIXES = Set.of(
             "co.uk", "org.uk", "com.au", "net.au", "co.in", "com.br", "co.nz", "com.sg", "co.jp");
+    /** Common Greek/Cyrillic characters that visually resemble Latin letters in domain labels. */
+    private static final Map<Integer, String> CONFUSABLES = confusables();
 
     public UrlHostSignals { signals = signals == null ? List.of() : List.copyOf(signals); }
 
@@ -78,8 +82,18 @@ public record UrlHostSignals(String status, String host, String checkedAt, List<
         if (sldIndex < 0) return;
         String registrableLabel = labels[sldIndex];
         String root = String.join(".", java.util.Arrays.copyOfRange(labels, sldIndex, labels.length));
+        String unicodeLabel;
+        try { unicodeLabel = Normalizer.normalize(IDN.toUnicode(registrableLabel), Normalizer.Form.NFKC).toLowerCase(Locale.ROOT); }
+        catch (RuntimeException invalid) { unicodeLabel = registrableLabel; }
+        String skeleton = confusableSkeleton(unicodeLabel);
         for (Map.Entry<String, Set<String>> brand : OFFICIAL_BRAND_ROOTS.entrySet()) {
             if (brand.getValue().stream().anyMatch(domain -> host.equals(domain) || host.endsWith("." + domain))) continue;
+            if (!unicodeLabel.equals(registrableLabel) && !skeleton.equals(unicodeLabel)
+                    && skeleton.equals(brand.getKey())) {
+                found.add(new Signal("IDN_BRAND_HOMOGRAPH", "HIGH",
+                        "The internationalized registrable domain uses Greek or Cyrillic characters that resemble the well-known brand " + brand.getKey() + "."));
+                return;
+            }
             String normalized = registrableLabel.replace("-", "");
             if (normalized.equals(brand.getKey()) || editDistanceAtMostOne(normalized, brand.getKey())) {
                 found.add(new Signal("BRAND_LOOKALIKE_DOMAIN", "HIGH",
@@ -100,6 +114,25 @@ public record UrlHostSignals(String status, String host, String checkedAt, List<
                 return;
             }
         }
+    }
+
+    private static Map<Integer, String> confusables() {
+        Map<Integer, String> map = new HashMap<>();
+        String[][] pairs = {
+                {"аα", "a"}, {"вβ", "b"}, {"сϲ", "c"}, {"ԁ", "d"}, {"еε", "e"},
+                {"һη", "h"}, {"іι", "i"}, {"ј", "j"}, {"кκ", "k"}, {"мμ", "m"}, {"ӏ", "l"},
+                {"ո", "n"}, {"оο", "o"}, {"рρ", "p"}, {"ԛ", "q"}, {"г", "r"},
+                {"ѕ", "s"}, {"тτ", "t"}, {"υ", "u"}, {"хχ", "x"}, {"у", "y"}
+        };
+        for (String[] pair : pairs) pair[0].codePoints().forEach(codePoint -> map.put(codePoint, pair[1]));
+        return Map.copyOf(map);
+    }
+
+    private static String confusableSkeleton(String value) {
+        StringBuilder skeleton = new StringBuilder();
+        value.codePoints().forEach(codePoint -> skeleton.append(CONFUSABLES.getOrDefault(codePoint,
+                new String(Character.toChars(codePoint)))));
+        return skeleton.toString();
     }
 
     private static boolean editDistanceAtMostOne(String left, String right) {

@@ -252,6 +252,7 @@ public class MainController {
 
     // Secure Access
     @FXML private VBox secureAccessContainer;
+    @FXML private TextField domainExceptionInput;
     @FXML private FontIcon exceptionGlobe1, exceptionGlobe2;
     private final List<Animation> secureAccessGlobeAnimations = new ArrayList<>();
 
@@ -278,9 +279,12 @@ public class MainController {
     private volatile FileShieldSettings latestFileShieldSettings;
     private volatile NotificationPreferences latestNotificationPreferences;
     private volatile WindowsTelemetryHealth latestWindowsTelemetryHealth;
-    private boolean initialEventSnapshotLoaded;
+    private boolean initialUrlEventSnapshotLoaded;
+    private boolean initialMonitorEventSnapshotLoaded;
+    private boolean initialAssessmentSnapshotLoaded;
     private long lastMonitorEventId;
     private long lastUrlEventId;
+    private long lastAssessmentEventId;
 
     private int totalScanned;
     private int totalBlocked;
@@ -409,7 +413,8 @@ public class MainController {
         }
         if (activityEventFilter != null) {
             activityEventFilter.getItems().addAll("All Events", "URL Scan", "File Event", "Process Event", "Script Finding",
-                    "Windows Security Event", "Unified Assessment · URL", "Unified Assessment · FILE");
+                    "Windows Security Event", "Unified Assessment · URL", "Unified Assessment · FILE", "Operator Feedback · FALSE_POSITIVE",
+                    "Operator Feedback · FALSE_NEGATIVE", "Operator Feedback · CORRECT");
             activityEventFilter.setValue("All Events");
             activityEventFilter.setOnAction(event -> { activityPageIndex = 0; renderActivityTable(activitySearchInput == null ? "" : activitySearchInput.getText()); });
         }
@@ -457,20 +462,20 @@ public class MainController {
             SecurityEventStats stats = safeLoad(apiService::getSecurityEventStats);
             List<SecurityEvent> assessments = safeLoad(apiService::getRecentAssessments);
             AssessmentStats assessmentStats = safeLoad(apiService::getAssessmentStats);
+            List<SecurityEvent> feedbackEvents = safeLoad(apiService::getRecentFeedback);
             Platform.runLater(() -> {
                 latestBackendHealth = health;
                 latestFileShieldSettings = fileShieldSettings;
-                latestNotificationPreferences = notificationPreferences;
+                if (notificationPreferences != null) latestNotificationPreferences = notificationPreferences;
                 latestWindowsTelemetryHealth = windowsTelemetryHealth;
                 updateSidebarProtectionStatus(health, fileShieldSettings, windowsTelemetryHealth);
-                applyBackendSnapshot(health, urlEvents, monitorEvents, stats, assessments, assessmentStats);
-                notifyForNewThreatEvents(urlEvents, monitorEvents);
+                applyBackendSnapshot(health, urlEvents, monitorEvents, stats, assessments, assessmentStats, feedbackEvents);
+                notifyForNewThreatEvents(urlEvents, monitorEvents, assessments);
             });
         } catch (Exception error) {
             Platform.runLater(() -> {
                 latestBackendHealth = null;
                 latestFileShieldSettings = null;
-                latestNotificationPreferences = null;
                 latestWindowsTelemetryHealth = null;
                 updateSidebarProtectionStatus(null, null, null);
                 showBackendUnavailable(error);
@@ -670,33 +675,47 @@ public class MainController {
         return "Desktop file and process event monitors are active";
     }
 
-    private void notifyForNewThreatEvents(List<SecurityEvent> urlEvents, List<MonitorEvent> monitorEvents) {
-        if (urlEvents == null || monitorEvents == null) return;
-        long newestUrlId = urlEvents.stream().map(SecurityEvent::id).filter(java.util.Objects::nonNull)
-                .mapToLong(Long::longValue).max().orElse(lastUrlEventId);
-        long newestMonitorId = monitorEvents.stream().map(MonitorEvent::id).filter(java.util.Objects::nonNull)
-                .mapToLong(Long::longValue).max().orElse(lastMonitorEventId);
-        if (!initialEventSnapshotLoaded) {
-            lastUrlEventId = newestUrlId;
-            lastMonitorEventId = newestMonitorId;
-            initialEventSnapshotLoaded = true;
-            return;
+    private void notifyForNewThreatEvents(List<SecurityEvent> urlEvents, List<MonitorEvent> monitorEvents,
+                                          List<SecurityEvent> assessments) {
+        if (urlEvents != null) {
+            long newest = urlEvents.stream().map(SecurityEvent::id).filter(java.util.Objects::nonNull)
+                    .mapToLong(Long::longValue).max().orElse(lastUrlEventId);
+            if (initialUrlEventSnapshotLoaded) {
+                for (SecurityEvent event : urlEvents) {
+                    if (event.id() != null && event.id() > lastUrlEventId && isAlertDecision(event.decision()))
+                        sendThreatNotification("URL assessment", event.riskLevel(), event.decision());
+                }
+            } else initialUrlEventSnapshotLoaded = true;
+            lastUrlEventId = Math.max(lastUrlEventId, newest);
         }
-        for (SecurityEvent event : urlEvents) {
-            if (event.id() != null && event.id() > lastUrlEventId && isAlertDecision(event.decision())) {
-                sendThreatNotification("URL assessment", event.riskLevel(), event.decision());
-            }
+        if (monitorEvents != null) {
+            long newest = monitorEvents.stream().map(MonitorEvent::id).filter(java.util.Objects::nonNull)
+                    .mapToLong(Long::longValue).max().orElse(lastMonitorEventId);
+            if (initialMonitorEventSnapshotLoaded) {
+                for (MonitorEvent event : monitorEvents) {
+                    if (event.id() != null && event.id() > lastMonitorEventId && isAlertDecision(event.decision())) {
+                        String source = "FILE".equalsIgnoreCase(event.eventType()) ? "File event"
+                                : "SCRIPT".equalsIgnoreCase(event.eventType()) ? "Script finding"
+                                : "WINDOWS".equalsIgnoreCase(event.eventType()) ? "Windows security event" : "Process event";
+                        sendThreatNotification(source, event.riskLevel(), event.decision());
+                    }
+                }
+            } else initialMonitorEventSnapshotLoaded = true;
+            lastMonitorEventId = Math.max(lastMonitorEventId, newest);
         }
-        for (MonitorEvent event : monitorEvents) {
-            if (event.id() != null && event.id() > lastMonitorEventId && isAlertDecision(event.decision())) {
-                String source = "FILE".equalsIgnoreCase(event.eventType()) ? "File event"
-                        : "SCRIPT".equalsIgnoreCase(event.eventType()) ? "Script finding"
-                        : "WINDOWS".equalsIgnoreCase(event.eventType()) ? "Windows security event" : "Process event";
-                sendThreatNotification(source, event.riskLevel(), event.decision());
-            }
+        if (assessments != null) {
+            long newest = assessments.stream().map(SecurityEvent::id).filter(java.util.Objects::nonNull)
+                    .mapToLong(Long::longValue).max().orElse(lastAssessmentEventId);
+            if (initialAssessmentSnapshotLoaded) {
+                for (SecurityEvent event : assessments) {
+                    if (event.id() == null || event.id() <= lastAssessmentEventId || !isAlertDecision(event.decision())) continue;
+                    JsonNode details = parseAssessment(event.detailsJson());
+                    String risk = textAt(details.path("sources").path("urlModel"), "risk_level", event.riskLevel());
+                    sendThreatNotification("URL assessment", risk, event.decision());
+                }
+            } else initialAssessmentSnapshotLoaded = true;
+            lastAssessmentEventId = Math.max(lastAssessmentEventId, newest);
         }
-        lastUrlEventId = Math.max(lastUrlEventId, newestUrlId);
-        lastMonitorEventId = Math.max(lastMonitorEventId, newestMonitorId);
     }
 
     private boolean isAlertDecision(String decision) {
@@ -717,7 +736,8 @@ public class MainController {
 
     private void applyBackendSnapshot(ServiceHealth health, List<SecurityEvent> urlEvents,
                                       List<MonitorEvent> monitorEvents, SecurityEventStats stats,
-                                      List<SecurityEvent> assessments, AssessmentStats assessmentStats) {
+                                      List<SecurityEvent> assessments, AssessmentStats assessmentStats,
+                                      List<SecurityEvent> feedbackEvents) {
         if (closed) return;
         if (dashAssessmentLoading != null) { dashAssessmentLoading.setVisible(false); dashAssessmentLoading.setManaged(false); }
         boolean statsAvailable = stats != null;
@@ -725,10 +745,12 @@ public class MainController {
         boolean monitorHistoryAvailable = monitorEvents != null;
         boolean assessmentsAvailable = assessments != null;
         boolean assessmentStatsAvailable = assessmentStats != null;
+        boolean feedbackAvailable = feedbackEvents != null;
         if (stats == null) stats = new SecurityEventStats(0,0,0,0,0,0,0,0,0,0,0);
         if (urlEvents == null) urlEvents = List.of();
         if (monitorEvents == null) monitorEvents = List.of();
         if (assessments == null) assessments = List.of();
+        if (feedbackEvents == null) feedbackEvents = List.of();
         updateAssessmentDashboard(assessmentStats);
         totalScanned = Math.toIntExact(Math.min(Integer.MAX_VALUE, stats.totalEvents()));
         totalBlocked = Math.toIntExact(Math.min(Integer.MAX_VALUE, stats.blockCount()));
@@ -862,6 +884,14 @@ public class MainController {
                     assessmentId + " · " + subject + " · " + summary, "Assessment", decision, status,
                     parseEventInstant(event.timestamp()), assessmentId, subjectType, event.detailsJson(), event.correlationId()));
         }
+        for (SecurityEvent event : feedbackEvents) {
+            JsonNode feedback = parseAssessment(event.detailsJson());
+            String label = textAt(feedback, "label", "UNKNOWN");
+            String assessmentId = valueOr(event.subjectId(), "unavailable");
+            recent.add(new ActivityItem(formatEventTime(event.timestamp()), "Operator Feedback · " + label,
+                    "Assessment " + assessmentId, "Human review", valueOr(event.decision(), "REVIEW"),
+                    "Stored for offline evaluation", parseEventInstant(event.timestamp())));
+        }
         activityLog.clear();
         // Each backend source is capped at 100 rows, so this combined in-memory page remains bounded.
         activityLog.addAll(recent.stream().sorted(Comparator.comparing(ActivityItem::instant).reversed()).toList());
@@ -873,8 +903,8 @@ public class MainController {
             if (activityCount0 != null) activityCount0.setText("N/A");
         }
         if (activityPaginationLabel != null && (!statsAvailable || !urlHistoryAvailable
-                || !monitorHistoryAvailable || !assessmentsAvailable || !assessmentStatsAvailable)) {
-            activityPaginationLabel.setText("Partial data: one or more history or aggregate requests failed. Assessment history is limited to the latest 100 records.");
+                || !monitorHistoryAvailable || !assessmentsAvailable || !assessmentStatsAvailable || !feedbackAvailable)) {
+            activityPaginationLabel.setText("Partial data: one or more history or aggregate requests failed. Assessment and feedback history are limited to the latest 100 records.");
         }
     }
 
@@ -1385,7 +1415,7 @@ public class MainController {
     }
     @FXML public void navigateScanner() { selectNav(navScannerBtn, scannerInputPage); }
     @FXML public void navigateFileShield() { selectNav(navFileShieldBtn, fileShieldPage); }
-    @FXML public void navigateSecureAccess() { selectNav(navSecureAccessBtn, secureAccessPage); }
+    @FXML public void navigateSecureAccess() { selectNav(navSecureAccessBtn, secureAccessPage); refreshDomainWhitelist(); }
     @FXML public void navigateThreatCenter() {
         selectNav(navThreatCenterBtn, threatCenterPage);
         if (threatInsightsHelper != null) {
@@ -1434,8 +1464,91 @@ public class MainController {
     }
 
     // =========================================================================
+    @FXML private void addException() {
+        String domain = domainExceptionInput == null ? "" : domainExceptionInput.getText().trim();
+        if (domain.isBlank()) { notifyUser("Enter a domain such as example.com."); return; }
+        domainExceptionInput.setDisable(true);
+        backendRefresh.execute(() -> {
+            try {
+                List<String> entries = apiService.addDomainWhitelistEntry(domain);
+                Platform.runLater(() -> {
+                    domainExceptionInput.clear();
+                    domainExceptionInput.setDisable(false);
+                    renderDomainWhitelist(entries);
+                    notifyUser("Domain exception saved.");
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    domainExceptionInput.setDisable(false);
+                    notifyUser(e.getMessage() == null ? "Could not save domain exception." : e.getMessage());
+                });
+            }
+        });
+    }
+
+    private void refreshDomainWhitelist() {
+        if (secureAccessContainer == null) return;
+        secureAccessContainer.getChildren().clear();
+        backendRefresh.execute(() -> {
+            try {
+                List<String> entries = apiService.getDomainWhitelist();
+                Platform.runLater(() -> renderDomainWhitelist(entries));
+            } catch (Exception e) {
+                Platform.runLater(() -> notifyUser("Could not load domain exceptions. Check backend connection."));
+            }
+        });
+    }
+
+    private void renderDomainWhitelist(List<String> entries) {
+        if (secureAccessContainer == null) return;
+        secureAccessContainer.getChildren().clear();
+        if (entries == null || entries.isEmpty()) {
+            Label empty = new Label("No domain exceptions configured.");
+            empty.getStyleClass().add("wd-exception-desc");
+            secureAccessContainer.getChildren().add(empty);
+            return;
+        }
+        for (String domain : entries) {
+            HBox row = new HBox(14);
+            row.setAlignment(Pos.CENTER_LEFT);
+            row.getStyleClass().add("wd-exception-row");
+            StackPane iconBox = new StackPane();
+            iconBox.getStyleClass().addAll("metric-icon-circle", "icon-emerald-bg");
+            iconBox.setMinSize(36, 36);
+            FontIcon icon = new FontIcon("fth-globe");
+            icon.setIconSize(16);
+            icon.setIconColor(Color.web("#10B981"));
+            iconBox.getChildren().add(icon);
+            VBox details = new VBox(2);
+            HBox.setHgrow(details, Priority.ALWAYS);
+            Label title = new Label(domain);
+            title.getStyleClass().add("wd-exception-domain");
+            Label subtitle = new Label("Domain exception · URL model skipped; other checks remain active");
+            subtitle.getStyleClass().add("wd-exception-desc");
+            details.getChildren().addAll(title, subtitle);
+            Button remove = new Button("Remove");
+            remove.setAccessibleText("Remove " + domain + " from domain whitelist");
+            remove.setOnAction(event -> removeDomainException(domain, remove));
+            row.getChildren().addAll(iconBox, details, remove);
+            secureAccessContainer.getChildren().add(row);
+        }
+    }
+
+    private void removeDomainException(String domain, Button button) {
+        button.setDisable(true);
+        backendRefresh.execute(() -> {
+            try {
+                List<String> entries = apiService.removeDomainWhitelistEntry(domain);
+                Platform.runLater(() -> { renderDomainWhitelist(entries); notifyUser("Domain exception removed."); });
+            } catch (Exception e) {
+                Platform.runLater(() -> { button.setDisable(false); notifyUser("Could not remove domain exception."); });
+            }
+        });
+    }
+
+    // =========================================================================
     @FXML
-    public void addException() {
+    public void addLegacyDemoException() {
         if (secureAccessContainer != null) {
             HBox newRow = new HBox(14);
             newRow.setAlignment(Pos.CENTER_LEFT);
@@ -1859,7 +1972,15 @@ public class MainController {
         String url = result.url();
         String decision = valueOr(result.decision(), "UNKNOWN").toUpperCase(Locale.ROOT);
         String prediction = valueOr(result.prediction(), "UNKNOWN").toUpperCase(Locale.ROOT);
-        String shownPrediction = "PHISHING".equals(prediction) && "REVIEW".equals(decision)
+        boolean modelSkipped = result.reasons() != null && result.reasons().stream()
+                .anyMatch(reason -> reason.startsWith("Model skipped:")
+                        || reason.startsWith("URL indicator: Model skipped:"));
+        boolean allowlistException = result.reasons() != null && result.reasons().stream()
+                .anyMatch(reason -> reason.contains("active domain allowlist exception"));
+        boolean feedbackOverride = modelSkipped && !allowlistException;
+        String shownPrediction = allowlistException ? "MODEL SKIPPED · DOMAIN EXCEPTION"
+                : feedbackOverride ? "SAFE · PRIOR FEEDBACK"
+                : "PHISHING".equals(prediction) && "REVIEW".equals(decision)
                 ? "REVIEW REQUIRED" : prediction;
         int score = result.riskScore();
         String riskLevel = valueOr(result.riskLevel(), "UNKNOWN").toUpperCase(Locale.ROOT);
@@ -1985,10 +2106,11 @@ public class MainController {
                     : "-fx-font-weight: 700; -fx-text-fill: #10B981;"));
         }
         if (resultConfidence != null) {
-            resultConfidence.setText(String.format(Locale.ROOT, "%.2f%%", prob * 100.0));
+            resultConfidence.setText(modelSkipped ? "Model skipped" : String.format(Locale.ROOT, "%.2f%%", prob * 100.0));
         }
         if (resultThreshold != null) {
-            resultThreshold.setText(String.format(Locale.ROOT, "%.0f%%", result.threshold() * 100.0));
+            resultThreshold.setText(modelSkipped ? (allowlistException ? "Domain allowlist" : "Feedback memory")
+                    : String.format(Locale.ROOT, "%.0f%%", result.threshold() * 100.0));
         }
         if (resultScorePill != null) resultScorePill.setText(riskLevel);
 
@@ -2050,7 +2172,9 @@ public class MainController {
         };
         task.setOnSucceeded(event -> {
             setFeedbackControlsDisabled(false);
-            if (feedbackStatus != null) feedbackStatus.setText("Feedback saved locally for later review. It does not retrain the model.");
+            if (feedbackStatus != null) feedbackStatus.setText("FALSE_POSITIVE".equals(label)
+                    ? "False-positive feedback saved. This exact URL skips model inference for 30 days; other URLs are still analyzed."
+                    : "Feedback saved for offline review. It does not retrain the model.");
         });
         task.setOnFailed(event -> {
             setFeedbackControlsDisabled(false);

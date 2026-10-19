@@ -51,7 +51,8 @@ class ThreatAssessmentServiceTest {
         List<String> modelReasons = List.of("No major URL-level warning indicators detected");
         MlPredictionResponse modelResponse = new MlPredictionResponse(
                 url, 0.993671, 99, "HIGH_RISK", "PHISHING", .15, modelReasons);
-        when(ml.predict(url)).thenReturn(modelResponse);
+        when(ml.predict("https://console.groq.com")).thenReturn(new MlPredictionResponse(
+                "https://console.groq.com", 0.993671, 99, "HIGH_RISK", "PHISHING", .15, modelReasons));
         when(policy.evaluate(any())).thenReturn(Decision.BLOCK);
         when(explanationService.explain(any())).thenReturn(new AssessmentExplanation(
                 "The supplied evidence was reviewed.", List.of("LLM-generated text"),
@@ -79,10 +80,12 @@ class ThreatAssessmentServiceTest {
 
     @Test void urlAuditRedactsQuerySecretsWhileResponseKeepsSourcePrediction() {
         String url = "https://example.test/private?token=secret-value";
-        when(ml.predict(url)).thenReturn(new MlPredictionResponse(url, .01, 1, "SAFE", "BENIGN", .15, List.of()));
+        when(ml.predict("https://example.test")).thenReturn(new MlPredictionResponse(
+                "https://example.test", .01, 1, "SAFE", "BENIGN", .15, List.of()));
         when(policy.evaluate(any())).thenReturn(Decision.ALLOW);
         var response = service.assessUrl(url);
-        assertEquals(url, ((MlPredictionResponse) response.sources().get("urlModel")).url());
+        assertEquals("https://example.test", ((MlPredictionResponse) response.sources().get("urlModel")).url());
+        assertEquals(url, response.sources().get("submittedUrl"));
         ArgumentCaptor<com.aiwatchdog.backend.logging.SecurityEvent> captor =
                 ArgumentCaptor.forClass(com.aiwatchdog.backend.logging.SecurityEvent.class);
         verify(logger).logAssessment(captor.capture());

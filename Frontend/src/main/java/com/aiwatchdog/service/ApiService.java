@@ -61,6 +61,7 @@ public class ApiService implements MonitorEventSubmitter {
     }
 
     public String getBaseUrl() { return baseUrl; }
+    public boolean hasLocalDesktopCredential() { return localToken != null; }
 
     public AnalyzeResponse analyzeUrl(String url) throws Exception {
         String body = mapper.writeValueAsString(new AnalyzeRequest(url));
@@ -146,6 +147,26 @@ public class ApiService implements MonitorEventSubmitter {
         HttpResponse<String> response = get("/api/v1/windows-telemetry/health");
         requireSuccess(response, "Windows telemetry health request failed");
         return readBody(response, WindowsTelemetryHealth.class, "Backend returned no Windows telemetry health");
+    }
+
+    public List<String> getDomainWhitelist() throws Exception {
+        HttpResponse<String> response = get("/api/v1/domain-whitelist");
+        requireSuccess(response, "Domain whitelist request failed");
+        return mapper.readValue(response.body(), new TypeReference<List<String>>() {});
+    }
+
+    public List<String> addDomainWhitelistEntry(String domain) throws Exception {
+        return postJson("/api/v1/domain-whitelist", new DomainWhitelistRequest(domain),
+                mapper.getTypeFactory().constructCollectionType(List.class, String.class));
+    }
+
+    public List<String> removeDomainWhitelistEntry(String domain) throws Exception {
+        String encoded = java.net.URLEncoder.encode(domain, java.nio.charset.StandardCharsets.UTF_8).replace("+", "%20");
+        HttpRequest request = authorizedRequest("/api/v1/domain-whitelist/" + encoded)
+                .timeout(Duration.ofSeconds(10)).DELETE().build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        requireSuccess(response, "Could not remove domain exception");
+        return mapper.readValue(response.body(), new TypeReference<List<String>>() {});
     }
 
     /** Runs reputation, PE analysis, deterministic policy, and audit integration on Spring's worker thread. */
@@ -251,6 +272,14 @@ public class ApiService implements MonitorEventSubmitter {
         return mapper.readValue(response.body(), responseType);
     }
 
+    private <T> T postJson(String path, Object payload, com.fasterxml.jackson.databind.JavaType responseType) throws Exception {
+        HttpRequest request = authorizedRequest(path).header("Content-Type", "application/json")
+                .timeout(Duration.ofSeconds(10)).POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(payload))).build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        requireSuccess(response, "Could not save domain exception");
+        return mapper.readValue(response.body(), responseType);
+    }
+
     private URI endpoint(String path) { return URI.create(baseUrl + path); }
 
     private HttpRequest.Builder authorizedRequest(String path) {
@@ -291,6 +320,7 @@ public class ApiService implements MonitorEventSubmitter {
 
     private record MonitorEventRequest(String eventType, String action, String resourceName,
                                        Long processId, Long sizeBytes) { }
+    private record DomainWhitelistRequest(String domain) { }
     private record ThreatAssessmentRequest(String path) { }
     private record ThreatFeedbackRequest(String assessmentId, String correlationId, String label) { }
     private record QuarantineRequest(String path, String expectedSha256, boolean confirmed) { }

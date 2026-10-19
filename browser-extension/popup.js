@@ -13,8 +13,8 @@ function classify(item) {
   if (item.state === "PAUSED") return ["gray", "Protection paused"];
   if (item.state === "SEARCH_PAGE") return ["gray", "Search results page"];
   if (item.state !== "ASSESSED") return ["gray", "Unknown / not assessed"];
-  if (item.domainDenied && item.decision === "BLOCK") return ["red", item.enforcement === "DISABLED" ? "Denied by local domain rule — protection paused" : item.enforcement === "RULE_APPLIED" ? "Denied by local domain rule — warning active" : "Denied by local domain rule — warning unavailable"];
-  if (item.decision === "BLOCK" && item.riskLevel === "HIGH_RISK") return ["red", item.enforcement === "DISABLED" ? "Dangerous — protection paused" : item.enforcement === "RULE_APPLIED" ? "Dangerous — browser warning active" : "Dangerous — warning unavailable"];
+  if (item.decision === "BLOCK") return ["red", item.domainDenied ? (item.enforcement === "DISABLED" ? "Denied by local domain rule — protection paused" : item.enforcement === "RULE_APPLIED" ? "Denied by local domain rule — warning active" : "Denied by local domain rule — warning unavailable") : item.enforcement === "DISABLED" ? "Blocked — protection paused" : item.enforcement === "RULE_APPLIED" ? "Blocked — browser warning active" : "Blocked — warning unavailable"];
+  if (item.domainAllowlisted && item.decision === "ALLOW") return ["green", "Domain exception — URL model skipped"];
   if (item.hostnameConcern) return ["yellow", "Caution advised — hostname evidence"];
   if (["WARN", "REVIEW"].includes(item.decision) || item.riskLevel === "SUSPICIOUS") return ["yellow", "Caution advised"];
   if (item.decision === "ALLOW" && item.riskLevel === "SAFE") return ["green", "Low risk from available checks"];

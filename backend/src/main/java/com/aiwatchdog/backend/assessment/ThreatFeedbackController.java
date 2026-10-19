@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import java.time.Instant;
 import java.util.Map;
@@ -20,12 +22,20 @@ import java.util.Map;
 @RequestMapping("/api/v1/threat-assessments")
 public class ThreatFeedbackController {
     private final SecurityEventLogger events;
+    private final SeenUrlFeedbackStore seenUrls;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public ThreatFeedbackController(SecurityEventLogger events) { this.events = events; }
+    public ThreatFeedbackController(SecurityEventLogger events, SeenUrlFeedbackStore seenUrls) {
+        this.events = events;
+        this.seenUrls = seenUrls;
+    }
 
     @PostMapping("/feedback")
     public ResponseEntity<Map<String, Boolean>> submit(@Valid @RequestBody ThreatFeedbackRequest request) {
+        if ("FALSE_POSITIVE".equals(request.label()) && !seenUrls.markSafe(request.assessmentId(), request.correlationId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "This assessment is unavailable for exact-URL feedback.");
+        }
         String details;
         try {
             details = mapper.writeValueAsString(Map.of("label", request.label()));

@@ -36,7 +36,7 @@ Windows browser, file, and process sources feed the Spring Boot security path. U
 ## 5. Components Modified
 
 - Spring URL logger uses the configured database path and canonicalizes persisted labels.
-- URL analysis persists sanitized audit URLs while preserving the full submitted URL for inference.
+- URL analysis sends only the normalized scheme and host to model inference, shows the full submitted URL in the live result, and persists only sanitized audit data.
 - Spring binds to loopback by default.
 - JavaFX controller starts/stops monitors with the application lifecycle and loads combined history.
 - Root and frontend READMEs describe the actual JavaFX/Spring/FastAPI implementation and its limits.

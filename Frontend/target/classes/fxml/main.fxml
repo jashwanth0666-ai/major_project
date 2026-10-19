@@ -1366,7 +1366,12 @@
                 <HBox alignment="CENTER_LEFT">
                   <Label text="Domain Whitelist &amp; Exceptions" styleClass="panel-title" style="-fx-font-size: 15px; -fx-font-weight: 700;"/>
                   <Region HBox.hgrow="ALWAYS"/>
-                  <Button text="+ Add Exception" onAction="#addException" styleClass="stitch-btn-primary, wd-btn, wd-primary, wd-btn--primary"/>
+                </HBox>
+
+                <Label text="Exact-host exceptions skip URL model inference. Reputation, hostname, redirect, and browser-page signals stay active." styleClass="wd-exception-desc" wrapText="true"/>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                  <TextField fx:id="domainExceptionInput" promptText="example.com" HBox.hgrow="ALWAYS" onAction="#addException"/>
+                  <Button text="Add domain" onAction="#addException" styleClass="stitch-btn-primary, wd-btn, wd-primary, wd-btn--primary"/>
                 </HBox>
 
                 <VBox fx:id="secureAccessContainer" spacing="12">

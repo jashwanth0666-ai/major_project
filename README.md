@@ -2,6 +2,8 @@
 
 AI WatchDog is a local Windows security monitoring prototype with a JavaFX desktop UI, a Spring Boot application backend, and a Python FastAPI phishing URL model. The URL model uses the existing calibrated XGBoost artifact and threshold; this implementation does not retrain or replace it.
 
+Production inference sends only the normalized scheme and hostname to the model. The desktop result displays the full URL submitted by the user, while audit history continues to store a sanitized URL. The 0.31 threshold and calibrated model artifact are unchanged. The evaluation workflow still compares full-URL, sanitized-path, and host-only representations for future model decisions.
+
 ## Components
 
 - `Frontend/`: JavaFX UI. It talks to Spring Boot over REST and does not access SQLite or FastAPI directly.

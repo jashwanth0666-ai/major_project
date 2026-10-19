@@ -30,10 +30,10 @@ def detector_with_fake_model():
     return detector
 
 
-class HostInferenceUrlNormalizationTests(unittest.TestCase):
-    def test_production_detector_passes_scheme_and_host_for_stitch_and_preserves_original(self):
+class PathInferenceUrlNormalizationTests(unittest.TestCase):
+    def test_production_detector_passes_path_cues_to_model_and_preserves_original(self):
         original = "https://stitch.withgoogle.com/projects/1572296968793876056"
-        expected = "https://stitch.withgoogle.com"
+        expected = "https://stitch.withgoogle.com/projects/1572296968793876056"
         detector = detector_with_fake_model()
 
         response = detector.predict(original)
@@ -44,11 +44,11 @@ class HostInferenceUrlNormalizationTests(unittest.TestCase):
             build_model_input(extract_features(expected)).reset_index(drop=True),
         )
 
-    def test_paths_queries_fragments_and_numeric_segments_do_not_reach_model(self):
+    def test_path_reaches_model_but_query_and_fragment_do_not(self):
         cases = [
-            ("https://shop.example/orders/1572296968793876056", "https://shop.example"),
-            ("https://example.com/account/verify?redirect=secure#form", "https://example.com"),
-            ("https://example.com/a?next=https%3A%2F%2Flogin.example", "https://example.com"),
+            ("https://shop.example/orders/1572296968793876056", "https://shop.example/orders/1572296968793876056"),
+            ("https://example.com/account/verify?redirect=secure#form", "https://example.com/account/verify"),
+            ("https://example.com/a?next=https%3A%2F%2Flogin.example", "https://example.com/a"),
         ]
         for original, expected in cases:
             with self.subTest(original=original):
@@ -59,16 +59,16 @@ class HostInferenceUrlNormalizationTests(unittest.TestCase):
                     detector.model.received.iloc[0].to_dict(),
                     build_model_input(extract_features(expected)).iloc[0].to_dict(),
                 )
-                self.assertEqual(detector.model.received.loc[0, "path_length"], 0)
+                self.assertGreater(detector.model.received.loc[0, "path_length"], 0)
                 self.assertEqual(detector.model.received.loc[0, "query_length"], 0)
-                self.assertEqual(detector.model.received.loc[0, "path_segment_count"], 0)
+                self.assertGreater(detector.model.received.loc[0, "path_segment_count"], 0)
 
     def test_ipv4_ipv6_and_ports_are_normalized_before_production_prediction(self):
         cases = [
-            ("http://192.0.2.10:8080/private/path", "http://192.0.2.10:8080"),
-            ("https://[2001:db8::1]:8443/account?x=1", "https://[2001:db8::1]:8443"),
-            ("http://example.com:80/a", "http://example.com"),
-            ("https://example.com:443/a", "https://example.com"),
+            ("http://192.0.2.10:8080/private/path", "http://192.0.2.10:8080/private/path"),
+            ("https://[2001:db8::1]:8443/account?x=1", "https://[2001:db8::1]:8443/account"),
+            ("http://example.com:80/a", "http://example.com/a"),
+            ("https://example.com:443/a", "https://example.com/a"),
         ]
         for original, expected in cases:
             with self.subTest(original=original):
@@ -87,7 +87,7 @@ class HostInferenceUrlNormalizationTests(unittest.TestCase):
                     detector.predict(invalid)
                 self.assertIsNone(detector.model.received)
 
-    def test_fastapi_production_route_uses_detector_normalization_and_keeps_original(self):
+    def test_fastapi_production_route_uses_path_features_and_keeps_original(self):
         original = "https://stitch.withgoogle.com/projects/1572296968793876056"
         detector = detector_with_fake_model()
         with patch("api.server.detector", detector), patch("api.server._service_token", return_value="a" * 64):
@@ -97,10 +97,10 @@ class HostInferenceUrlNormalizationTests(unittest.TestCase):
         result = json.loads(payload)
         self.assertEqual(status, 200)
         self.assertEqual(result["url"], original)
-        expected = build_model_input(extract_features("https://stitch.withgoogle.com"))
+        expected = build_model_input(extract_features("https://stitch.withgoogle.com/projects/1572296968793876056"))
         self.assertEqual(detector.model.received.loc[0, FEATURES].tolist(), expected.loc[0, FEATURES].tolist())
 
-    def test_csv_batch_entry_point_uses_normalized_model_input(self):
+    def test_csv_batch_entry_point_uses_path_and_drops_query(self):
         original = "https://example.com/login?token=abc"
         detector = detector_with_fake_model()
         with tempfile.TemporaryDirectory() as directory:
@@ -109,10 +109,10 @@ class HostInferenceUrlNormalizationTests(unittest.TestCase):
             input_path.write_text(f"url\n{original}\n", encoding="utf-8")
             detector.predict_batch(input_path, output_path)
 
-        self.assertEqual(detector.model.received.loc[0, "path_length"], 0)
+        self.assertGreater(detector.model.received.loc[0, "path_length"], 0)
         self.assertEqual(detector.model.received.loc[0, "query_length"], 0)
 
-    def test_single_url_cli_entry_point_uses_normalized_model_input(self):
+    def test_single_url_cli_entry_point_uses_path_and_drops_query(self):
         original = "https://example.com/account/verify?redirect=secure"
         detector = detector_with_fake_model()
         with patch.object(detector_module, "WatchDogDetector", return_value=detector), patch(
@@ -120,7 +120,7 @@ class HostInferenceUrlNormalizationTests(unittest.TestCase):
         ), contextlib.redirect_stdout(io.StringIO()):
             detector_module.main()
 
-        self.assertEqual(detector.model.received.loc[0, "path_length"], 0)
+        self.assertGreater(detector.model.received.loc[0, "path_length"], 0)
         self.assertEqual(detector.model.received.loc[0, "query_length"], 0)
 
     def test_supported_url_forms(self):

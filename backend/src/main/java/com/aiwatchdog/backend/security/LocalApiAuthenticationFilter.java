@@ -48,12 +48,14 @@ public final class LocalApiAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         if ("extension".equals(role)
-                && !("POST".equals(request.getMethod())
+                && !("GET".equals(request.getMethod())
+                && "/api/v1/domain-whitelist".equals(request.getRequestURI())
+                || "POST".equals(request.getMethod())
                 && ("/api/v1/threat-assessments/url".equals(request.getRequestURI())
                 || "/api/v1/threat-assessments/url/preview".equals(request.getRequestURI())
                 || "/api/v1/threat-assessments/feedback".equals(request.getRequestURI())))) {
             reject(response, HttpServletResponse.SC_FORBIDDEN, "INSUFFICIENT_SCOPE",
-                    "The browser extension credential can access URL assessments and submit assessment feedback only.");
+                    "The browser extension credential can assess URLs, read configured domain exceptions, and submit assessment feedback only.");
             return;
         }
         chain.doFilter(request, response);

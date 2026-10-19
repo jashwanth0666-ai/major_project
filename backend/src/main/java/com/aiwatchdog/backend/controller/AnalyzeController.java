@@ -58,7 +58,9 @@ public class AnalyzeController {
         }
         java.util.List<String> reasons = new java.util.ArrayList<>(assessment.explanation());
         if (model.reasons() != null) model.reasons().forEach(reason -> reasons.add("URL indicator: " + reason));
-        return new AnalyzeResponse(model.url(), model.phishing_probability(), model.risk_score(),
+        Object submittedUrl = assessment.sources().get("submittedUrl");
+        String displayUrl = submittedUrl instanceof String value ? value : model.url();
+        return new AnalyzeResponse(displayUrl, model.phishing_probability(), model.risk_score(),
                 model.risk_level(), model.prediction(), assessment.policyVerdict(), model.threshold(),
                 reasons, assessment.assessmentId(), assessment.correlationId());
     }

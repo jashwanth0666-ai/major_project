@@ -8,8 +8,8 @@ function rating(item) {
   if (item.state === "PAUSED") return ["gray", "Protection paused"];
   if (item.state === "SEARCH_PAGE") return ["gray", "Search results page — destinations checked separately"];
   if (item.state !== "ASSESSED") return ["gray", "Unknown / not assessed"];
-  if (item.domainDenied && item.decision === "BLOCK") return ["red", item.enforcement === "DISABLED" ? "Denied by local domain rule — protection paused" : item.enforcement === "RULE_APPLIED" ? "Denied by local domain rule — warning rule applied" : "Denied by local domain rule — warning unavailable"];
-  if (item.decision === "BLOCK" && item.riskLevel === "HIGH_RISK") return ["red", item.enforcement === "DISABLED" ? "High risk — protection paused" : item.enforcement === "RULE_APPLIED" ? "High risk — browser warning rule applied" : "High risk — browser warning unavailable"];
+  if (item.decision === "BLOCK") return ["red", item.domainDenied ? (item.enforcement === "DISABLED" ? "Denied by local domain rule — protection paused" : item.enforcement === "RULE_APPLIED" ? "Denied by local domain rule — warning rule applied" : "Denied by local domain rule — warning unavailable") : item.enforcement === "DISABLED" ? "Blocked — protection paused" : item.enforcement === "RULE_APPLIED" ? "Blocked — browser warning rule applied" : "Blocked — browser warning unavailable"];
+  if (item.domainAllowlisted && item.decision === "ALLOW") return ["green", "Domain exception — URL model skipped"];
   if (item.hostnameConcern) return ["yellow", "Caution advised — hostname evidence"];
   if (["WARN", "REVIEW"].includes(item.decision) || item.riskLevel === "SUSPICIOUS") return ["yellow", "Caution advised"];
   if (item.decision === "ALLOW" && item.riskLevel === "SAFE") return ["green", "Low risk from available checks"];
@@ -21,9 +21,9 @@ function enforcementSummary(item) {
     if (item.enforcement === "DISABLED") return "Browser enforcement: protection was paused and its dynamic warning rules were removed.";
     return "Browser enforcement: the local domain deny rule returned BLOCK, but a browser warning rule could not be installed.";
   }
-  if (item?.decision === "BLOCK" && item?.riskLevel === "HIGH_RISK" && item.enforcement === "RULE_APPLIED") return "Browser enforcement: a dynamic navigation redirect rule was installed for the assessed URL path. The first visit may begin loading before assessment completes.";
-  if (item?.decision === "BLOCK" && item?.riskLevel === "HIGH_RISK" && item.enforcement === "DISABLED") return "Browser enforcement: protection was paused and its dynamic navigation rules were removed.";
-  if (item?.decision === "BLOCK" && item?.riskLevel === "HIGH_RISK") return "Browser enforcement: the policy returned BLOCK, but a navigation rule could not be installed for this URL.";
+  if (item?.decision === "BLOCK" && item.enforcement === "RULE_APPLIED") return "Browser enforcement: a dynamic navigation redirect rule was installed for the assessed URL. The first visit may begin loading before assessment completes.";
+  if (item?.decision === "BLOCK" && item.enforcement === "DISABLED") return "Browser enforcement: protection was paused and its dynamic navigation rules were removed.";
+  if (item?.decision === "BLOCK") return "Browser enforcement: the policy returned BLOCK, but a navigation rule could not be installed for this URL.";
   return "Browser enforcement: no navigation block is active for this result.";
 }
 async function render() {
@@ -50,6 +50,10 @@ async function render() {
   document.getElementById("page-signals").textContent = pageSignals
     ? `Local page structure: ${pageSignals.passwordFormCount} password forms · ${pageSignals.crossOriginPasswordFormCount} cross-site password forms · ${pageSignals.insecurePasswordFormCount} insecure password forms · ${pageSignals.hiddenFrameCount} hidden frames · ${pageSignals.crossOriginFrameCount} cross-site frames. No form values or page text were sent.`
     : "Local page structure: no page signal payload was available.";
+  const redirectHosts = Array.isArray(pageSignals?.redirectHosts) ? pageSignals.redirectHosts.slice(0, 6) : [];
+  document.getElementById("redirect-chain").textContent = redirectHosts.length > 1
+    ? `Observed redirect hostnames: ${redirectHosts.join(" → ")}. Paths, queries, and fragments were not sent.`
+    : "Observed redirect hostnames: no cross-host redirect was observed.";
   document.getElementById("backend").textContent = health?.spring_boot ? `Backend: Spring Boot ${health.spring_boot} · ML service ${health.ml_service || "status unavailable"}` : `Backend unavailable (${health?.state || "connection error"}).`;
   document.getElementById("enforcement").textContent = enforcementSummary(item);
   const list = document.getElementById("reasons"); list.replaceChildren();

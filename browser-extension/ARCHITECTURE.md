@@ -2,9 +2,9 @@
 
 ```text
 Active HTTP(S) navigation
-  -> MV3 service worker removes credentials, query, fragment, and sensitive path segments
+  -> MV3 service worker removes credentials, query, fragment, and sensitive path segments; observes up to six main-frame redirect hostnames
   -> POST /api/v1/threat-assessments/url
-  -> Spring validation -> existing FastAPI URL model -> existing Spring PolicyEngine
+  -> Spring validation -> existing FastAPI URL model -> existing Spring PolicyEngine; intermediate redirect hosts receive local deception checks
   -> local domain rules + hostname heuristics + optional hostname reputation -> audit logger -> unified assessment response
   -> popup/report; HIGH_RISK + BLOCK may install a dynamic browser navigation redirect rule
 
@@ -23,6 +23,8 @@ The content script is limited to Google Search, Bing, and DuckDuckGo result page
 The extension installs a DNR redirect rule for an actual `HIGH_RISK` plus `BLOCK` result or a configured exact-host denylist `BLOCK`. Model rules match the normalized assessed URL path; denylist rules match that exact hostname across paths. Since local inference is asynchronous, the first request may already have reached the destination before the extension installs the rule and sends the current tab through it. If rule creation fails or the path was redacted, the extension keeps the true assessment and reports enforcement as unavailable. It retains at most 128 active warning rules and removes the oldest one when adding a new unique rule. A paused protection switch removes rules in the extension-owned ID range.
 
 The popup reads `GET /api/v1/health` and shows each reported service independently. Search previews do not create desktop audit-history rows or trigger the existing JavaFX notification path. Actual navigations continue using the existing persistence and notification integration.
+
+Redirect observation uses the browser's `webNavigation` events for the main frame only. The extension sends at most six hostnames to loopback Spring; it does not send redirect paths, queries, fragments, or credentials. A cross-host redirect sequence is shown in the site report and assessment evidence. Redirects alone do not raise the verdict, but high-severity deception signals on an intermediate host can raise policy to WARN; a BLOCK still requires the model score to meet its configured threshold. First-visit assessment remains asynchronous, so this evidence does not prevent the initial navigation from reaching its destination.
 
 ## Data handling
 

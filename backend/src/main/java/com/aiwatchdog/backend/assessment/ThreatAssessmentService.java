@@ -34,23 +34,32 @@ public class ThreatAssessmentService {
     private final UrlReputationService urlReputation;
     private final ConfiguredLocalDomainRuleService domainRules;
     private final AssessmentExplanationService explanationService;
+    private final SeenUrlFeedbackStore seenUrls;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public ThreatAssessmentService(MlServiceClient ml, PolicyEngine policy, FileShieldService files,
                                    SecurityEventLogger events) {
         this(ml, policy, files, events, host -> UrlReputationResult.disabled(host),
-                new ConfiguredLocalDomainRuleService("", ""), AssessmentExplanation::fallback);
+                new ConfiguredLocalDomainRuleService("", ""), AssessmentExplanation::fallback, SeenUrlFeedbackStore.noop());
+    }
+
+    public ThreatAssessmentService(MlServiceClient ml, PolicyEngine policy, FileShieldService files,
+                                   SecurityEventLogger events, UrlReputationService urlReputation,
+                                   ConfiguredLocalDomainRuleService domainRules,
+                                   AssessmentExplanationService explanationService) {
+        this(ml, policy, files, events, urlReputation, domainRules, explanationService, SeenUrlFeedbackStore.noop());
     }
 
     @Autowired
     public ThreatAssessmentService(MlServiceClient ml, PolicyEngine policy, FileShieldService files,
                                    SecurityEventLogger events, UrlReputationService urlReputation,
                                    ConfiguredLocalDomainRuleService domainRules,
-                                   AssessmentExplanationService explanationService) {
+                                   AssessmentExplanationService explanationService, SeenUrlFeedbackStore seenUrls) {
         this.ml = ml; this.policy = policy; this.files = files; this.events = events;
         this.urlReputation = urlReputation;
         this.domainRules = domainRules;
         this.explanationService = explanationService;
+        this.seenUrls = seenUrls;
     }
 
     public ThreatAssessment assessUrl(String url) {
@@ -80,17 +89,44 @@ public class ThreatAssessmentService {
                 throw new InvalidRequestException("URL must be a valid HTTP or HTTPS URL.");
         } catch (IllegalArgumentException e) { throw new InvalidRequestException("URL must be a valid HTTP or HTTPS URL."); }
         Map<String,Object> source = new LinkedHashMap<>();
+        // Kept in the live assessment response for display; auditSafeCopy strips it before persistence.
+        source.put("submittedUrl", url);
         List<String> explanations = new ArrayList<>(); List<String> errors = new ArrayList<>();
+        String exactUrlHash = sha256(url);
+        String hostInferenceUrl = hostInferenceUrl(parsed);
+        String host = UrlHostSignals.extractAsciiHost(parsed);
+        DomainRuleMatch domainRule = domainRules.lookup(host);
+        source.put("localDomainRule", domainRule);
+        SeenUrlFeedbackStore.SeenUrl seenUrl = null;
+        try { seenUrl = seenUrls.findCurrentSafe(exactUrlHash); }
+        catch (RuntimeException ignored) { /* Lookup failure falls through to normal model inference. */ }
+        if (seenUrl != null) source.put("seenUrlFeedback", Map.of(
+                "status", "MATCHED_SAFE_FEEDBACK", "markedAt", seenUrl.markedAt(), "expiresAt", seenUrl.expiresAt()));
         List<String> pageReasons = pageSignals == null ? List.of() : pageSignals.securityReasons();
         if (pageSignals != null) source.put("browserPageSignals", pageSignals);
         Decision verdict; String status;
         MlPredictionResponse modelResult = null;
         try {
-            MlPredictionResponse result = ml.predict(url);
+            MlPredictionResponse result;
+            if ("ALLOWLIST_EXCEPTION".equals(domainRule.action())) {
+                result = new MlPredictionResponse(hostInferenceUrl, 0, 0, "SAFE", "BENIGN", .15,
+                        List.of("Model skipped: this exact hostname has an active domain allowlist exception."));
+                explanations.add("URL model inference was skipped because this exact hostname is on the configured allowlist.");
+            } else if (seenUrl != null) {
+                result = new MlPredictionResponse(hostInferenceUrl, 0, 0, "SAFE", "BENIGN", 0,
+                        List.of("Model skipped: this exact URL has an unexpired user-confirmed false-positive label."));
+                explanations.add("The model was skipped because this exact URL was marked as a false positive by a user. The feedback expires after 30 days.");
+            } else {
+                // The production model receives only the normalized scheme and host. The full
+                // submitted URL remains available to the caller for display and is not persisted.
+                result = ml.predict(hostInferenceUrl);
+            }
             modelResult = result;
             source.put("urlModel", result);
             List<String> policyReasons = new ArrayList<>(result.reasons() == null ? List.of() : result.reasons());
-            policyReasons.addAll(pageReasons);
+            policyReasons.addAll(pageReasons.stream()
+                    .filter(reason -> !reason.startsWith("The browser observed redirects across "))
+                    .toList());
             verdict = policy.evaluate(new PolicyRequest(result.url(), result.phishing_probability(),
                     result.risk_score(), result.risk_level(), result.prediction(), policyReasons));
             boolean unsupportedHighRisk = "HIGH RISK".equalsIgnoreCase(result.risk_level())
@@ -107,14 +143,11 @@ public class ThreatAssessmentService {
             verdict = Decision.REVIEW; status = "PARTIAL";
             errors.add("URL prediction or policy evaluation failed; no safe verdict was inferred.");
         }
-        String host = UrlHostSignals.extractAsciiHost(parsed);
-        DomainRuleMatch domainRule = domainRules.lookup(host);
-        source.put("localDomainRule", domainRule);
         if ("DENY".equals(domainRule.action())) {
             verdict = Decision.BLOCK;
             explanations.add("An operator-configured exact-host denylist rule matched; policy verdict is BLOCK.");
-        } else if ("ALLOWLIST_EVIDENCE".equals(domainRule.action())) {
-            explanations.add("The hostname matched an operator-configured allowlist entry; this is evidence only and does not override other detections.");
+        } else if ("ALLOWLIST_EXCEPTION".equals(domainRule.action())) {
+            explanations.add("The exact-host allowlist exception skipped URL model inference. Independent reputation, hostname, redirect, and browser-page checks still apply.");
         }
         UrlHostSignals hostSignals = UrlHostSignals.inspect(host, parsed.getRawUserInfo() != null);
         source.put("urlHostSignals", hostSignals);
@@ -124,6 +157,14 @@ public class ThreatAssessmentService {
         } else {
             explanations.add("No configured hostname deception heuristic matched; this does not establish that the URL is safe.");
         }
+        List<UrlHostSignals> redirectHostSignals = pageSignals == null ? List.of()
+                : pageSignals.redirectHosts().stream().map(value -> value.toLowerCase(Locale.ROOT))
+                .filter(value -> !value.equals(host)).distinct()
+                .map(value -> UrlHostSignals.inspect(value, false))
+                .filter(value -> !value.signals().isEmpty()).toList();
+        source.put("redirectHostSignals", redirectHostSignals);
+        redirectHostSignals.forEach(signals -> signals.signals().forEach(signal ->
+                explanations.add("Redirect hostname " + signals.host() + ": " + signal.explanation())));
         UrlReputationResult reputation;
         if ("DENY".equals(domainRule.action())) {
             reputation = new UrlReputationResult("SKIPPED", "not-queried", host,
@@ -162,6 +203,17 @@ public class ThreatAssessmentService {
             verdict = elevate(verdict, Decision.WARN);
             explanations.add("A medium-severity hostname mismatch corroborates the model score; policy is at least WARN.");
         }
+        boolean suspiciousRedirectHop = redirectHostSignals.stream()
+                .flatMap(signals -> signals.signals().stream())
+                .anyMatch(signal -> "HIGH".equalsIgnoreCase(signal.severity()));
+        if (suspiciousRedirectHop) {
+            boolean modelAlsoHigh = modelResult != null
+                    && modelResult.phishing_probability() >= modelResult.threshold();
+            verdict = modelAlsoHigh ? Decision.BLOCK : elevate(verdict, Decision.WARN);
+            explanations.add(modelAlsoHigh
+                    ? "A high model score is corroborated by a high-severity deception signal on an observed redirect hostname; policy verdict is BLOCK."
+                    : "An observed redirect hostname has a high-severity deception signal; policy is at least WARN. Heuristic signals are not proof of phishing.");
+        }
         if (pageSignals != null) {
             pageReasons.forEach(reason -> explanations.add("Browser page signal: " + reason));
             if (pageSignals.hasCredentialRisk()) {
@@ -172,7 +224,7 @@ public class ThreatAssessmentService {
         ThreatAssessment assessment = new ThreatAssessment(null, Instant.now().toString(), "URL", redactUrl(url), null,
                 source, verdict.name(), status, explanations, errors, UUID.randomUUID().toString());
         assessment = enrichExplanation(assessment);
-        return persistResult ? persist(assessment) : assessment;
+        return persistResult ? persist(assessment, exactUrlHash) : assessment;
     }
 
     public ThreatAssessment assessFile(String path) {
@@ -246,7 +298,9 @@ public class ThreatAssessmentService {
         };
     }
 
-    private ThreatAssessment persist(ThreatAssessment assessment) {
+    private ThreatAssessment persist(ThreatAssessment assessment) { return persist(assessment, null); }
+
+    private ThreatAssessment persist(ThreatAssessment assessment, String exactUrlHash) {
         String json;
         try { json = mapper.writeValueAsString(auditSafeCopy(assessment)); }
         catch (JsonProcessingException e) { throw new IllegalStateException("Assessment could not be serialized for audit.", e); }
@@ -255,6 +309,11 @@ public class ThreatAssessmentService {
             events.logAssessment(new SecurityEvent(null, Instant.parse(assessment.timestamp()), null, null, null, null, null,
                     assessment.policyVerdict(), "THREAT_ASSESSMENT", assessment.subjectType(), subjectId,
                     assessment.correlationId(), json));
+            if ("URL".equals(assessment.subjectType()) && exactUrlHash != null) {
+                Object modelSource = assessment.sources().get("urlModel");
+                String prediction = modelSource instanceof MlPredictionResponse model ? model.prediction() : "UNKNOWN";
+                seenUrls.recordAssessment(assessment.assessmentId(), assessment.correlationId(), exactUrlHash, prediction);
+            }
             return assessment;
         } catch (RuntimeException failure) {
             List<String> errors = new ArrayList<>(assessment.errors());
@@ -267,6 +326,7 @@ public class ThreatAssessmentService {
 
     private ThreatAssessment auditSafeCopy(ThreatAssessment assessment) {
         Map<String, Object> safeSources = new LinkedHashMap<>(assessment.sources());
+        safeSources.remove("submittedUrl");
         Object model = safeSources.get("urlModel");
         if (model instanceof MlPredictionResponse result) {
             safeSources.put("urlModel", new MlPredictionResponse(redactUrl(result.url()),
@@ -277,6 +337,16 @@ public class ThreatAssessmentService {
                 assessment.subjectId(), assessment.sha256(), safeSources, assessment.policyVerdict(),
                 assessment.status(), assessment.explanation(), assessment.errors(), assessment.correlationId(),
                 assessment.explanationDetails());
+    }
+
+    private String hostInferenceUrl(URI uri) {
+        String host = UrlHostSignals.extractAsciiHost(uri);
+        try {
+            return new URI(uri.getScheme().toLowerCase(Locale.ROOT), null, host, uri.getPort(), null, null, null)
+                    .toASCIIString();
+        } catch (java.net.URISyntaxException invalid) {
+            throw new InvalidRequestException("URL host could not be normalized for analysis.");
+        }
     }
 
     private String redactUrl(String raw) {
@@ -291,5 +361,15 @@ public class ThreatAssessmentService {
             return new URI(uri.getScheme(), null, host, uri.getPort(), path, null, null).toASCIIString();
         }
         catch (Exception ignored) { return "[redacted URL]"; }
+    }
+
+    private String sha256(String value) {
+        try {
+            byte[] digest = java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(value.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return java.util.HexFormat.of().formatHex(digest);
+        } catch (java.security.NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException("SHA-256 is unavailable", impossible);
+        }
     }
 }

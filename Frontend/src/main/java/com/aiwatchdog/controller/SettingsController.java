@@ -28,14 +28,15 @@ import java.util.function.Consumer;
 
 /** Settings that change real application behavior; backend changes are applied immediately. */
 public final class SettingsController {
-    @FXML private Button fileShieldTab, localMonitorTab, appearanceTab, aboutTab;
-    @FXML private VBox fileShieldPane, localMonitorPane, appearancePane, aboutPane;
+    @FXML private Button fileShieldTab, localMonitorTab, accessControlTab, appearanceTab, aboutTab;
+    @FXML private VBox fileShieldPane, localMonitorPane, accessControlPane, appearancePane, aboutPane;
     @FXML private ListView<String> approvedRootsList, watchDirectoriesList, localMonitorRootsList;
     @FXML private TextField reputationDatabasePath;
     @FXML private CheckBox fileShieldEnabled, backendMonitoringEnabled, recursiveMonitoring;
     @FXML private Spinner<Integer> monitoringDepth, maxFilesPerScan, scanDepth;
     @FXML private Spinner<Integer> maxFileSizeMb;
     @FXML private Label backendSettingsStatus, reputationDatabaseStatus, settingsMessage;
+    @FXML private Label accessCredentialStatus;
     @FXML private CheckBox notificationsEnabled, warnNotificationsEnabled, blockNotificationsEnabled;
     @FXML private Label notificationPreferencesStatus;
     @FXML private Button saveNotificationPreferencesButton;
@@ -78,6 +79,11 @@ public final class SettingsController {
         ThemeManager.ThemeMode mode = ThemeManager.getCurrentMode();
         if (mode == null) mode = ThemeManager.ThemeMode.LIGHT;
         updateThemeButtons(mode);
+        accessCredentialStatus.setText(api.hasLocalDesktopCredential()
+                ? "Desktop API credential: loaded from the current user’s local credential file."
+                : "Desktop API credential: missing. Run setup-local-auth.ps1, then restart the desktop app and backend.");
+        accessCredentialStatus.setStyle(api.hasLocalDesktopCredential()
+                ? "-fx-text-fill: #22c55e;" : "-fx-text-fill: #f59e0b;");
         loadBackendSettings();
         loadNotificationPreferences();
         loadWindowsTelemetrySettings();
@@ -89,14 +95,15 @@ public final class SettingsController {
 
     @FXML private void showFileShield() { show(fileShieldTab, fileShieldPane); }
     @FXML private void showLocalMonitor() { show(localMonitorTab, localMonitorPane); }
+    @FXML private void showAccessControl() { show(accessControlTab, accessControlPane); }
     @FXML private void showAppearance() { show(appearanceTab, appearancePane); }
     @FXML private void showAbout() { show(aboutTab, aboutPane); }
 
     private void show(Button button, VBox pane) {
-        for (Button tab : List.of(fileShieldTab, localMonitorTab, appearanceTab, aboutTab))
+        for (Button tab : List.of(fileShieldTab, localMonitorTab, accessControlTab, appearanceTab, aboutTab))
             tab.getStyleClass().remove("settings-subnav-btn-active");
         button.getStyleClass().add("settings-subnav-btn-active");
-        for (VBox candidate : List.of(fileShieldPane, localMonitorPane, appearancePane, aboutPane)) {
+        for (VBox candidate : List.of(fileShieldPane, localMonitorPane, accessControlPane, appearancePane, aboutPane)) {
             boolean active = candidate == pane;
             candidate.setVisible(active);
             candidate.setManaged(active);

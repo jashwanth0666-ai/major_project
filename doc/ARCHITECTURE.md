@@ -20,9 +20,10 @@ api/
 `WatchDogDetector`. A failed or missing verification leaves the service
 reachable for health diagnostics but prevents prediction. Each production
 prediction passes the submitted HTTP or HTTPS URL through
-`normalize_host_inference_url` before feature extraction. The model therefore
-receives only `scheme://hostname[:non-default-port]`; paths, queries, and
-fragments do not contribute to ML features. The detector response retains the
+`normalize_path_inference_url` before feature extraction. The model receives
+the normalized origin and path; query values and fragments are excluded.
+Spring also removes credentials and paths containing sensitive or opaque
+segments before calling the ML service. The detector response retains the
 submitted URL separately as `url` for assessment context. This input change
 does not change the model artifact, 0.31 inference threshold, or downstream
 policy rules.
@@ -32,12 +33,14 @@ that host-only input substantially reduced phishing recall on the frozen
 validation, test, and unseen-domain splits. On the held-out test split, recall
 was 0.2473 with scheme-plus-host input versus 0.8483 with full-URL input; on
 the unseen-domain split it was 0.3407 versus 0.7713. Full-URL inference also
-performed better on F1 in both splits. Because production host-only inference
-omits path and query evidence, phishing URLs identifiable primarily by those
-components may be missed. Host-only inference is not demonstrated to improve
-overall detection quality; evaluating this change against newly collected,
-representative production traffic and retraining with host-only features are
-follow-up work before relying on its detection performance.
+performed better on F1 in both splits. The previous host-only production input
+omitted path evidence, so phishing URLs identifiable primarily by those
+components could be missed. Production now uses path features while dropping
+queries and fragments to limit exposure of sensitive URL data. The checked-in
+full-URL benchmark includes query features, so its metrics are directional
+evidence rather than a direct estimate of the sanitized production path-only
+input. The evaluation utility now includes the sanitized path-only strategy;
+its metrics should be generated before further model or threshold changes.
 
 The detector remains deterministic and does not require network access or
 optional external providers. Existing hostname-signal and reputation services

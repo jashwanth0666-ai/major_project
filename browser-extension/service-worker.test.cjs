@@ -64,10 +64,10 @@ test("search pages are distinguished from navigation and ordinary query text is 
   assert.equal(worker.sanitizeUrl("hello"), null);
 });
 
-test("warning rules require high-risk BLOCK; a probability by itself is not enforcement evidence", () => {
+test("every policy BLOCK is enforceable; non-block verdicts do not install warning rules", () => {
   const { worker } = loadWorker();
   assert.equal(worker.isDangerous({ decision: "BLOCK", riskLevel: "HIGH_RISK" }), true);
-  assert.equal(worker.isDangerous({ decision: "BLOCK", riskLevel: "LOW_RISK" }), false);
+  assert.equal(worker.isDangerous({ decision: "BLOCK", riskLevel: "LOW_RISK" }), true);
   assert.equal(worker.isDangerous({ decision: "ALLOW", riskLevel: "SAFE", probability: 0.01 }), false);
   const rating = worker.normalizeAssessment({ decision: "ALLOW", risk_level: "SAFE", phishing_probability: 0.01 }, "https://example.com/", "ASSESSED");
   assert.equal(rating.decision, "ALLOW");

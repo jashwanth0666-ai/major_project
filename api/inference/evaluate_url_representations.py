@@ -1,4 +1,4 @@
-"""Compare full-URL and scheme-plus-host inference with the frozen model.
+"""Compare full-URL, sanitized-path, and scheme-plus-host inference.
 
 Input CSV schema: required columns ``url`` and ``label``; labels must be
 ``benign`` or ``phishing``. Optional ``source`` and ``scenario`` columns are
@@ -37,7 +37,7 @@ from api.inference.detector import (
     WatchDogDetector,
     extract_features,
 )
-from api.inference.url_normalization import normalize_host_inference_url
+from api.inference.url_normalization import normalize_host_inference_url, normalize_path_inference_url
 
 
 _LONG_NUMERIC_PATH_SEGMENT = re.compile(r"^\d{6,}$")
@@ -237,20 +237,26 @@ def evaluate(training_data: Path, evaluation_data: Path, model_path: Path, batch
     detector = WatchDogDetector(model_path)
     full_probabilities: list[float] = []
     host_probabilities: list[float] = []
+    sanitized_path_probabilities: list[float] = []
     for start in range(0, len(urls), batch_size):
         chunk = urls[start : start + batch_size]
         host_chunk = [normalize_host_inference_url(url) for url in chunk]
+        sanitized_path_chunk = [normalize_path_inference_url(url) for url in chunk]
         full_matrix = _feature_frame(chunk)
         host_matrix = _feature_frame(host_chunk)
+        sanitized_path_matrix = _feature_frame(sanitized_path_chunk)
         full_probabilities.extend(detector.model.predict_proba(full_matrix)[:, 1].astype(float))
         host_probabilities.extend(detector.model.predict_proba(host_matrix)[:, 1].astype(float))
+        sanitized_path_probabilities.extend(detector.model.predict_proba(sanitized_path_matrix)[:, 1].astype(float))
 
     full_probs = np.asarray(full_probabilities)
     host_probs = np.asarray(host_probabilities)
+    sanitized_path_probs = np.asarray(sanitized_path_probabilities)
     cohorts = _cohort_masks(urls, labels)
     strategy_results = {
         "full_url": _probability_metrics(labels, full_probs),
         "scheme_and_hostname": _probability_metrics(labels, host_probs),
+        "sanitized_path_no_query": _probability_metrics(labels, sanitized_path_probs),
     }
     cohort_results = {}
     for name, mask in cohorts.items():
@@ -258,6 +264,7 @@ def evaluate(training_data: Path, evaluation_data: Path, model_path: Path, batch
             "sample_count": int(np.sum(mask)),
             "full_url": _probability_metrics(labels[mask], full_probs[mask]) if np.any(mask) else None,
             "scheme_and_hostname": _probability_metrics(labels[mask], host_probs[mask]) if np.any(mask) else None,
+            "sanitized_path_no_query": _probability_metrics(labels[mask], sanitized_path_probs[mask]) if np.any(mask) else None,
         }
 
     return {
@@ -290,7 +297,7 @@ def evaluate(training_data: Path, evaluation_data: Path, model_path: Path, batch
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Compare frozen-model full-URL and scheme-plus-host probabilities on labelled CSV data."
+        description="Compare three URL representations with the frozen model on labelled CSV data."
     )
     parser.epilog = (
         "CSV schema: required columns url,label; label is benign or phishing. "

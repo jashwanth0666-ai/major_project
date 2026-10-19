@@ -31,7 +31,7 @@ import joblib
 import numpy as np
 import pandas as pd
 
-from .url_normalization import normalize_host_inference_url
+from .url_normalization import normalize_path_inference_url
 
 
 # ---------------------------------------------------------------------
@@ -351,7 +351,7 @@ class WatchDogDetector:
 
     def predict(self, url: str) -> dict:
         original_url = url
-        model_url = normalize_host_inference_url(url)
+        model_url = normalize_path_inference_url(url)
         features = extract_features(model_url)
 
         X = build_model_input(features)

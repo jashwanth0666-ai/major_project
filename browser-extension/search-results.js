@@ -211,16 +211,17 @@
 
   function ratingClass(item) {
     if (item.state !== "ASSESSED") return "awd-unknown";
-    if (item.decision === "BLOCK" && (item.riskLevel === "HIGH_RISK" || item.domainDenied)) return "awd-danger";
+    if (item.decision === "BLOCK") return "awd-danger";
     if (item.hostnameConcern) return "awd-caution";
     if (item.decision === "WARN" || item.decision === "REVIEW" || item.riskLevel === "SUSPICIOUS") return "awd-caution";
+    if (item.domainAllowlisted && item.decision === "ALLOW") return "awd-safe";
     if (item.decision === "ALLOW" && item.riskLevel === "SAFE") return "awd-safe";
     return "awd-unknown";
   }
 
   function ratingText(item) {
     const cls = ratingClass(item);
-    return cls === "awd-danger" ? "WatchDog: dangerous" : cls === "awd-caution" ? "WatchDog: caution" : cls === "awd-safe" ? "WatchDog: low risk" : "WatchDog: unknown";
+    return cls === "awd-danger" ? "WatchDog: dangerous" : cls === "awd-caution" ? "WatchDog: caution" : cls === "awd-safe" && item.domainAllowlisted ? "WatchDog: domain exception; model skipped" : cls === "awd-safe" ? "WatchDog: low risk" : "WatchDog: unknown";
   }
   function ratingLabel(item) { return `${ratingText(item)}. Based on available AI WatchDog checks; not a guarantee.`; }
 

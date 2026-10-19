@@ -1,13 +1,15 @@
-"""URL normalization helpers for production host-only ML inference."""
+"""URL normalization helpers for bounded production ML inference inputs."""
 
 from __future__ import annotations
 
 import ipaddress
 import re
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 
 _DNS_LABEL = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
+_SENSITIVE_PATH_SEGMENT = re.compile(r"(token|session|password|secret|credential|access[_-]?key|auth[_-]?code)", re.IGNORECASE)
+_OPAQUE_PATH_SEGMENT = re.compile(r"[A-Za-z0-9_-]{32,}")
 
 
 def normalize_host_inference_url(url: str) -> str:
@@ -65,3 +67,19 @@ def normalize_host_inference_url(url: str) -> str:
     if port is not None and port != default_port:
         authority += f":{port}"
     return f"{scheme}://{authority}"
+
+
+def normalize_path_inference_url(url: str) -> str:
+    """Return a validated normalized origin plus path, excluding query and fragment.
+
+    Retaining ordinary paths lets the calibrated model use phishing cues such as
+    login and verification routes. Queries and paths containing sensitive or
+    opaque segments are excluded because they may carry user or session data.
+    """
+    origin = normalize_host_inference_url(url)
+    path = urlsplit(url).path
+    segments = [unquote(segment) for segment in path.split("/")]
+    if any(_SENSITIVE_PATH_SEGMENT.search(segment) or _OPAQUE_PATH_SEGMENT.fullmatch(segment)
+           for segment in segments):
+        path = "/"
+    return origin + path

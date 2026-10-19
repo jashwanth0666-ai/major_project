@@ -24,6 +24,9 @@
         <Button fx:id="localMonitorTab" text="Local Monitoring" onAction="#showLocalMonitor" styleClass="settings-subnav-btn, wd-btn, wd-chip, wd-btn--chip">
           <graphic><FontIcon iconLiteral="fth-activity" iconSize="15"/></graphic>
         </Button>
+        <Button fx:id="accessControlTab" text="Access Control" onAction="#showAccessControl" styleClass="settings-subnav-btn, wd-btn, wd-chip, wd-btn--chip">
+          <graphic><FontIcon iconLiteral="fth-lock" iconSize="15"/></graphic>
+        </Button>
         <Button fx:id="appearanceTab" text="Appearance" onAction="#showAppearance" styleClass="settings-subnav-btn, wd-btn, wd-chip, wd-btn--chip">
           <graphic><FontIcon iconLiteral="fth-eye" iconSize="15"/></graphic>
         </Button>
@@ -33,6 +36,28 @@
       </VBox>
 
       <StackPane HBox.hgrow="ALWAYS" alignment="TOP_LEFT">
+        <VBox fx:id="accessControlPane" spacing="14" visible="false" managed="false">
+          <Label text="Access Control" styleClass="panel-title"/>
+          <Label text="Current response policy" styleClass="feature-val"/>
+          <Label text="These are the desktop app’s current URL risk responses. They guide warnings and block decisions; they do not grant or revoke Windows, file, or account permissions." styleClass="breakdown-sub" wrapText="true"/>
+          <GridPane hgap="12" vgap="10">
+            <columnConstraints><ColumnConstraints percentWidth="30"/><ColumnConstraints percentWidth="25"/><ColumnConstraints percentWidth="45"/></columnConstraints>
+            <Label text="Risk result" styleClass="feature-val" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <Label text="App response" styleClass="feature-val" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+            <Label text="Meaning" styleClass="feature-val" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+            <Label text="SAFE" GridPane.columnIndex="0" GridPane.rowIndex="1"/><Label text="Allow" GridPane.columnIndex="1" GridPane.rowIndex="1"/><Label text="Continue without a risk warning." wrapText="true" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+            <Label text="SUSPICIOUS" GridPane.columnIndex="0" GridPane.rowIndex="2"/><Label text="Warn" GridPane.columnIndex="1" GridPane.rowIndex="2"/><Label text="Show a caution to the user." wrapText="true" GridPane.columnIndex="2" GridPane.rowIndex="2"/>
+            <Label text="HIGH_RISK" GridPane.columnIndex="0" GridPane.rowIndex="3"/><Label text="Restrict" GridPane.columnIndex="1" GridPane.rowIndex="3"/><Label text="Apply the app’s restricted response for this result." wrapText="true" GridPane.columnIndex="2" GridPane.rowIndex="3"/>
+            <Label text="PHISHING" GridPane.columnIndex="0" GridPane.rowIndex="4"/><Label text="Block" GridPane.columnIndex="1" GridPane.rowIndex="4"/><Label text="Block the assessed URL in supported app flows." wrapText="true" GridPane.columnIndex="2" GridPane.rowIndex="4"/>
+          </GridPane>
+          <Separator/>
+          <Label text="Local service protection" styleClass="feature-val"/>
+          <Label fx:id="accessCredentialStatus" text="Checking local desktop credential…" styleClass="breakdown-sub" wrapText="true"/>
+          <Label text="Spring Boot protects API routes with separate desktop and browser-extension credentials. Run setup-local-auth.ps1 from the project folder to create or repair the per-user credential file. Use -Rotate only when you intend to replace credentials; the extension token must then be updated in its Options page." styleClass="breakdown-sub" wrapText="true"/>
+          <Label text="This is a single-user local client model. There are no user accounts or configurable roles. Keep the backend on loopback and protect the credential file; local API tokens do not defend against malware already running as your Windows user." styleClass="breakdown-sub" wrapText="true"/>
+          <Label text="These policy responses are best effort. They do not enforce operating-system access controls or replace endpoint protection." styleClass="breakdown-sub" wrapText="true"/>
+        </VBox>
+
         <VBox fx:id="fileShieldPane" spacing="14">
           <VBox spacing="3">
             <Label text="File Shield Scanner" styleClass="panel-title"/>
@@ -113,6 +138,7 @@
           <CheckBox fx:id="processMonitoringEnabled" text="Correlate Windows process creation and parent events" disable="true"/>
           <Label fx:id="windowsTelemetryStatus" text="Provider availability will be read from Spring Boot." styleClass="breakdown-sub" wrapText="true"/>
           <Label text="PowerShell Script Block Logging and Windows process audit policies must be configured externally. Script file inspection also needs active backend File Shield watch roots. AI WatchDog does not change Windows audit settings." styleClass="breakdown-sub" wrapText="true"/>
+          <Label text="Permission guidance: DEGRADED or UNAVAILABLE provider states can indicate unavailable logs, missing access, or unsupported Windows configuration. For process events, ask an administrator to enable Audit Process Creation (and command-line inclusion only if your organization permits it). For script event detail, an administrator can configure PowerShell Script Block Logging. Restart monitoring after policy changes. This app reports collector/provider state; it does not inspect or change audit policy." styleClass="breakdown-sub" wrapText="true"/>
           <Button fx:id="saveWindowsTelemetryButton" text="Apply monitoring settings" onAction="#saveWindowsTelemetrySettings" disable="true" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary"/>
           <Separator/>
           <Label text="Desktop notifications" styleClass="panel-title"/>
