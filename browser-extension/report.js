@@ -37,13 +37,43 @@ async function render() {
   const pill = document.getElementById("rating"); pill.className = `status ${color}`; pill.textContent = label;
   document.getElementById("decision").textContent = item?.state === "ASSESSED" ? `Risk level: ${item.riskLevel} · Policy: ${item.decision} · Model prediction: ${item.prediction}` : "No URL assessment is available.";
   document.getElementById("timestamp").textContent = Number.isFinite(item?.timestamp) ? `Received by extension: ${new Date(item.timestamp).toLocaleString()}` : "Assessment time unavailable";
-  const ml = item?.state === "ASSESSED" && Number.isFinite(item.probability) ? `Phishing probability: ${(item.probability * 100).toFixed(1)}% · Policy risk score: ${item.riskScore ?? "unavailable"} · Model threshold: ${item.threshold ?? "unavailable"}` : "Model assessment: unavailable or not yet completed.";
+  const uncorroborated = item?.decision === "REVIEW" && item?.prediction === "PHISHING";
+  const ml = item?.state === "ASSESSED" && Number.isFinite(item.probability)
+    ? `${uncorroborated ? "Uncorroborated model probability" : "Model phishing probability"}: ${(item.probability * 100).toFixed(1)}% · Model risk score: ${item.riskScore ?? "unavailable"} · Label threshold: ${item.threshold ?? "unavailable"}`
+    : "Model assessment: unavailable or not yet completed.";
   document.getElementById("ml").textContent = ml;
+  const reputation = item?.evidence?.urlReputation;
+  document.getElementById("intel").textContent = reputation
+    ? `Threat intelligence: ${reputation.status || "unknown"} · provider ${reputation.provider || "unknown"}`
+    : "Threat intelligence: unavailable.";
+  const pageSignals = item?.evidence?.browserPageSignals;
+  document.getElementById("page-signals").textContent = pageSignals
+    ? `Local page structure: ${pageSignals.passwordFormCount} password forms · ${pageSignals.crossOriginPasswordFormCount} cross-site password forms · ${pageSignals.insecurePasswordFormCount} insecure password forms · ${pageSignals.hiddenFrameCount} hidden frames · ${pageSignals.crossOriginFrameCount} cross-site frames. No form values or page text were sent.`
+    : "Local page structure: no page signal payload was available.";
   document.getElementById("backend").textContent = health?.spring_boot ? `Backend: Spring Boot ${health.spring_boot} · ML service ${health.ml_service || "status unavailable"}` : `Backend unavailable (${health?.state || "connection error"}).`;
   document.getElementById("enforcement").textContent = enforcementSummary(item);
   const list = document.getElementById("reasons"); list.replaceChildren();
   const reasons = Array.isArray(item?.reasons) ? item.reasons.slice(0, 12) : [];
   if (!reasons.length) reasons.push(item?.state === "UNAVAILABLE" ? "The local backend could not provide an assessment." : "No assessment reasons are available.");
   for (const reason of reasons) { const li = document.createElement("li"); li.textContent = reason; list.append(li); }
+  const feedbackButtons = [...document.querySelectorAll("[data-feedback]")];
+  const feedbackReady = item?.state === "ASSESSED" && typeof item.assessmentId === "string";
+  for (const button of feedbackButtons) {
+    button.disabled = !feedbackReady;
+    button.addEventListener("click", async () => {
+      feedbackButtons.forEach((entry) => { entry.disabled = true; });
+      const result = await chrome.runtime.sendMessage({
+        type: "SUBMIT_FEEDBACK",
+        tabId,
+        ruleId: Number.isInteger(ruleId) && ruleId > 0 ? ruleId : undefined,
+        assessmentId: item.assessmentId,
+        label: button.dataset.feedback
+      });
+      document.getElementById("feedback-status").textContent = result?.ok
+        ? "Feedback saved locally for later review. It does not retrain the model."
+        : "Feedback could not be saved. Check that the local backend is available.";
+      if (!result?.ok) feedbackButtons.forEach((entry) => { entry.disabled = false; });
+    }, { once: true });
+  }
 }
 void render();

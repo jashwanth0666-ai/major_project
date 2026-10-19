@@ -193,6 +193,9 @@ public class MainController {
     @FXML private Label resultPrediction;
     @FXML private Label resultDecision;
     @FXML private Label resultConfidence;
+    @FXML private Label resultThreshold;
+    @FXML private Label feedbackStatus;
+    @FXML private Button feedbackFalsePositiveBtn, feedbackFalseNegativeBtn, feedbackCorrectBtn;
     @FXML private VBox reasonsListContainer;
     @FXML private Label featUrlLength;
     @FXML private Label featHasHttps;
@@ -305,6 +308,7 @@ public class MainController {
     private int currentStepIndex = -1;
     private final DoubleProperty currentScanProgress = new SimpleDoubleProperty(0.0);
     private Task<AnalyzeResponse> currentScanTask;
+    private AnalyzeResponse currentAnalyzeResult;
     private final AtomicReference<AnalyzeResponse> backendResultRef = new AtomicReference<>(null);
     private int currentStage = 1;
     private boolean isFinishingAnalysis = false;
@@ -927,6 +931,12 @@ public class MainController {
             parts.add(pe.path("risk_score").isNumber()
                     ? "PE heuristic " + pe.path("risk_score").asInt() + "/100 · " + peStatus
                     : "PE " + peStatus);
+        }
+        JsonNode explanationDetails = assessment.path("explanationDetails");
+        if (explanationDetails.isObject()) {
+            String summary = textAt(explanationDetails, "summary", "");
+            if (!summary.isBlank()) parts.add("LLM " + summary);
+            else if (explanationDetails.path("fallbackUsed").asBoolean(false)) parts.add("LLM fallback explanation");
         }
         return parts.isEmpty() ? "Source details unavailable" : String.join(" · ", parts);
     }
@@ -1839,6 +1849,7 @@ public class MainController {
     // Display Analysis Result (Stitch Screen 3)
     // =========================================================================
     private void showResult(AnalyzeResponse result) {
+        currentAnalyzeResult = result;
         if (resultPage != null) {
             pageStack.getChildren().forEach(child -> child.setVisible(child == resultPage));
             resultPage.toFront();
@@ -1848,13 +1859,15 @@ public class MainController {
         String url = result.url();
         String decision = valueOr(result.decision(), "UNKNOWN").toUpperCase(Locale.ROOT);
         String prediction = valueOr(result.prediction(), "UNKNOWN").toUpperCase(Locale.ROOT);
+        String shownPrediction = "PHISHING".equals(prediction) && "REVIEW".equals(decision)
+                ? "REVIEW REQUIRED" : prediction;
         int score = result.riskScore();
         String riskLevel = valueOr(result.riskLevel(), "UNKNOWN").toUpperCase(Locale.ROOT);
         double prob = result.phishingProbability();
 
         // 1. Result Hero Box (SAFE / PHISHING / SUSPICIOUS)
         if (resultHeroBox != null) {
-            if ("HIGH_RISK".equals(riskLevel)) {
+            if ("HIGH_RISK".equals(riskLevel) && !"REVIEW".equals(decision)) {
                 if (resultIconContainer != null) {
                     resultIconContainer.setStyle("-fx-background-color: #EF4444; -fx-background-radius: 12px; -fx-alignment: center;");
                 }
@@ -1863,7 +1876,7 @@ public class MainController {
                     resultHeroIcon.setIconColor(Color.web("#FFFFFF"));
                 }
                 if (resultTitle != null) {
-                    resultTitle.setText(prediction);
+                    resultTitle.setText(shownPrediction);
                     resultTitle.getStyleClass().removeAll("result-title-text", "result-title-warn");
                     resultTitle.getStyleClass().add("result-title-danger");
                 }
@@ -1881,11 +1894,11 @@ public class MainController {
                     resultBannerIcon.setIconColor(Color.web("#EF4444"));
                 }
                 if (resultBannerText != null) {
-                    resultBannerText.setText("Prediction: " + prediction + " · Risk: " + riskLevel + " · Decision: " + decision);
+                    resultBannerText.setText("Assessment: " + shownPrediction + " · Risk: " + riskLevel + " · Decision: " + decision);
                     resultBannerText.getStyleClass().removeAll("banner-text-safe");
                     resultBannerText.getStyleClass().add("banner-text-danger");
                 }
-            } else if ("SUSPICIOUS".equals(riskLevel) || "LOW_RISK".equals(riskLevel)) {
+            } else if ("SUSPICIOUS".equals(riskLevel) || "LOW_RISK".equals(riskLevel) || "REVIEW".equals(decision)) {
                 if (resultIconContainer != null) {
                     resultIconContainer.setStyle("-fx-background-color: #F59E0B; -fx-background-radius: 12px; -fx-alignment: center;");
                 }
@@ -1894,7 +1907,7 @@ public class MainController {
                     resultHeroIcon.setIconColor(Color.web("#FFFFFF"));
                 }
                 if (resultTitle != null) {
-                    resultTitle.setText(prediction);
+                    resultTitle.setText(shownPrediction);
                     resultTitle.getStyleClass().removeAll("result-title-text", "result-title-danger");
                     resultTitle.getStyleClass().add("result-title-warn");
                 }
@@ -1912,7 +1925,7 @@ public class MainController {
                     resultBannerIcon.setIconColor(Color.web("#F59E0B"));
                 }
                 if (resultBannerText != null) {
-                    resultBannerText.setText("Prediction: " + prediction + " · Risk: " + riskLevel + " · Decision: " + decision);
+                    resultBannerText.setText("Assessment: " + shownPrediction + " · Risk: " + riskLevel + " · Decision: " + decision);
                     resultBannerText.getStyleClass().removeAll("banner-text-safe");
                     resultBannerText.getStyleClass().add("banner-text-danger");
                 }
@@ -1925,7 +1938,7 @@ public class MainController {
                     resultHeroIcon.setIconColor(Color.web("#FFFFFF"));
                 }
                 if (resultTitle != null) {
-                    resultTitle.setText(prediction);
+                    resultTitle.setText(shownPrediction);
                     resultTitle.getStyleClass().removeAll("result-title-danger", "result-title-warn");
                     resultTitle.getStyleClass().add("result-title-text");
                 }
@@ -1943,7 +1956,7 @@ public class MainController {
                     resultBannerIcon.setIconColor(Color.web("#059669"));
                 }
                 if (resultBannerText != null) {
-                    resultBannerText.setText("Prediction: " + prediction + " · Risk: " + riskLevel + " · Decision: " + decision);
+                    resultBannerText.setText("Assessment: " + shownPrediction + " · Risk: " + riskLevel + " · Decision: " + decision);
                     resultBannerText.getStyleClass().removeAll("banner-text-danger");
                     resultBannerText.getStyleClass().add("banner-text-safe");
                 }
@@ -1956,8 +1969,13 @@ public class MainController {
         // 3. Metadata fields
         if (resultUrl != null) resultUrl.setText(url);
         if (resultPrediction != null) {
-            resultPrediction.setText(prediction);
-            resultPrediction.setStyle("PHISHING".equals(prediction) ? "-fx-font-weight: 700; -fx-text-fill: #EF4444;" : "-fx-font-weight: 700; -fx-text-fill: #10B981;");
+            resultPrediction.setText("REVIEW".equals(decision) && "PHISHING".equals(prediction)
+                    ? "PHISHING · REVIEW REQUIRED" : prediction);
+            resultPrediction.setStyle("PHISHING".equals(prediction) && !"REVIEW".equals(decision)
+                    ? "-fx-font-weight: 700; -fx-text-fill: #EF4444;"
+                    : ("REVIEW".equals(decision) || "WARN".equals(decision)
+                    ? "-fx-font-weight: 700; -fx-text-fill: #F59E0B;"
+                    : "-fx-font-weight: 700; -fx-text-fill: #10B981;"));
         }
         if (resultDecision != null) {
             resultDecision.setText(decision);
@@ -1968,6 +1986,9 @@ public class MainController {
         }
         if (resultConfidence != null) {
             resultConfidence.setText(String.format(Locale.ROOT, "%.2f%%", prob * 100.0));
+        }
+        if (resultThreshold != null) {
+            resultThreshold.setText(String.format(Locale.ROOT, "%.0f%%", result.threshold() * 100.0));
         }
         if (resultScorePill != null) resultScorePill.setText(riskLevel);
 
@@ -2007,6 +2028,43 @@ public class MainController {
         updateRiskLevelScale(riskLevel, decision);
 
         backendRefresh.schedule(this::refreshBackendSnapshot, 350, TimeUnit.MILLISECONDS);
+    }
+
+    @FXML private void markAssessmentFalsePositive() { submitAssessmentFeedback("FALSE_POSITIVE"); }
+    @FXML private void markAssessmentFalseNegative() { submitAssessmentFeedback("FALSE_NEGATIVE"); }
+    @FXML private void markAssessmentCorrect() { submitAssessmentFeedback("CORRECT"); }
+
+    private void submitAssessmentFeedback(String label) {
+        AnalyzeResponse assessment = currentAnalyzeResult;
+        if (assessment == null || assessment.assessmentId() == null) {
+            if (feedbackStatus != null) feedbackStatus.setText("This result cannot be linked to feedback.");
+            return;
+        }
+        setFeedbackControlsDisabled(true);
+        if (feedbackStatus != null) feedbackStatus.setText("Saving feedback locally…");
+        Task<Void> task = new Task<>() {
+            @Override protected Void call() throws Exception {
+                apiService.submitThreatFeedback(assessment, label);
+                return null;
+            }
+        };
+        task.setOnSucceeded(event -> {
+            setFeedbackControlsDisabled(false);
+            if (feedbackStatus != null) feedbackStatus.setText("Feedback saved locally for later review. It does not retrain the model.");
+        });
+        task.setOnFailed(event -> {
+            setFeedbackControlsDisabled(false);
+            if (feedbackStatus != null) feedbackStatus.setText("Feedback could not be saved. Check the local backend connection.");
+        });
+        Thread worker = new Thread(task, "aiwatchdog-assessment-feedback");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    private void setFeedbackControlsDisabled(boolean disabled) {
+        if (feedbackFalsePositiveBtn != null) feedbackFalsePositiveBtn.setDisable(disabled);
+        if (feedbackFalseNegativeBtn != null) feedbackFalseNegativeBtn.setDisable(disabled);
+        if (feedbackCorrectBtn != null) feedbackCorrectBtn.setDisable(disabled);
     }
 
     // =========================================================================
@@ -2662,6 +2720,28 @@ public class MainController {
         catch (Exception ignored) { bodyText.append("Source details are unavailable or malformed."); }
         JsonNode explanation = details.path("explanation");
         if (explanation.isArray() && !explanation.isEmpty()) bodyText.append("\n\nExplanation\n").append(explanation.toString());
+        JsonNode explanationDetails = details.path("explanationDetails");
+        if (!explanationDetails.isMissingNode() && !explanationDetails.isNull()) {
+            String summary = textAt(explanationDetails, "summary", "");
+            String generatedBy = textAt(explanationDetails, "generatedBy", "");
+            boolean fallbackUsed = explanationDetails.path("fallbackUsed").asBoolean(false);
+            JsonNode supporting = explanationDetails.path("supportingEvidence");
+            JsonNode uncertainties = explanationDetails.path("uncertainties");
+            JsonNode recommended = explanationDetails.path("recommendedAction");
+            bodyText.append("\n\nLLM explanation\n");
+            if (!summary.isBlank()) bodyText.append("Summary: ").append(summary).append('\n');
+            if (supporting.isArray() && !supporting.isEmpty()) {
+                bodyText.append("Supporting evidence: ").append(supporting.toString()).append('\n');
+            }
+            if (uncertainties.isArray() && !uncertainties.isEmpty()) {
+                bodyText.append("Uncertainties: ").append(uncertainties.toString()).append('\n');
+            }
+            if (recommended.isTextual() && !recommended.asText().isBlank()) {
+                bodyText.append("Recommended action: ").append(recommended.asText()).append('\n');
+            }
+            if (!generatedBy.isBlank()) bodyText.append("Generated by: ").append(generatedBy).append('\n');
+            bodyText.append("Fallback used: ").append(fallbackUsed);
+        }
         JsonNode errors = details.path("errors");
         if (errors.isArray() && !errors.isEmpty()) bodyText.append("\n\nReported limitations\n").append(errors.toString());
         Alert alert = new Alert(Alert.AlertType.INFORMATION);

@@ -3,6 +3,7 @@ com\aiwatchdog\ui\scanner\ScanRadarView$NodeData.class
 com\aiwatchdog\model\FileShieldSettingsUpdate.class
 com\aiwatchdog\model\QuarantineOperation.class
 com\aiwatchdog\model\QuarantineHistory.class
+com\aiwatchdog\model\ThreatAssessmentExplanation.class
 com\aiwatchdog\service\URLFeatureExtractor.class
 com\aiwatchdog\model\ThreatLevel.class
 com\aiwatchdog\controller\FileShieldController$5.class
@@ -19,6 +20,7 @@ com\aiwatchdog\util\ThemeManager$ThemeMode.class
 com\aiwatchdog\util\ThemeManager.class
 com\aiwatchdog\controller\MainController$2.class
 com\aiwatchdog\service\ApiService$RestoreRequest.class
+com\aiwatchdog\service\ProcessMonitorService$HealthSnapshot.class
 com\aiwatchdog\controller\FileShieldController.class
 com\aiwatchdog\model\FileShieldDirectoryResult.class
 com\aiwatchdog\model\AccessDecision.class
@@ -31,6 +33,7 @@ com\aiwatchdog\model\WindowsTelemetryProviderStatus.class
 com\aiwatchdog\controller\SettingsController$5.class
 com\aiwatchdog\model\AnalysisResult.class
 com\aiwatchdog\service\DemoModeService.class
+com\aiwatchdog\service\FileSystemMonitorService$HealthSnapshot.class
 com\aiwatchdog\controller\SettingsController$4.class
 com\aiwatchdog\model\AssessmentStats.class
 com\aiwatchdog\model\SecurityEvent.class

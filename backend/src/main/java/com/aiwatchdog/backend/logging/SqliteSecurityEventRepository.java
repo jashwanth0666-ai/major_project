@@ -103,6 +103,17 @@ public class SqliteSecurityEventRepository implements SecurityEventRepository {
     }
 
     @Override
+    public List<SecurityEvent> findRecentFeedback(int limit) {
+        String sql = "SELECT id,timestamp,url,phishing_probability,risk_score,risk_level,prediction,decision,"
+                + "event_type,subject_type,subject_id,correlation_id,details_json FROM security_events "
+                + "WHERE event_type='URL_FEEDBACK' ORDER BY id DESC LIMIT ?";
+        try (Connection conn = connect(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, Math.max(1, Math.min(limit, 500)));
+            return collectResults(ps);
+        } catch (SQLException e) { throw new IllegalStateException("Failed to retrieve URL feedback", e); }
+    }
+
+    @Override
     public List<SecurityEvent> findRecentFileOperations(int limit) {
         String sql = "SELECT id,timestamp,url,phishing_probability,risk_score,risk_level,prediction,decision,event_type,"
                 + "subject_type,subject_id,correlation_id,details_json FROM security_events "

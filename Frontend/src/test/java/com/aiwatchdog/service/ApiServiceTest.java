@@ -40,7 +40,11 @@ class ApiServiceTest {
                     + "\"subjectType\":\"FILE\",\"subjectId\":\"abc\",\"sha256\":\"abc\","
                     + "\"sources\":{\"fileReputation\":{\"reputationStatus\":\"UNKNOWN\"}},"
                     + "\"policyVerdict\":\"REVIEW\",\"status\":\"PARTIAL\","
-                    + "\"explanation\":[\"Unknown is not clean\"],\"errors\":[\"PE unavailable\"],\"correlationId\":\"c-1\"}");
+                    + "\"explanation\":[\"Unknown is not clean\"],\"errors\":[\"PE unavailable\"],"
+                    + "\"correlationId\":\"c-1\","
+                    + "\"explanationDetails\":{\"summary\":\"LLM summary\",\"supporting_evidence\":[\"evidence\"],"
+                    + "\"uncertainties\":[\"missing signal\"],\"recommended_action\":\"Review safely\","
+                    + "\"generated_by\":\"llm\",\"fallback_used\":false}}");
         });
         server.createContext("/api/v1/file-shield/settings", exchange -> {
             settingsMethod.set(exchange.getRequestMethod());
@@ -107,6 +111,9 @@ class ApiServiceTest {
         assertEquals("REVIEW", result.policyVerdict());
         assertEquals("PARTIAL", result.status());
         assertEquals("UNKNOWN", result.sources().get("fileReputation").path("reputationStatus").asText());
+        assertNotNull(result.explanationDetails());
+        assertEquals("LLM summary", result.explanationDetails().summary());
+        assertFalse(result.explanationDetails().fallbackUsed());
         assertTrue(postedBody.get().contains("C:/approved/file.exe"));
     }
 

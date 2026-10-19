@@ -66,7 +66,8 @@ public class AnalysisService {
                 mlResult.phishing_probability(),
                 mlResult.risk_score(),
                 mlResult.risk_level(),
-                mlResult.prediction());
+                mlResult.prediction(),
+                mlResult.reasons());
 
         Decision finalDecision =
                 policyEngine.evaluate(policyRequest);

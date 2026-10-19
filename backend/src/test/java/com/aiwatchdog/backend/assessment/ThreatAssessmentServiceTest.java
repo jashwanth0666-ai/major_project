@@ -25,10 +25,12 @@ class ThreatAssessmentServiceTest {
     private FileShieldService files;
     private SecurityEventLogger logger;
     private ThreatAssessmentService service;
+    private AssessmentExplanationService explanationService;
 
     @BeforeEach void setup() {
         ml = mock(MlServiceClient.class); policy = mock(PolicyEngine.class);
         files = mock(FileShieldService.class); logger = mock(SecurityEventLogger.class);
+        explanationService = mock(AssessmentExplanationService.class);
         service = new ThreatAssessmentService(ml, policy, files, logger);
     }
 
@@ -41,6 +43,38 @@ class ThreatAssessmentServiceTest {
         assertEquals("PHISHING", ((MlPredictionResponse) result.sources().get("urlModel")).prediction());
         assertEquals("COMPLETE", result.status());
         verify(logger).logAssessment(any());
+    }
+
+    @Test
+    void groqConsoleAssessmentKeepsModelAuthoritiesWhenExplanationIsUntrusted() {
+        String url = "https://console.groq.com/dashboard/metrics";
+        List<String> modelReasons = List.of("No major URL-level warning indicators detected");
+        MlPredictionResponse modelResponse = new MlPredictionResponse(
+                url, 0.993671, 99, "HIGH_RISK", "PHISHING", .15, modelReasons);
+        when(ml.predict(url)).thenReturn(modelResponse);
+        when(policy.evaluate(any())).thenReturn(Decision.BLOCK);
+        when(explanationService.explain(any())).thenReturn(new AssessmentExplanation(
+                "The supplied evidence was reviewed.", List.of("LLM-generated text"),
+                List.of(), "Review through a trusted channel.", "llm", false));
+
+        service = new ThreatAssessmentService(ml, policy, files, logger,
+                host -> UrlReputationResult.disabled(host),
+                new ConfiguredLocalDomainRuleService("", ""), explanationService);
+
+        ThreatAssessment result = service.assessUrl(url);
+
+        MlPredictionResponse returnedModel = (MlPredictionResponse) result.sources().get("urlModel");
+        assertEquals("PHISHING", returnedModel.prediction());
+        assertEquals(0.993671, returnedModel.phishing_probability(), 0.0000005);
+        assertEquals(99, returnedModel.risk_score());
+        assertEquals("HIGH_RISK", returnedModel.risk_level());
+        assertEquals(modelReasons, returnedModel.reasons());
+        assertEquals("BLOCK", result.policyVerdict());
+        assertEquals("llm", result.explanationDetails().generatedBy());
+        verify(policy).evaluate(argThat(request ->
+                request.riskScore() == 99
+                        && "HIGH_RISK".equals(request.riskLevel())
+                        && "PHISHING".equals(request.prediction())));
     }
 
     @Test void urlAuditRedactsQuerySecretsWhileResponseKeepsSourcePrediction() {

@@ -31,6 +31,8 @@ import joblib
 import numpy as np
 import pandas as pd
 
+from .url_normalization import normalize_host_inference_url
+
 
 # ---------------------------------------------------------------------
 # Configuration
@@ -40,7 +42,11 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 MODEL_PATH = PROJECT_ROOT / "ml_model" / "phase4" / "xgboost_calibrated.joblib"
 DEFAULT_OUTPUT = PROJECT_ROOT / "ml_model" / "phase5" / "predictions.csv"
 
-THRESHOLD = 0.15
+# Balanced operating point selected on the existing threshold-selection split.
+# At 0.31 the selection results show F1=0.8379 and FPR=2.00%, versus
+# F1=0.7938 and FPR=4.43% at 0.15. Held-out metrics at 0.31 are not available.
+# The model artifact is unchanged.
+THRESHOLD = 0.31
 
 FEATURES = [
     "url_length",
@@ -344,7 +350,9 @@ class WatchDogDetector:
         self.model = joblib.load(self.model_path)
 
     def predict(self, url: str) -> dict:
-        features = extract_features(url)
+        original_url = url
+        model_url = normalize_host_inference_url(url)
+        features = extract_features(model_url)
 
         X = build_model_input(features)
 
@@ -363,14 +371,14 @@ class WatchDogDetector:
 
 
         return {
-            "url": url,
+            "url": original_url,
             "phishing_probability": round(probability, 6),
             "risk_score": risk_score,
             "risk_level": level,
             "prediction": prediction,
             
             "threshold": THRESHOLD,
-            "reasons": generate_reasons(url, features),
+            "reasons": generate_reasons(model_url, features),
         }
 
     def predict_batch(

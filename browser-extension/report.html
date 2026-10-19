@@ -4,7 +4,8 @@
   <div class="brand">AI WatchDog · Site report</div><h1 id="host">Loading assessment…</h1><p><span id="rating" class="status gray">Unknown</span></p>
   <p id="url" class="muted"></p><p id="decision"></p><p id="timestamp" class="muted"></p>
   <section class="panel"><strong>Assessment evidence</strong><ul id="reasons"></ul></section>
-  <section class="panel"><strong>Available signals</strong><p id="ml" class="muted"></p><p id="intel" class="muted">Threat intelligence: unavailable; no external reputation provider is configured.</p><p id="enforcement" class="muted"></p></section>
+  <section class="panel"><strong>Help improve local assessments</strong><p class="muted">Your label is linked to this assessment ID. No URL, page text, or form data is sent with feedback.</p><div class="actions"><button data-feedback="FALSE_POSITIVE" class="secondary">False alarm</button><button data-feedback="FALSE_NEGATIVE" class="secondary">Missed phishing</button><button data-feedback="CORRECT" class="secondary">Looks correct</button></div><p id="feedback-status" class="muted" aria-live="polite"></p></section>
+  <section class="panel"><strong>Available signals</strong><p id="ml" class="muted"></p><p id="intel" class="muted">Threat intelligence: unavailable; no external reputation provider is configured.</p><p id="page-signals" class="muted">Browser page signals: unavailable.</p><p id="enforcement" class="muted"></p></section>
   <p id="backend" class="muted">Checking backend availability…</p>
   <p class="notice">URLs are displayed without credentials, query parameters, or fragments. A low-risk result reflects available AI WatchDog checks and is not a guarantee.</p>
   <script src="report.js"></script>

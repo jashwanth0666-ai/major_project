@@ -16,6 +16,10 @@
     "service_worker": "service-worker.js"
   },
   "content_scripts": [{
+    "matches": ["http://*/*", "https://*/*"],
+    "js": ["page-signals.js"],
+    "run_at": "document_idle"
+  }, {
     "matches": [
       "https://google.com/search*",
       "https://www.google.com/search*",

@@ -31,4 +31,10 @@ Set these environment variables for the backend process:
 - `AI_WATCHDOG_URL_REPUTATION_API_KEY` — optional provider credential; never place it in source control.
 - `AI_WATCHDOG_URL_REPUTATION_PROVIDER` — display name for provenance.
 
-The provider should support rate limiting and return truthful timestamps. Keep outbound firewall rules limited to the configured provider. Provider failures make the assessment `PARTIAL` while preserving the model's existing verdict.
+The provider should support rate limiting and return truthful timestamps. The
+cache TTL, timeout, and local request limit are configurable through
+`AI_WATCHDOG_URL_REPUTATION_CACHE_TTL_SECONDS`,
+`AI_WATCHDOG_URL_REPUTATION_TIMEOUT_MS`, and
+`AI_WATCHDOG_URL_REPUTATION_REQUESTS_PER_MINUTE`. Keep outbound firewall rules
+limited to the configured provider. Provider failures make the assessment
+`PARTIAL` while preserving the model's existing verdict.

@@ -619,8 +619,10 @@
                     <Label text="Decision" GridPane.columnIndex="0" GridPane.rowIndex="2" styleClass="info-label"/>
                     <Label fx:id="resultDecision" text="ALLOW" GridPane.columnIndex="1" GridPane.rowIndex="2" styleClass="info-value" style="-fx-font-weight: 700; -fx-text-fill: #10B981;"/>
 
-                    <Label text="Phishing Probability" GridPane.columnIndex="0" GridPane.rowIndex="3" styleClass="info-label"/>
+                    <Label text="Model phishing probability" GridPane.columnIndex="0" GridPane.rowIndex="3" styleClass="info-label"/>
                     <Label fx:id="resultConfidence" text="—" GridPane.columnIndex="1" GridPane.rowIndex="3" styleClass="info-value"/>
+                    <Label text="Phishing label threshold" GridPane.columnIndex="0" GridPane.rowIndex="4" styleClass="info-label"/>
+                    <Label fx:id="resultThreshold" text="31%" GridPane.columnIndex="1" GridPane.rowIndex="4" styleClass="info-value"/>
                   </GridPane>
                 </HBox>
               </VBox>
@@ -637,6 +639,14 @@
                 <VBox GridPane.columnIndex="0" styleClass="stitch-card" spacing="12">
                   <Label text="Why this result?" styleClass="panel-title" style="-fx-font-size: 14px; -fx-font-weight: 700;"/>
                   <VBox fx:id="reasonsListContainer" spacing="10"/>
+                  <Label text="Help improve local assessments" styleClass="panel-title" style="-fx-font-size: 12px; -fx-font-weight: 700;"/>
+                  <VBox spacing="6">
+                    <Button fx:id="feedbackFalsePositiveBtn" text="False alarm" onAction="#markAssessmentFalsePositive" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary, wd-dbtn"/>
+                    <Button fx:id="feedbackFalseNegativeBtn" text="Missed phishing" onAction="#markAssessmentFalseNegative" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary, wd-dbtn"/>
+                    <Button fx:id="feedbackCorrectBtn" text="Looks correct" onAction="#markAssessmentCorrect" styleClass="stitch-btn-secondary, wd-btn, wd-secondary, wd-btn--secondary, wd-dbtn"/>
+                  </VBox>
+                  <Label text="Feedback stores only the assessment ID and label. It does not retrain the model." styleClass="info-label" wrapText="true"/>
+                  <Label fx:id="feedbackStatus" text="" styleClass="info-label" wrapText="true"/>
                 </VBox>
 
                 <!-- Extracted Features -->

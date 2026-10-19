@@ -22,6 +22,9 @@ public interface SecurityEventRepository {
     /** Returns structured threat-assessment audit events, newest first. */
     List<SecurityEvent> findRecentAssessments(int limit);
 
+    /** Human labels linked to URL assessments, newest first. */
+    default List<SecurityEvent> findRecentFeedback(int limit) { return List.of(); }
+
     List<SecurityEvent> findRecentFileOperations(int limit);
     List<SecurityEvent> findActiveQuarantines();
     List<SecurityEvent> findIncompleteFileOperations();

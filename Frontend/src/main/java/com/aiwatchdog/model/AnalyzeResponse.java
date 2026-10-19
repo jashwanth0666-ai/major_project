@@ -13,5 +13,14 @@ public record AnalyzeResponse(
                 String prediction,
                 String decision,
                 double threshold,
-                List<String> reasons) {
+                List<String> reasons,
+                String assessmentId,
+                String correlationId) {
+
+        public AnalyzeResponse(String url, double phishingProbability, int riskScore,
+                               String riskLevel, String prediction, String decision,
+                               double threshold, List<String> reasons) {
+                this(url, phishingProbability, riskScore, riskLevel, prediction, decision,
+                        threshold, reasons, null, null);
+        }
 }

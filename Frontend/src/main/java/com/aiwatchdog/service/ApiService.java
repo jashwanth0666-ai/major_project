@@ -75,6 +75,17 @@ public class ApiService implements MonitorEventSubmitter {
         return readBody(response, AnalyzeResponse.class, "Backend returned an empty analysis response");
     }
 
+    public void submitThreatFeedback(AnalyzeResponse assessment, String label) throws Exception {
+        if (assessment == null || assessment.assessmentId() == null || assessment.correlationId() == null) {
+            throw new IllegalArgumentException("This assessment cannot be linked to feedback.");
+        }
+        if (!List.of("FALSE_POSITIVE", "FALSE_NEGATIVE", "CORRECT").contains(label)) {
+            throw new IllegalArgumentException("Unsupported feedback label.");
+        }
+        postJson("/api/v1/threat-assessments/feedback",
+                new ThreatFeedbackRequest(assessment.assessmentId(), assessment.correlationId(), label), JsonNode.class);
+    }
+
     /** Performs one read-only file scan. Call from a background Task, never the FX thread. */
     public FileShieldScanResult scanFile(String path) throws Exception {
         return postJson("/api/v1/file-shield/scan", new FileShieldScanRequest(path), FileShieldScanResult.class);
@@ -164,6 +175,11 @@ public class ApiService implements MonitorEventSubmitter {
     /** Returns only the latest bounded assessment page exposed by Spring. */
     public List<SecurityEvent> getRecentAssessments() throws Exception {
         return getList("/api/security-events/assessments", new TypeReference<>() {});
+    }
+
+    /** Returns recent user labels for manual false-positive and missed-phishing review. */
+    public List<SecurityEvent> getRecentFeedback() throws Exception {
+        return getList("/api/security-events/feedback", new TypeReference<>() {});
     }
 
     /** Returns lifetime SQL aggregates for persisted unified assessments. */
@@ -275,6 +291,7 @@ public class ApiService implements MonitorEventSubmitter {
     private record MonitorEventRequest(String eventType, String action, String resourceName,
                                        Long processId, Long sizeBytes) { }
     private record ThreatAssessmentRequest(String path) { }
+    private record ThreatFeedbackRequest(String assessmentId, String correlationId, String label) { }
     private record QuarantineRequest(String path, String expectedSha256, boolean confirmed) { }
     private record RestoreRequest(String destinationPath, boolean confirmed, boolean reinspect) { }
 }

@@ -8,8 +8,23 @@ public class PolicyEngineImpl implements PolicyEngine {
     @Override
     public Decision evaluate(PolicyRequest request) {
         validateRequest(request);
-
-        return evaluateRiskLevel(RiskLevel.parse(request.riskLevel()));
+        Decision modelDecision = evaluateRiskLevel(RiskLevel.parse(request.riskLevel()));
+        String noUrlIndicators = "No major URL-level warning indicators detected";
+        boolean modelOnlyHighRisk = RiskLevel.parse(request.riskLevel()) == RiskLevel.HIGH_RISK
+                && "PHISHING".equalsIgnoreCase(request.prediction().trim())
+                && (request.reasons().isEmpty()
+                || request.reasons().stream().anyMatch(reason -> noUrlIndicators.equalsIgnoreCase(reason)));
+        // The model can be overconfident on out-of-distribution URLs. If its own
+        // independent URL checks found no corroborating warning signal, hold for
+        // review instead of blocking solely on the model score.
+        if (!modelOnlyHighRisk) return modelDecision;
+        boolean externalPassword = request.reasons().stream()
+                .anyMatch(reason -> "A password form submits to a different site origin.".equals(reason));
+        boolean insecurePassword = request.reasons().stream()
+                .anyMatch(reason -> "A password form submits without HTTPS protection.".equals(reason));
+        if (externalPassword && insecurePassword) return Decision.BLOCK;
+        if (externalPassword || insecurePassword) return Decision.WARN;
+        return Decision.REVIEW;
     }
 
     @Override

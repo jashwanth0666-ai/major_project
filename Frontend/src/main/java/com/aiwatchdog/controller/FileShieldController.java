@@ -174,9 +174,13 @@ public class FileShieldController {
                 String verdict = assessment.policyVerdict() + " · " + assessment.status();
                 String evidence = String.join(" ", assessment.explanation());
                 String errors = String.join(" ", assessment.errors());
+                    String explanationSummary = assessment.explanationDetails() == null ? ""
+                            : assessment.explanationDetails().summary();
                     mapped.add(new FileShieldRow(selectedPath.toString(), hash, verdict,
-                        "Final policy verdict. " + evidence + (errors.isBlank() ? "" : " Errors: " + errors),
-                            selectedPath.toAbsolutePath().toString(), "", false));
+                            "Final policy verdict. " + evidence
+                                    + (explanationSummary.isBlank() ? "" : " LLM explanation: " + explanationSummary)
+                                    + (errors.isBlank() ? "" : " Errors: " + errors),
+                                selectedPath.toAbsolutePath().toString(), "", false));
                 if (assessment.sources() != null) assessment.sources().forEach((name, source) -> {
                     String sourceStatus = source.path("reputationStatus").asText("");
                     if (sourceStatus.isBlank()) sourceStatus = source.path("status").asText("");

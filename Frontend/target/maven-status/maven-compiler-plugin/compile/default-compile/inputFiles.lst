@@ -20,6 +20,7 @@ P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\model
 P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\model\SecurityEvent.java
 P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\model\SecurityEventStats.java
 P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\model\ServiceHealth.java
+P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\model\ThreatAssessmentExplanation.java
 P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\model\ThreatAssessmentResult.java
 P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\model\ThreatLevel.java
 P:\major_project_final\major_project\Frontend\src\main\java\com\aiwatchdog\model\WindowsTelemetryHealth.java

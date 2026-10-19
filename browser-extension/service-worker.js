@@ -7,6 +7,7 @@ const inFlightNavigation = new Map();
 const recentlyAssessedNavigation = new Map();
 const navigationPending = new Set();
 const previewCache = new Map();
+const pageSignalsCache = new Map();
 const protectionStateKey = "browserProtectionEnabled";
 const assessmentStorageKey = "tabAssessments";
 const blockedAssessmentStorageKey = "blockedAssessments";
@@ -51,9 +52,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }).then(sendResponse).catch(() => sendResponse({ ok: false, error: "preview_unavailable" }));
     return true;
   }
+  if (message.type === "PAGE_SIGNALS") {
+    if (!Number.isInteger(sender.tab?.id) || sender.id !== chrome.runtime.id) return false;
+    void receivePageSignals(sender.tab, message.signals).then(() => sendResponse({ ok: true }))
+      .catch(() => sendResponse({ ok: false }));
+    return true;
+  }
+  if (message.type === "SUBMIT_FEEDBACK") {
+    if (!extensionPage) { sendResponse({ ok: false, error: "unsupported_sender" }); return false; }
+    void submitFeedback(message.tabId, message.ruleId, message.assessmentId, message.label)
+      .then(sendResponse).catch(() => sendResponse({ ok: false, error: "feedback_unavailable" }));
+    return true;
+  }
   if (message.type === "GET_CURRENT_ASSESSMENT") {
     if (!extensionPage) { sendResponse({ state: "UNKNOWN" }); return false; }
-    void (Number.isInteger(message.ruleId) ? getBlockedAssessment(message.ruleId) : getCurrentAssessment(sender.tab?.id ?? message.tabId)).then(sendResponse);
+    void (Number.isInteger(message.ruleId) ? getBlockedAssessment(message.ruleId) : getCurrentAssessment(message.tabId ?? sender.tab?.id)).then(sendResponse);
     return true;
   }
   if (message.type === "RECHECK_CURRENT") {
@@ -166,6 +179,7 @@ async function analyzeNavigation(tab, force = false) {
     return;
   }
   const key = `${tab.id}:${url}`;
+  const pageSignals = getPageSignals(tab.id, url);
   const previous = await getCurrentAssessment(tab.id);
   if (!force && ["ASSESSED", "UNAVAILABLE"].includes(previous?.state) && previous.url === url && Date.now() - previous.timestamp < 10_000) return;
   const last = recentlyAssessedNavigation.get(key);
@@ -174,7 +188,7 @@ async function analyzeNavigation(tab, force = false) {
   const work = (async () => {
     let assessment;
     try {
-      const response = await callApi(NAVIGATION_ENDPOINT, { url });
+      const response = await callApi(NAVIGATION_ENDPOINT, { url, ...(pageSignals ? { pageSignals } : {}) });
       assessment = normalizeAssessment(response, url, "ASSESSED");
       recentlyAssessedNavigation.set(key, Date.now());
       while (recentlyAssessedNavigation.size > 512) recentlyAssessedNavigation.delete(recentlyAssessedNavigation.keys().next().value);
@@ -201,10 +215,12 @@ function normalizeAssessment(response, url, state) {
   const model = response.sources?.urlModel || response;
   const decision = response.policyVerdict || response.decision;
   const riskLevel = typeof model.risk_level === "string" ? model.risk_level : "UNKNOWN";
-  const modelReasons = Array.isArray(model.reasons) ? model.reasons : [];
-  const evidenceReasons = Array.isArray(response.explanation) ? response.explanation : [];
+  const modelReasons = Array.isArray(model.reasons) ? model.reasons.map((item) => `URL indicator: ${item}`) : [];
+  const evidenceReasons = Array.isArray(response.explanation) ? response.explanation.map((item) => `Assessment: ${item}`) : [];
   return {
     state,
+    assessmentId: typeof response.assessmentId === "string" ? response.assessmentId : null,
+    correlationId: typeof response.correlationId === "string" ? response.correlationId : null,
     url: sanitizeUrl(model.url || response.url || response.subjectId) || url,
     decision,
     riskLevel,
@@ -222,6 +238,70 @@ function normalizeAssessment(response, url, state) {
     enforcement: "NOT_APPLICABLE",
     timestamp: Date.now()
   };
+}
+
+function sanitizePageSignals(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const names = ["passwordFormCount", "crossOriginPasswordFormCount", "insecurePasswordFormCount", "hiddenFrameCount", "crossOriginFrameCount"];
+  const safe = {};
+  for (const name of names) {
+    const value = raw[name];
+    if (!Number.isInteger(value) || value < 0 || value > 50) return null;
+    safe[name] = value;
+  }
+  return safe;
+}
+
+function getPageSignals(tabId, url) {
+  const key = `${tabId}:${url}`;
+  const entry = pageSignalsCache.get(key);
+  if (!entry || Date.now() - entry.timestamp > 60_000) {
+    pageSignalsCache.delete(key);
+    return null;
+  }
+  return entry.signals;
+}
+
+async function receivePageSignals(tab, rawSignals) {
+  await protectionReady;
+  if (!protectionEnabled || !tab?.url || isSearchResultsPage(tab.url)) return;
+  const signals = sanitizePageSignals(rawSignals);
+  const url = sanitizeUrl(tab.url);
+  if (!signals || !url) return;
+  const tabNow = await chrome.tabs.get(tab.id);
+  if (!tabNow?.url || sanitizeUrl(tabNow.url) !== url) return;
+  const key = `${tab.id}:${url}`;
+  pageSignalsCache.set(key, { signals, timestamp: Date.now() });
+  while (pageSignalsCache.size > 256) pageSignalsCache.delete(pageSignalsCache.keys().next().value);
+
+  const inFlight = inFlightNavigation.get(key);
+  if (inFlight) await inFlight;
+  const current = await getCurrentAssessment(tab.id);
+  if (current?.state !== "ASSESSED" || current.url !== url) return;
+  const response = await callApi(NAVIGATION_ENDPOINT + "/preview", { url, pageSignals: signals });
+  const assessment = normalizeAssessment(response, url, "ASSESSED");
+  await saveAssessment(tab.id, assessment);
+  if (isDangerous(assessment) && protectionEnabled) {
+    try { assessment.enforcement = await installWarningRule(tab.id, tabNow.url, assessment) ? "RULE_APPLIED" : "UNAVAILABLE"; }
+    catch { assessment.enforcement = "UNAVAILABLE"; }
+    await saveAssessment(tab.id, assessment);
+  }
+}
+
+async function submitFeedback(tabId, ruleId, assessmentId, label) {
+  if (!Number.isInteger(tabId) || !["FALSE_POSITIVE", "FALSE_NEGATIVE", "CORRECT"].includes(label)) {
+    return { ok: false, error: "invalid_feedback" };
+  }
+  const assessment = Number.isInteger(ruleId) ? await getBlockedAssessment(ruleId) : await getCurrentAssessment(tabId);
+  if (assessment?.state !== "ASSESSED" || assessment.assessmentId !== assessmentId) {
+    return { ok: false, error: "assessment_not_found" };
+  }
+  const response = await callApi("/api/v1/threat-assessments/feedback", {
+    assessmentId,
+    correlationId: assessment.correlationId,
+    label
+  });
+  return { ok: response?.accepted === true };
 }
 
 function isDangerous(item) {

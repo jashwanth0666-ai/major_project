@@ -12,12 +12,12 @@ public class ThreatAssessmentController {
 
     @PostMapping("/url")
     public ThreatAssessment assessUrl(@Valid @RequestBody AnalyzeRequest request) {
-        return service.assessUrl(request.url());
+        return service.assessUrl(request.url(), request.pageSignals());
     }
 
     @PostMapping("/url/preview")
     public ThreatAssessment previewUrl(@Valid @RequestBody AnalyzeRequest request) {
-        return service.previewUrl(request.url());
+        return service.previewUrl(request.url(), request.pageSignals());
     }
 
     @PostMapping("/file")

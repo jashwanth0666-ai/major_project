@@ -1,0 +1,208 @@
+{
+  "cohorts": {
+    "benign_with_long_numeric_path_segment": {
+      "full_url": {
+        "brier_score": 0.005567850329423588,
+        "confusion_matrix": {
+          "labels": [
+            "benign",
+            "phishing"
+          ],
+          "matrix": [
+            [
+              1494,
+              18
+            ],
+            [
+              0,
+              0
+            ]
+          ]
+        },
+        "expected_calibration_error_10_bins": 0.024673523512261916,
+        "f1": 0.0,
+        "false_negative_rate": null,
+        "false_positive_rate": 0.011904761904761904,
+        "precision": 0.0,
+        "recall": 0.0,
+        "sample_count": 1512,
+        "threshold": 0.31
+      },
+      "sample_count": 1512,
+      "scheme_and_hostname": {
+        "brier_score": 0.006022184178332209,
+        "confusion_matrix": {
+          "labels": [
+            "benign",
+            "phishing"
+          ],
+          "matrix": [
+            [
+              1494,
+              18
+            ],
+            [
+              0,
+              0
+            ]
+          ]
+        },
+        "expected_calibration_error_10_bins": 0.060200880699244036,
+        "f1": 0.0,
+        "false_negative_rate": null,
+        "false_positive_rate": 0.011904761904761904,
+        "precision": 0.0,
+        "recall": 0.0,
+        "sample_count": 1512,
+        "threshold": 0.31
+      }
+    },
+    "phishing_with_suspicious_path_or_query_keyword": {
+      "full_url": {
+        "brier_score": 0.018109306334622124,
+        "confusion_matrix": {
+          "labels": [
+            "benign",
+            "phishing"
+          ],
+          "matrix": [
+            [
+              0,
+              0
+            ],
+            [
+              13,
+              1098
+            ]
+          ]
+        },
+        "expected_calibration_error_10_bins": 0.048975296843290654,
+        "f1": 0.9941149841557265,
+        "false_negative_rate": 0.011701170117011701,
+        "false_positive_rate": null,
+        "precision": 1.0,
+        "recall": 0.9882988298829883,
+        "sample_count": 1111,
+        "threshold": 0.31
+      },
+      "sample_count": 1111,
+      "scheme_and_hostname": {
+        "brier_score": 0.7596853699440783,
+        "confusion_matrix": {
+          "labels": [
+            "benign",
+            "phishing"
+          ],
+          "matrix": [
+            [
+              0,
+              0
+            ],
+            [
+              972,
+              139
+            ]
+          ]
+        },
+        "expected_calibration_error_10_bins": 0.8287837554664627,
+        "f1": 0.2224,
+        "false_negative_rate": 0.8748874887488749,
+        "false_positive_rate": null,
+        "precision": 1.0,
+        "recall": 0.1251125112511251,
+        "sample_count": 1111,
+        "threshold": 0.31
+      }
+    }
+  },
+  "evaluation_data_sha256": "3bf64a07aaed19c660f8dd57d578f3b22fa294ff03cb3c6fa0c71ec9b6d53528",
+  "evaluation_rows": 148076,
+  "evaluation_source_rows": 148086,
+  "evaluation_unique_hostnames_eligible": 148076,
+  "evaluation_unique_hostnames_including_excluded": 116772,
+  "excluded_evaluation_rows": {
+    "invalid_url": 9,
+    "unsupported_scheme": 1
+  },
+  "feature_count": 25,
+  "input_schema": {
+    "allowed_labels": [
+      "benign",
+      "phishing"
+    ],
+    "required_columns": [
+      "url",
+      "label"
+    ]
+  },
+  "model_sha256": "b46d8ae98125357a349bc308a9e839a2b1804b2e6bc291931aa72c1e358d69b7",
+  "runtime_versions": {
+    "numpy": "2.5.4",
+    "pandas": "3.0.6",
+    "python": "3.13.12",
+    "scikit_learn": "1.8.0",
+    "xgboost": "3.4.1"
+  },
+  "shared_training_evaluation_hostnames": 0,
+  "strategies": {
+    "full_url": {
+      "brier_score": 0.02283481004142897,
+      "confusion_matrix": {
+        "labels": [
+          "benign",
+          "phishing"
+        ],
+        "matrix": [
+          [
+            129810,
+            2528
+          ],
+          [
+            2471,
+            13267
+          ]
+        ]
+      },
+      "expected_calibration_error_10_bins": 0.0007187014084353647,
+      "f1": 0.8414676687914248,
+      "false_negative_rate": 0.15700851442368788,
+      "false_positive_rate": 0.01910260091583672,
+      "precision": 0.8399493510604622,
+      "recall": 0.8429914855763121,
+      "sample_count": 148076,
+      "threshold": 0.31
+    },
+    "scheme_and_hostname": {
+      "brier_score": 0.07663147173714754,
+      "confusion_matrix": {
+        "labels": [
+          "benign",
+          "phishing"
+        ],
+        "matrix": [
+          [
+            131429,
+            909
+          ],
+          [
+            11725,
+            4013
+          ]
+        ]
+      },
+      "expected_calibration_error_10_bins": 0.05624662813015425,
+      "f1": 0.3884801548886737,
+      "false_negative_rate": 0.7450120726903037,
+      "false_positive_rate": 0.006868775408423885,
+      "precision": 0.8153189760260057,
+      "recall": 0.25498792730969627,
+      "sample_count": 148076,
+      "threshold": 0.31
+    }
+  },
+  "threshold": 0.31,
+  "training_data_sha256": "5e3320a82fc29554196bf7718c1d23bdb10d3b3f61fe0617888c19985688537b",
+  "training_hostname_groups_from_domain_column": 0,
+  "training_rows": 1043526,
+  "training_unique_hostnames": 817407
+}

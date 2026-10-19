@@ -1,6 +1,7 @@
 package com.aiwatchdog.backend.assessment;
 
 import com.aiwatchdog.backend.dto.MlPredictionResponse;
+import com.aiwatchdog.backend.dto.PageSignals;
 import com.aiwatchdog.backend.fileshield.dto.FileScanResponse;
 import com.aiwatchdog.backend.fileshield.service.FileShieldService;
 import com.aiwatchdog.backend.logging.SecurityEvent;
@@ -32,33 +33,44 @@ public class ThreatAssessmentService {
     private final SecurityEventLogger events;
     private final UrlReputationService urlReputation;
     private final ConfiguredLocalDomainRuleService domainRules;
+    private final AssessmentExplanationService explanationService;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public ThreatAssessmentService(MlServiceClient ml, PolicyEngine policy, FileShieldService files,
                                    SecurityEventLogger events) {
         this(ml, policy, files, events, host -> UrlReputationResult.disabled(host),
-                new ConfiguredLocalDomainRuleService("", ""));
+                new ConfiguredLocalDomainRuleService("", ""), AssessmentExplanation::fallback);
     }
 
     @Autowired
     public ThreatAssessmentService(MlServiceClient ml, PolicyEngine policy, FileShieldService files,
                                    SecurityEventLogger events, UrlReputationService urlReputation,
-                                   ConfiguredLocalDomainRuleService domainRules) {
+                                   ConfiguredLocalDomainRuleService domainRules,
+                                   AssessmentExplanationService explanationService) {
         this.ml = ml; this.policy = policy; this.files = files; this.events = events;
         this.urlReputation = urlReputation;
         this.domainRules = domainRules;
+        this.explanationService = explanationService;
     }
 
     public ThreatAssessment assessUrl(String url) {
-        return assessUrl(url, true);
+        return assessUrl(url, null, true);
+    }
+
+    public ThreatAssessment assessUrl(String url, PageSignals pageSignals) {
+        return assessUrl(url, pageSignals, true);
     }
 
     /** Same assessment semantics as a navigation assessment, without an audit write for unvisited previews. */
     public ThreatAssessment previewUrl(String url) {
-        return assessUrl(url, false);
+        return assessUrl(url, null, false);
     }
 
-    private ThreatAssessment assessUrl(String url, boolean persistResult) {
+    public ThreatAssessment previewUrl(String url, PageSignals pageSignals) {
+        return assessUrl(url, pageSignals, false);
+    }
+
+    private ThreatAssessment assessUrl(String url, PageSignals pageSignals, boolean persistResult) {
         if (url == null || url.isBlank()) throw new InvalidRequestException("URL must not be empty.");
         URI parsed;
         try {
@@ -69,13 +81,26 @@ public class ThreatAssessmentService {
         } catch (IllegalArgumentException e) { throw new InvalidRequestException("URL must be a valid HTTP or HTTPS URL."); }
         Map<String,Object> source = new LinkedHashMap<>();
         List<String> explanations = new ArrayList<>(); List<String> errors = new ArrayList<>();
+        List<String> pageReasons = pageSignals == null ? List.of() : pageSignals.securityReasons();
+        if (pageSignals != null) source.put("browserPageSignals", pageSignals);
         Decision verdict; String status;
+        MlPredictionResponse modelResult = null;
         try {
             MlPredictionResponse result = ml.predict(url);
+            modelResult = result;
             source.put("urlModel", result);
+            List<String> policyReasons = new ArrayList<>(result.reasons() == null ? List.of() : result.reasons());
+            policyReasons.addAll(pageReasons);
             verdict = policy.evaluate(new PolicyRequest(result.url(), result.phishing_probability(),
-                    result.risk_score(), result.risk_level(), result.prediction()));
-            explanations.add("Policy verdict follows the existing model risk category and policy mapping.");
+                    result.risk_score(), result.risk_level(), result.prediction(), policyReasons));
+            boolean unsupportedHighRisk = "HIGH RISK".equalsIgnoreCase(result.risk_level())
+                    && "PHISHING".equalsIgnoreCase(result.prediction())
+                    && (pageSignals == null || !pageSignals.hasCredentialRisk())
+                    && (result.reasons() == null || result.reasons().isEmpty()
+                    || result.reasons().stream().anyMatch(reason -> "No major URL-level warning indicators detected".equalsIgnoreCase(reason)));
+            explanations.add(unsupportedHighRisk
+                    ? "The model returned a high phishing score, but its URL checks found no corroborating warning indicators; policy requires review instead of blocking on the model alone."
+                    : "Policy verdict follows the model risk category and corroborating evidence rules.");
             status = "COMPLETE";
         } catch (RuntimeException failure) {
             source.put("urlModel", Map.of("status", "UNAVAILABLE"));
@@ -103,23 +128,50 @@ public class ThreatAssessmentService {
         if ("DENY".equals(domainRule.action())) {
             reputation = new UrlReputationResult("SKIPPED", "not-queried", host,
                     Instant.now().toString(), null, null, "Local denylist matched; external reputation lookup was skipped.");
-        } else try { reputation = urlReputation.lookup(host); }
+        } else try { reputation = urlReputation.lookupUrl(redactUrl(url), host); }
         catch (RuntimeException failure) {
             reputation = new UrlReputationResult("UNAVAILABLE", "configured-url-provider", host,
                     Instant.now().toString(), null, null, "Provider lookup failed.");
         }
         source.put("urlReputation", reputation);
         switch (reputation.status()) {
-            case "KNOWN_MALICIOUS" -> explanations.add("URL reputation provider reported this hostname as known malicious; this evidence does not alter the existing model policy verdict.");
-            case "SUSPICIOUS" -> explanations.add("URL reputation provider reported suspicious hostname activity; this evidence does not alter the existing model policy verdict.");
+            case "KNOWN_MALICIOUS" -> {
+                verdict = Decision.BLOCK;
+                explanations.add("The configured URL reputation provider reports this URL's host or path as known malicious; policy verdict is BLOCK.");
+            }
+            case "SUSPICIOUS" -> {
+                verdict = elevate(verdict, Decision.WARN);
+                explanations.add("The configured URL reputation provider reports suspicious hostname activity; policy is at least WARN.");
+            }
             case "KNOWN_CLEAN" -> explanations.add("URL reputation provider reported this hostname as known clean; reputation evidence does not lower the model risk.");
             case "UNKNOWN" -> explanations.add("URL reputation has no record for this hostname; unknown is not clean.");
             case "SKIPPED" -> explanations.add("External reputation lookup was skipped because a local denylist rule already matched.");
             case "UNAVAILABLE" -> { explanations.add("URL reputation is unavailable; no safe verdict was inferred."); status = "PARTIAL"; errors.add("URL reputation provider is unavailable."); }
             default -> explanations.add("Optional URL reputation lookup is disabled.");
         }
+        if (hostSignals.signals().stream().anyMatch(signal -> "HIGH".equalsIgnoreCase(signal.severity()))) {
+            boolean modelAlsoHigh = modelResult != null
+                    && modelResult.phishing_probability() >= modelResult.threshold();
+            verdict = modelAlsoHigh ? Decision.BLOCK : elevate(verdict, Decision.WARN);
+            explanations.add(modelAlsoHigh
+                    ? "A high model score is corroborated by a high-severity hostname deception signal; policy verdict is BLOCK."
+                    : "A high-severity hostname deception signal raises policy to at least WARN; heuristic signals are not proof of phishing.");
+        } else if (modelResult != null
+                && modelResult.phishing_probability() >= modelResult.threshold()
+                && hostSignals.signals().stream().anyMatch(signal -> "MEDIUM".equalsIgnoreCase(signal.severity()))) {
+            verdict = elevate(verdict, Decision.WARN);
+            explanations.add("A medium-severity hostname mismatch corroborates the model score; policy is at least WARN.");
+        }
+        if (pageSignals != null) {
+            pageReasons.forEach(reason -> explanations.add("Browser page signal: " + reason));
+            if (pageSignals.hasCredentialRisk()) {
+                verdict = elevate(verdict, Decision.WARN);
+                explanations.add("Credential submission structure raises policy to at least WARN; the extension did not collect form values.");
+            }
+        }
         ThreatAssessment assessment = new ThreatAssessment(null, Instant.now().toString(), "URL", redactUrl(url), null,
                 source, verdict.name(), status, explanations, errors, UUID.randomUUID().toString());
+        assessment = enrichExplanation(assessment);
         return persistResult ? persist(assessment) : assessment;
     }
 
@@ -166,8 +218,32 @@ public class ThreatAssessmentService {
         }
         String subject = reputation.sha256() == null ? "unavailable" : reputation.sha256();
         if (errors.isEmpty() && reputation.scanStatus().name().equals("COMPLETED")) status = "COMPLETE";
-        return persist(new ThreatAssessment(null, Instant.now().toString(), "FILE", subject,
-                reputation.sha256(), sources, verdict.name(), status, explanation, errors, UUID.randomUUID().toString()));
+        return persist(enrichExplanation(new ThreatAssessment(null, Instant.now().toString(), "FILE", subject,
+                reputation.sha256(), sources, verdict.name(), status, explanation, errors, UUID.randomUUID().toString())));
+    }
+
+    private ThreatAssessment enrichExplanation(ThreatAssessment assessment) {
+        try {
+            AssessmentExplanation details = explanationService.explain(assessment);
+            return new ThreatAssessment(assessment.assessmentId(), assessment.timestamp(), assessment.subjectType(),
+                    assessment.subjectId(), assessment.sha256(), assessment.sources(), assessment.policyVerdict(),
+                    assessment.status(), assessment.explanation(), assessment.errors(), assessment.correlationId(), details);
+        } catch (RuntimeException ignored) {
+            return assessment;
+        }
+    }
+
+    private Decision elevate(Decision current, Decision minimum) {
+        return decisionRank(current) >= decisionRank(minimum) ? current : minimum;
+    }
+
+    private int decisionRank(Decision decision) {
+        return switch (decision) {
+            case ALLOW -> 0;
+            case REVIEW -> 1;
+            case WARN -> 2;
+            case BLOCK -> 3;
+        };
     }
 
     private ThreatAssessment persist(ThreatAssessment assessment) {
@@ -185,7 +261,7 @@ public class ThreatAssessmentService {
             errors.add("Assessment was produced, but its audit event could not be persisted.");
             return new ThreatAssessment(assessment.assessmentId(), assessment.timestamp(), assessment.subjectType(),
                     assessment.subjectId(), assessment.sha256(), assessment.sources(), assessment.policyVerdict(),
-                    "PARTIAL", assessment.explanation(), errors, assessment.correlationId());
+                    "PARTIAL", assessment.explanation(), errors, assessment.correlationId(), assessment.explanationDetails());
         }
     }
 
@@ -199,7 +275,8 @@ public class ThreatAssessmentService {
         }
         return new ThreatAssessment(assessment.assessmentId(), assessment.timestamp(), assessment.subjectType(),
                 assessment.subjectId(), assessment.sha256(), safeSources, assessment.policyVerdict(),
-                assessment.status(), assessment.explanation(), assessment.errors(), assessment.correlationId());
+                assessment.status(), assessment.explanation(), assessment.errors(), assessment.correlationId(),
+                assessment.explanationDetails());
     }
 
     private String redactUrl(String raw) {

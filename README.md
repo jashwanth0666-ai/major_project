@@ -34,6 +34,12 @@ For manual startup, see [doc/RUNNING.md](doc/RUNNING.md) and [backend/RUNNING_BA
 
 The optional Chrome/Edge browser extension distinguishes search pages from destinations, assesses visits and search previews through the same unified evidence path, and can install browser redirect rules after a `HIGH_RISK` plus `BLOCK` decision or an exact-host local denylist match. The first visit may begin loading before local inference finishes. Optional hostname reputation is disabled by default; local hostname heuristics provide limited indicators, not comprehensive typo-domain protection. Browser download scanning is not implemented. Review its [permissions and limitations](browser-extension/README.md), [domain rule configuration](doc/URL_DOMAIN_RULES.md), and [flow](browser-extension/ARCHITECTURE.md) before loading it.
 
+Optional cloud explanations are disabled by default and are documented in
+[doc/LLM_EXPLANATIONS.md](doc/LLM_EXPLANATIONS.md). They explain existing
+evidence only and never replace the model or policy decision. Copy
+[.env.example](.env.example) to a local `.env` for configuration; never commit
+the local file or an API key.
+
 The frozen URL model has a reproducible full-split evaluation workflow at [PHISHING_EVALUATION.md](doc/PHISHING_EVALUATION.md). It reports held-out and unseen-domain metrics and review queues; temporal evaluation remains unavailable until reliable timestamps and label-time provenance exist.
 
 ## Existing verification commands

@@ -11,7 +11,8 @@ p { margin: 8px 0; }
 .green { color: #176b3a; background: #e7f6ec; } .yellow { color: #855600; background: #fff3cd; }
 .red { color: #a21c28; background: #fde8e9; } .gray { color: #586273; background: #edf0f4; }
 .row { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
-.actions { display: flex; gap: 8px; margin-top: 15px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px; }
+.actions button { flex: 1 1 150px; }
 button, .button { display: inline-block; border: 0; border-radius: 8px; padding: 9px 12px; background: #11645f; color: #fff; font: inherit; font-weight: 650; text-decoration: none; cursor: pointer; }
 button.secondary, .button.secondary { background: #e6ecef; color: #172433; }
 button:disabled { opacity: .55; cursor: default; }

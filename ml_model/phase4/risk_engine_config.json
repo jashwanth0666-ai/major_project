@@ -1,7 +1,7 @@
 {
   "model": "XGBoost + isotonic calibration",
-  "selected_threshold": 0.15,
-  "threshold_selection_rule": "max F1 subject to recall >= 0.90",
+  "selected_threshold": 0.31,
+  "threshold_selection_rule": "balanced operating point from the existing threshold-selection split; lowers false-positive rate and improves F1 versus 0.15, with lower recall; held-out metrics at 0.31 are not available",
   "risk_score_formula": "round(calibrated_phishing_probability * 100)",
   "risk_bands": {
     "0-25": "SAFE",

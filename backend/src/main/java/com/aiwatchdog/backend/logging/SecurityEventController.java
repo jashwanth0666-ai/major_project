@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 import java.util.Locale;
@@ -29,6 +30,12 @@ public class SecurityEventController {
     @GetMapping("/assessments")
     public ResponseEntity<List<SecurityEvent>> getRecentAssessments() {
         return ResponseEntity.ok(repository.findRecentAssessments(100));
+    }
+
+    @GetMapping("/feedback")
+    public ResponseEntity<List<SecurityEvent>> getRecentFeedback(
+            @RequestParam(defaultValue = "100") int limit) {
+        return ResponseEntity.ok(repository.findRecentFeedback(Math.max(1, Math.min(limit, 500))));
     }
 
     @GetMapping("/assessments/stats")
