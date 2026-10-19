@@ -265,8 +265,7 @@ public class MainController {
     // Secure Access
     @FXML private VBox secureAccessContainer;
     @FXML private TextField domainExceptionInput;
-    @FXML private FontIcon exceptionGlobe1, exceptionGlobe2;
-    private final List<Animation> secureAccessGlobeAnimations = new ArrayList<>();
+    private int domainWhitelistRequestId;
 
     // Toast
     @FXML private Label toast;
@@ -307,7 +306,7 @@ public class MainController {
     private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm a");
     private final List<ActivityItem> activityLog = new ArrayList<>();
     private final List<ThreatItem> threatLog = new ArrayList<>();
-    private String lastTargetUrl = "https://www.google.com";
+    private String lastTargetUrl;
 
     // Scanning animation & task state (Unified Single Source of Truth Engine)
     private AnimationTimer unifiedScanTimer;
@@ -377,7 +376,6 @@ public class MainController {
         setupInsightsUpgrades();
         setupAnalyzingUpgrades();
         setupSidebarCollapsible();
-        setupSecureAccessUpgrades();
         if (settingsViewController != null) settingsViewController.setLocalMonitoringApplyHandler(this::applyLocalMonitorSettings);
         updateRiskGauge(0, "UNKNOWN", false);
         startDashboardTelemetryAnimations();
@@ -840,7 +838,12 @@ public class MainController {
         urlEvents.stream().max(Comparator.comparing(event -> parseEventInstant(event.timestamp()))).ifPresentOrElse(
                 event -> {
                     updateRiskGauge(event.riskScore(), event.riskLevel());
-                    if (dashRiskDescription != null) dashRiskDescription.setText("Risk score from the latest URL assessment returned by Spring Boot.");
+                    if (dashRiskDescription != null) {
+                        dashRiskDescription.setText("Latest URL assessment from Spring Boot · "
+                                + valueOr(event.riskLevel(), "UNKNOWN") + " · "
+                                + Math.max(0, Math.min(100, event.riskScore())) + "/100 · "
+                                + formatEventTime(event.timestamp()));
+                    }
                 },
                 () -> {
                     updateRiskGauge(0, "UNKNOWN", false);
@@ -1420,6 +1423,7 @@ public class MainController {
     // =========================================================================
     @FXML public void navigateDashboard() {
         selectNav(navDashboardBtn, dashboardPage);
+        refreshBackendSnapshotAsync();
         startDashboardTelemetryAnimations();
         if (riskRadarView != null) {
             riskRadarView.replay();
@@ -1432,16 +1436,21 @@ public class MainController {
         }
     }
     @FXML public void navigateScanner() { selectNav(navScannerBtn, scannerInputPage); }
-    @FXML public void navigateFileShield() { selectNav(navFileShieldBtn, fileShieldPage); }
+    @FXML public void navigateFileShield() {
+        selectNav(navFileShieldBtn, fileShieldPage);
+        if (fileShieldViewController != null) fileShieldViewController.refreshPageData();
+    }
     @FXML public void navigateSecureAccess() { selectNav(navSecureAccessBtn, secureAccessPage); refreshDomainWhitelist(); }
     @FXML public void navigateThreatCenter() {
         selectNav(navThreatCenterBtn, threatCenterPage);
+        refreshBackendSnapshotAsync();
         if (threatInsightsHelper != null) {
             threatInsightsHelper.playEntranceAnimation();
         }
     }
     @FXML public void navigateActivity() {
         selectNav(navActivityBtn, activityPage);
+        refreshBackendSnapshotAsync();
     }
     @FXML public void navigateInsights() {
         selectNav(navInsightsBtn, insightsPage);
@@ -1567,7 +1576,14 @@ public class MainController {
     private static void setInsightProgress(ProgressBar bar, long count, long total) {
         if (bar != null) bar.setProgress(total <= 0 ? 0 : Math.min(1.0, (double) count / total));
     }
-    @FXML public void navigateSettings() { selectNav(navSettingsBtn, settingsPage); }
+    @FXML public void navigateSettings() {
+        selectNav(navSettingsBtn, settingsPage);
+        if (settingsViewController != null) settingsViewController.refreshData();
+    }
+
+    private void refreshBackendSnapshotAsync() {
+        if (!closed) backendRefresh.execute(this::refreshBackendSnapshot);
+    }
 
     @FXML public void navigateLocalMonitoringSettings() {
         navigateSettings();
@@ -1632,15 +1648,30 @@ public class MainController {
 
     private void refreshDomainWhitelist() {
         if (secureAccessContainer == null) return;
-        secureAccessContainer.getChildren().clear();
+        int requestId = ++domainWhitelistRequestId;
+        showDomainWhitelistStatus("Loading domain exceptions from Spring Boot…");
         backendRefresh.execute(() -> {
             try {
                 List<String> entries = apiService.getDomainWhitelist();
-                Platform.runLater(() -> renderDomainWhitelist(entries));
+                Platform.runLater(() -> {
+                    if (requestId == domainWhitelistRequestId) renderDomainWhitelist(entries);
+                });
             } catch (Exception e) {
-                Platform.runLater(() -> notifyUser("Could not load domain exceptions. Check backend connection."));
+                Platform.runLater(() -> {
+                    if (requestId != domainWhitelistRequestId) return;
+                    showDomainWhitelistStatus("Domain exceptions could not be loaded: "
+                            + valueOr(e.getMessage(), "Check the Spring Boot connection and local API credentials."));
+                });
             }
         });
+    }
+
+    private void showDomainWhitelistStatus(String message) {
+        if (secureAccessContainer == null) return;
+        Label status = new Label(message);
+        status.setWrapText(true);
+        status.getStyleClass().add("wd-exception-desc");
+        secureAccessContainer.getChildren().setAll(status);
     }
 
     private void renderDomainWhitelist(List<String> entries) {
@@ -1688,41 +1719,6 @@ public class MainController {
                 Platform.runLater(() -> { button.setDisable(false); notifyUser("Could not remove domain exception."); });
             }
         });
-    }
-
-    // =========================================================================
-    @FXML
-    public void addLegacyDemoException() {
-        if (secureAccessContainer != null) {
-            HBox newRow = new HBox(14);
-            newRow.setAlignment(Pos.CENTER_LEFT);
-            newRow.getStyleClass().add("wd-exception-row");
-
-            StackPane iconBox = new StackPane();
-            iconBox.getStyleClass().addAll("metric-icon-circle", "icon-green-bg");
-            iconBox.setMinWidth(36); iconBox.setMinHeight(36);
-            FontIcon icon = new FontIcon("fth-globe");
-            icon.setIconSize(16);
-            icon.setIconColor(Color.web("#10B981"));
-            secureAccessGlobeAnimations.add(com.aiwatchdog.ui.dashboard.DashboardCardsHelper.createSlowRotation(icon));
-            iconBox.getChildren().add(icon);
-
-            VBox textCol = new VBox(2);
-            HBox.setHgrow(textCol, Priority.ALWAYS);
-            Label domainLabel = new Label("*.github.com");
-            domainLabel.getStyleClass().add("wd-exception-domain");
-            Label descLabel = new Label("Developer code repository exception • Added by user");
-            descLabel.getStyleClass().add("wd-exception-desc");
-            textCol.getChildren().addAll(domainLabel, descLabel);
-
-            Label badge = new Label("ACTIVE");
-            badge.getStyleClass().addAll("pill-badge", "badge-safe");
-            badge.setStyle("-fx-font-size: 10px; -fx-font-weight: 700; -fx-padding: 3px 10px;");
-
-            newRow.getChildren().addAll(iconBox, textCol, badge);
-            secureAccessContainer.getChildren().add(newRow);
-        }
-        notifyUser("Domain exception *.github.com added to Secure Access whitelist.");
     }
 
     // =========================================================================
@@ -2345,9 +2341,6 @@ public class MainController {
             riskRadarView.setOnLevelChanged(this::applyRadarLevel);
             riskRadarView.setOnReplayRequested(this::replayDashboardSequence);
             dashGaugeContainer.getChildren().add(0, riskRadarView);
-            dashGaugeContainer.setOnMouseClicked(e -> {
-                if (riskRadarView != null) riskRadarView.replay();
-            });
         }
 
         cardsHelper = new com.aiwatchdog.ui.dashboard.DashboardCardsHelper();
@@ -2547,23 +2540,6 @@ public class MainController {
         }
     }
 
-    public void setupSecureAccessUpgrades() {
-        if (exceptionGlobe1 != null) {
-            secureAccessGlobeAnimations.add(com.aiwatchdog.ui.dashboard.DashboardCardsHelper.createSlowRotation(exceptionGlobe1));
-        }
-        if (exceptionGlobe2 != null) {
-            secureAccessGlobeAnimations.add(com.aiwatchdog.ui.dashboard.DashboardCardsHelper.createSlowRotation(exceptionGlobe2));
-        }
-        if (secureAccessPage != null) {
-            secureAccessPage.visibleProperty().addListener((obs, oldV, isVis) -> {
-                for (Animation a : secureAccessGlobeAnimations) {
-                    if (isVis) a.play();
-                    else a.pause();
-                }
-            });
-        }
-    }
-
     public void updateRiskGauge(int score) {
         updateRiskGauge(score, "UNKNOWN", true);
     }
@@ -2617,7 +2593,7 @@ public class MainController {
 
         // 5. Result Screen Gauge (if loaded)
         if (resultScoreNumber != null) {
-            resultScoreNumber.setText(String.valueOf(clampedScore));
+            resultScoreNumber.setText("UNKNOWN".equals(normalizedRisk) ? "—" : String.valueOf(clampedScore));
         }
         if (resultScoreArc != null) {
             resultScoreArc.setLength(targetArcLength);
@@ -3077,7 +3053,6 @@ public class MainController {
         if (riskRadarView != null) riskRadarView.stopTimer();
         if (operationalBadgePulse != null) operationalBadgePulse.stop();
         if (liveShieldPulse != null) liveShieldPulse.stop();
-        secureAccessGlobeAnimations.forEach(Animation::stop);
         FileSystemMonitorService file = fileMonitor;
         ProcessMonitorService process = processMonitor;
         if (file != null) file.close();

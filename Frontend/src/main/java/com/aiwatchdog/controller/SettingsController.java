@@ -96,6 +96,14 @@ public final class SettingsController {
         localMonitoringApply = handler == null ? paths -> { } : handler;
     }
 
+    public void refreshData() {
+        if (executor.isShutdown()) return;
+        loadBackendSettings();
+        loadNotificationPreferences();
+        loadWindowsTelemetrySettings();
+        loadPermissionCapabilities();
+    }
+
     @FXML private void showFileShield() { show(fileShieldTab, fileShieldPane); }
     @FXML private void showLocalMonitor() { show(localMonitorTab, localMonitorPane); }
     public void openLocalMonitorSettings() { showLocalMonitor(); }

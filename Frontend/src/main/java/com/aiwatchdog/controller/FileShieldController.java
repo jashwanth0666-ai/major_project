@@ -350,6 +350,11 @@ public class FileShieldController {
         scannerExecutor.execute(task);
     }
 
+    /** Refresh backend-owned quarantine history whenever this navigation section opens. */
+    public void refreshPageData() {
+        if (!scannerExecutor.isShutdown()) loadQuarantineHistory();
+    }
+
     private String verdict(String reputationStatus, String scanStatus) {
         String scan = scanStatus == null ? "" : scanStatus.toUpperCase(java.util.Locale.ROOT);
         if (scan.equals("FAILED")) return "SCAN FAILED";

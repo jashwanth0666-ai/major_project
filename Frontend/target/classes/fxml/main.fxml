@@ -584,8 +584,8 @@
                       <FontIcon fx:id="resultHeroIcon" iconLiteral="fth-check" iconSize="22" iconColor="#FFFFFF"/>
                     </StackPane>
                     <VBox spacing="2" alignment="CENTER_LEFT">
-                      <Label fx:id="resultTitle" text="SAFE" styleClass="result-title-text"/>
-                      <Label fx:id="resultSubtitle" text="This website is safe to visit." styleClass="result-sub-text"/>
+                      <Label fx:id="resultTitle" text="Awaiting assessment" styleClass="result-title-text"/>
+                      <Label fx:id="resultSubtitle" text="Run a scan to view the backend assessment." styleClass="result-sub-text"/>
                     </VBox>
                   </HBox>
 
@@ -598,7 +598,7 @@
                       <Arc fx:id="resultScoreArc" radiusX="52" radiusY="52" startAngle="90" length="-43.2" type="OPEN" styleClass="gauge-arc-fill"/>
                     </Group>
                     <VBox alignment="CENTER" spacing="1">
-                      <Label fx:id="resultScoreNumber" text="12" styleClass="gauge-score-text" style="-fx-font-size: 26px; -fx-font-weight: 800;"/>
+                      <Label fx:id="resultScoreNumber" text="—" styleClass="gauge-score-text" style="-fx-font-size: 26px; -fx-font-weight: 800;"/>
                       <Label text="/100" styleClass="gauge-score-sub" style="-fx-font-size: 11px;"/>
                       <Label fx:id="resultScorePill" text="RISK SCORE" styleClass="pill-badge, badge-safe" style="-fx-font-size: 8px; -fx-padding: 1px 6px;"/>
                     </VBox>
@@ -614,18 +614,18 @@
                     </columnConstraints>
                     
                     <Label text="URL" GridPane.columnIndex="0" GridPane.rowIndex="0" styleClass="info-label"/>
-                    <Label fx:id="resultUrl" text="https://www.google.com" GridPane.columnIndex="1" GridPane.rowIndex="0" styleClass="info-value" style="-fx-font-family: monospace;"/>
+                    <Label fx:id="resultUrl" text="No assessment yet" GridPane.columnIndex="1" GridPane.rowIndex="0" styleClass="info-value" style="-fx-font-family: monospace;"/>
 
                     <Label text="Prediction" GridPane.columnIndex="0" GridPane.rowIndex="1" styleClass="info-label"/>
-                    <Label fx:id="resultPrediction" text="BENIGN" GridPane.columnIndex="1" GridPane.rowIndex="1" styleClass="info-value" style="-fx-font-weight: 700; -fx-text-fill: #10B981;"/>
+                    <Label fx:id="resultPrediction" text="—" GridPane.columnIndex="1" GridPane.rowIndex="1" styleClass="info-value" style="-fx-font-weight: 700;"/>
 
                     <Label text="Decision" GridPane.columnIndex="0" GridPane.rowIndex="2" styleClass="info-label"/>
-                    <Label fx:id="resultDecision" text="ALLOW" GridPane.columnIndex="1" GridPane.rowIndex="2" styleClass="info-value" style="-fx-font-weight: 700; -fx-text-fill: #10B981;"/>
+                    <Label fx:id="resultDecision" text="—" GridPane.columnIndex="1" GridPane.rowIndex="2" styleClass="info-value" style="-fx-font-weight: 700;"/>
 
                     <Label text="Model phishing probability" GridPane.columnIndex="0" GridPane.rowIndex="3" styleClass="info-label"/>
                     <Label fx:id="resultConfidence" text="—" GridPane.columnIndex="1" GridPane.rowIndex="3" styleClass="info-value"/>
                     <Label text="Phishing label threshold" GridPane.columnIndex="0" GridPane.rowIndex="4" styleClass="info-label"/>
-                    <Label fx:id="resultThreshold" text="31%" GridPane.columnIndex="1" GridPane.rowIndex="4" styleClass="info-value"/>
+                    <Label fx:id="resultThreshold" text="—" GridPane.columnIndex="1" GridPane.rowIndex="4" styleClass="info-value"/>
                   </GridPane>
                 </HBox>
               </VBox>
@@ -1351,29 +1351,7 @@
                   <Button text="Add domain" onAction="#addException" styleClass="stitch-btn-primary, wd-btn, wd-primary, wd-btn--primary"/>
                 </HBox>
 
-                <VBox fx:id="secureAccessContainer" spacing="12">
-                  <HBox alignment="CENTER_LEFT" spacing="14" styleClass="wd-exception-row">
-                    <StackPane styleClass="metric-icon-circle, icon-emerald-bg" minWidth="36" minHeight="36" prefWidth="36" prefHeight="36">
-                      <FontIcon fx:id="exceptionGlobe1" iconLiteral="fth-globe" iconSize="16" iconColor="#10B981"/>
-                    </StackPane>
-                    <VBox spacing="2" HBox.hgrow="ALWAYS">
-                      <Label text="*.google.com" style="-fx-font-size: 14px; -fx-font-weight: 700;"/>
-                      <Label text="Internal allowlist â€¢ Zero inspection delay" styleClass="wd-exception-desc"/>
-                    </VBox>
-                    <Label text="ACTIVE" styleClass="pill-badge, badge-safe" style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-padding: 3px 10px;"/>
-                  </HBox>
-
-                  <HBox alignment="CENTER_LEFT" spacing="14" styleClass="wd-exception-row">
-                    <StackPane styleClass="metric-icon-circle, icon-blue-bg" minWidth="36" minHeight="36" prefWidth="36" prefHeight="36">
-                      <FontIcon fx:id="exceptionGlobe2" iconLiteral="fth-globe" iconSize="16" iconColor="#2563EB"/>
-                    </StackPane>
-                    <VBox spacing="2" HBox.hgrow="ALWAYS">
-                      <Label text="*.microsoft.com" style="-fx-font-size: 14px; -fx-font-weight: 700;"/>
-                      <Label text="Corporate identity provider exception" styleClass="wd-exception-desc"/>
-                    </VBox>
-                    <Label text="ACTIVE" styleClass="pill-badge, badge-safe" style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-padding: 3px 10px;"/>
-                  </HBox>
-                </VBox>
+                <VBox fx:id="secureAccessContainer" spacing="12"/>
               </VBox>
             </VBox>
           </ScrollPane>

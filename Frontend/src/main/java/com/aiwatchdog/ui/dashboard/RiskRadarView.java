@@ -100,9 +100,9 @@ public class RiskRadarView extends StackPane {
     private final Blip[] blips = new Blip[10];
 
     // Animation state
-    private double currentScore = 12.0;
+    private double currentScore = 0.0;
     private double animFrom = 0.0;
-    private double animTo = 12.0;
+    private double animTo = 0.0;
     private long animStartNs = -1;
     private long animDurationMs = 2200;
     private long animDelayMs = 0;
@@ -111,6 +111,7 @@ public class RiskRadarView extends StackPane {
     private double prevSweepAngle = 0.0;
     private long lastFrameNs = 0;
     private LevelData currentLevel = LEVEL_UNKNOWN;
+    private boolean assessmentAvailable;
 
     private Consumer<LevelData> onLevelChanged;
     private Runnable onReplayRequested;
@@ -157,13 +158,14 @@ public class RiskRadarView extends StackPane {
 
         setOnMouseClicked((MouseEvent e) -> {
             replay();
+            e.consume();
         });
     }
 
     public void setBoundScoreLabel(Label label) {
         this.boundScoreLabel = label;
         if (boundScoreLabel != null) {
-            boundScoreLabel.setText(String.valueOf(Math.round(currentScore)));
+            boundScoreLabel.setText(assessmentAvailable ? String.valueOf(Math.round(currentScore)) : "—");
         }
     }
 
@@ -229,11 +231,14 @@ public class RiskRadarView extends StackPane {
     /** Updates the visualization with a backend score and its backend-assigned risk level. */
     public void setAssessment(int score, String riskLevel, boolean animate) {
         LevelData level = getLevelForRisk(riskLevel);
+        assessmentAvailable = level != LEVEL_UNKNOWN;
         updateLevel(level);
         setScore(score, animate);
+        if (!assessmentAvailable && boundScoreLabel != null) boundScoreLabel.setText("—");
     }
 
     public void replay() {
+        if (!assessmentAvailable) return;
         setScore((int) Math.round(animTo), this.currentScore, 0, 2200);
         if (onReplayRequested != null) {
             onReplayRequested.run();
@@ -299,7 +304,7 @@ public class RiskRadarView extends StackPane {
         LevelData level = currentLevel;
 
         if (boundScoreLabel != null) {
-            boundScoreLabel.setText(String.valueOf(Math.round(currentScore)));
+            boundScoreLabel.setText(assessmentAvailable ? String.valueOf(Math.round(currentScore)) : "—");
         }
 
         // Draw radar
