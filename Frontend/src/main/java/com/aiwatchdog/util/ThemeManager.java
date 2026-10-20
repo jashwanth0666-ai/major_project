@@ -51,6 +51,7 @@ public class ThemeManager {
                 if (!currentScene.getStylesheets().toString().contains("wd-dark-buttons-fx.css")) {
                     currentScene.getStylesheets().add(ThemeManager.class.getResource("/css/wd-dark-buttons-fx.css").toExternalForm());
                 }
+                installRefinedStyles();
                 if (currentScene.getRoot() != null && !currentScene.getRoot().getStyleClass().contains("dark")) {
                     currentScene.getRoot().getStyleClass().add("dark");
                 }
@@ -62,6 +63,7 @@ public class ThemeManager {
                 if (!currentScene.getStylesheets().toString().contains("app-light.css")) {
                     currentScene.getStylesheets().add(ThemeManager.class.getResource("/css/app-light.css").toExternalForm());
                 }
+                installRefinedStyles();
                 if (currentScene.getRoot() != null) {
                     currentScene.getRoot().getStyleClass().remove("dark");
                     currentScene.getRoot().getStylesheets().removeIf(css -> css.contains("app-dark.css") || css.contains("wd-dark-buttons-fx.css"));
@@ -71,6 +73,13 @@ public class ThemeManager {
     }
     
     public static ThemeMode getCurrentMode() { return currentMode; }
+
+    private static void installRefinedStyles() {
+        if (currentScene == null) return;
+        String stylesheet = ThemeManager.class.getResource("/css/app-refined.css").toExternalForm();
+        currentScene.getStylesheets().remove(stylesheet);
+        currentScene.getStylesheets().add(stylesheet);
+    }
 
     private static ThemeMode readSavedMode() {
         try { return ThemeMode.valueOf(PREFERENCES.get("theme-mode", ThemeMode.LIGHT.name())); }

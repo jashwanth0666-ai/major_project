@@ -1,0 +1,113 @@
+/* Shared visual refinements for the existing JavaFX screens. */
+.app-root {
+    -fx-font-family: "Segoe UI", "Inter", "Arial", sans-serif;
+    -fx-background-color: #f5f7fa;
+    -fx-accent: #2563a6;
+    -fx-focus-color: #2563a6;
+    -fx-faint-focus-color: rgba(37, 99, 166, 0.18);
+}
+.app-root.dark { -fx-background-color: #111820; }
+.app-root .shell { -fx-background-color: #f5f7fa; }
+.app-root.dark .shell { -fx-background-color: #111820; }
+
+/* Stable navigation and a quieter workspace header. */
+.app-root .sidebar {
+    -fx-background-color: #ffffff;
+    -fx-border-color: transparent #e3e8ee transparent transparent;
+    -fx-padding: 20px 14px 16px 14px;
+}
+.app-root.dark .sidebar {
+    -fx-background-color: #151e28;
+    -fx-border-color: transparent #283441 transparent transparent;
+}
+.app-root .brand-container { -fx-padding: 0 7px 14px 7px; }
+.app-root .nav-btn {
+    -fx-min-height: 40px;
+    -fx-padding: 9px 12px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-border-color: transparent;
+    -fx-border-width: 1px;
+    -fx-graphic-text-gap: 11px;
+}
+.app-root .nav-btn:focused {
+    -fx-border-color: #5b93c9;
+    -fx-background-insets: 0;
+}
+.app-root .nav-btn-active {
+    -fx-background-color: #eaf2fa;
+    -fx-border-color: #d4e3f2;
+    -fx-text-fill: #205d93;
+}
+.app-root .nav-btn-active FontIcon,
+.app-root .nav-btn-active .ikonli-font-icon {
+    -fx-icon-color: #205d93;
+    -fx-fill: #205d93;
+}
+.app-root.dark .nav-btn-active {
+    -fx-background-color: #202f3e;
+    -fx-border-color: #344a60;
+    -fx-text-fill: #b8d7f4;
+}
+.app-root.dark .nav-btn-active FontIcon,
+.app-root.dark .nav-btn-active .ikonli-font-icon {
+    -fx-icon-color: #8fc2ee;
+    -fx-fill: #8fc2ee;
+}
+.app-root .topbar {
+    -fx-padding: 13px 24px;
+    -fx-background-color: #f8fafc;
+    -fx-border-color: transparent transparent #e6ebf0 transparent;
+    -fx-border-width: 0 0 1px 0;
+}
+.app-root.dark .topbar {
+    -fx-background-color: #151e28;
+    -fx-border-color: transparent transparent #283441 transparent;
+}
+.app-root .top-search-box {
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-pref-width: 400px;
+    -fx-padding: 6px 12px;
+}
+
+/* Consistent content surfaces, type scale, and interaction states. */
+.app-root .page-header-title { -fx-font-size: 23px; -fx-font-weight: 700; }
+.app-root .page-header-subtitle { -fx-font-size: 12px; }
+.app-root .stitch-card, .app-root .wd-card, .app-root .file-shield-workspace,
+.app-root .file-shield-results, .app-root .analysis-panel, .app-root .result-panel {
+    -fx-background-radius: 11px;
+    -fx-border-radius: 11px;
+    -fx-border-width: 1px;
+    -fx-effect: null;
+}
+.app-root .stitch-card, .app-root .wd-card,
+.app-root .file-shield-workspace, .app-root .file-shield-results,
+.app-root .analysis-panel, .app-root .result-panel {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e2e8ef;
+}
+.app-root.dark .stitch-card, .app-root.dark .wd-card,
+.app-root.dark .file-shield-workspace, .app-root.dark .file-shield-results,
+.app-root.dark .analysis-panel, .app-root.dark .result-panel {
+    -fx-background-color: #18222d;
+    -fx-border-color: #2a3948;
+}
+.app-root .button { -fx-cursor: hand; }
+.app-root .button:focused, .app-root .text-field:focused,
+.app-root .combo-box:focused, .app-root .list-view:focused,
+.app-root .table-view:focused, .app-root .check-box:focused {
+    -fx-border-color: #4b8bc2;
+    -fx-border-width: 1.3px;
+    -fx-border-radius: 6px;
+}
+.app-root .button:disabled { -fx-opacity: 0.58; }
+.app-root .scroll-pane, .app-root .scroll-pane > .viewport { -fx-background-color: transparent; }
+.app-root .table-view { -fx-background-radius: 8px; -fx-border-radius: 8px; }
+.app-root .table-row-cell:filled:selected { -fx-background-insets: 0; }
+
+/* Keep operations and their confirmation controls visually legible. */
+.app-root .file-shield-workspace, .app-root .file-shield-results { -fx-padding: 18px; }
+.app-root .file-shield-results .table-view { -fx-background-radius: 8px; -fx-border-radius: 8px; }
+.app-root .settings-subnav-btn { -fx-min-height: 38px; -fx-alignment: CENTER_LEFT; }
+.app-root .settings-subnav-btn:focused { -fx-border-color: #4b8bc2; }

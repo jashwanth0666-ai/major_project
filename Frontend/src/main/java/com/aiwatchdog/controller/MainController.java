@@ -104,7 +104,7 @@ public class MainController {
     @FXML private VBox navMenuBox;
 
     // Collapsible Sidebar State
-    public static final boolean SIDEBAR_OPEN_AT_START = false;
+    public static final boolean SIDEBAR_OPEN_AT_START = true;
     private boolean isSidebarOpen = SIDEBAR_OPEN_AT_START;
     private boolean isSidebarAnimating = false;
     private double sidebarFullWidth = -1;
