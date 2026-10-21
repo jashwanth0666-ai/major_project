@@ -111,3 +111,484 @@
 .app-root .file-shield-results .table-view { -fx-background-radius: 8px; -fx-border-radius: 8px; }
 .app-root .settings-subnav-btn { -fx-min-height: 38px; -fx-alignment: CENTER_LEFT; }
 .app-root .settings-subnav-btn:focused { -fx-border-color: #4b8bc2; }
+
+/* macOS-inspired desktop workspace skin. The application layout and controller
+   bindings stay intact; these rules only restyle the existing screens. */
+.app-root .desktop-shell {
+    -fx-padding: 14px 16px 18px 16px;
+    -fx-background-color: #e4eaf2;
+    -fx-background-image: url("../assets/desktop-light.png");
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center center;
+    -fx-background-size: cover;
+}
+.app-root.dark .desktop-shell {
+    -fx-background-color: #111723;
+    -fx-background-image: url("../assets/desktop-dark.png");
+}
+
+/* The navigation rail reads as an application launcher against the wallpaper. */
+.app-root .desktop-launcher {
+    -fx-min-width: 216px;
+    -fx-pref-width: 216px;
+    -fx-max-width: 216px;
+    -fx-padding: 16px 12px 14px 12px;
+    -fx-background-color: rgba(248, 250, 255, 0.78);
+    -fx-background-radius: 20px;
+    -fx-border-color: rgba(255, 255, 255, 0.62);
+    -fx-border-radius: 20px;
+    -fx-border-width: 1px;
+    -fx-effect: dropshadow(gaussian, rgba(21, 37, 61, 0.15), 26, 0.18, 0, 10);
+}
+.app-root.dark .desktop-launcher {
+    -fx-background-color: rgba(13, 19, 32, 0.82);
+    -fx-border-color: rgba(164, 186, 226, 0.14);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.42), 28, 0.2, 0, 12);
+}
+.app-root .desktop-launcher .brand-container { -fx-padding: 2px 4px 10px 4px; }
+.app-root .desktop-launcher .brand-title { -fx-font-size: 15px; -fx-font-weight: 700; }
+.app-root .desktop-launcher .brand-subtitle { -fx-font-size: 10px; }
+.app-root .desktop-launcher .nav-menu { -fx-spacing: 5px; -fx-padding: 8px 0; }
+.app-root .desktop-launcher .nav-btn {
+    -fx-min-height: 40px;
+    -fx-padding: 9px 11px;
+    -fx-background-radius: 12px;
+    -fx-border-radius: 12px;
+    -fx-graphic-text-gap: 10px;
+}
+.app-root.dark .desktop-launcher .nav-btn { -fx-text-fill: #c7d1e3; }
+.app-root.dark .desktop-launcher .nav-btn FontIcon,
+.app-root.dark .desktop-launcher .nav-btn .ikonli-font-icon { -fx-icon-color: #98a9c4; -fx-fill: #98a9c4; }
+.app-root.dark .desktop-launcher .nav-btn-active {
+    -fx-background-color: rgba(48, 99, 164, 0.27);
+    -fx-border-color: rgba(107, 168, 255, 0.24);
+    -fx-text-fill: #cfe3ff;
+}
+.app-root.dark .desktop-launcher .nav-btn-active FontIcon,
+.app-root.dark .desktop-launcher .nav-btn-active .ikonli-font-icon { -fx-icon-color: #85bbff; -fx-fill: #85bbff; }
+.app-root .desktop-launcher .protection-status-card {
+    -fx-padding: 10px 9px;
+    -fx-background-color: rgba(255, 255, 255, 0.48);
+    -fx-background-radius: 13px;
+    -fx-border-color: rgba(119, 143, 177, 0.16);
+    -fx-border-radius: 13px;
+}
+.app-root.dark .desktop-launcher .protection-status-card {
+    -fx-background-color: rgba(255, 255, 255, 0.045);
+    -fx-border-color: rgba(173, 194, 232, 0.09);
+}
+
+/* Main content sits inside a single floating window with familiar traffic lights. */
+.app-root .desktop-window {
+    -fx-background-color: rgba(250, 252, 255, 0.88);
+    -fx-background-radius: 19px;
+    -fx-border-color: rgba(255, 255, 255, 0.75);
+    -fx-border-radius: 19px;
+    -fx-border-width: 1px;
+    -fx-background-insets: 0;
+    -fx-effect: dropshadow(gaussian, rgba(18, 31, 52, 0.24), 34, 0.18, 0, 14);
+}
+.app-root.dark .desktop-window {
+    -fx-background-color: rgba(11, 17, 30, 0.91);
+    -fx-border-color: rgba(151, 176, 218, 0.19);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.52), 36, 0.22, 0, 15);
+}
+.app-root .desktop-window.in-app-maximized {
+    -fx-background-radius: 12px;
+    -fx-border-radius: 12px;
+}
+.app-root .window-titlebar {
+    -fx-min-height: 42px;
+    -fx-pref-height: 42px;
+    -fx-padding: 0 15px;
+    -fx-background-color: rgba(247, 249, 253, 0.84);
+    -fx-background-radius: 19px 19px 0 0;
+    -fx-border-color: transparent transparent rgba(135, 153, 180, 0.18) transparent;
+    -fx-border-width: 0 0 1px 0;
+}
+.app-root .desktop-window.in-app-maximized .window-titlebar {
+    -fx-background-radius: 12px 12px 0 0;
+}
+.app-root.dark .window-titlebar {
+    -fx-background-color: rgba(21, 29, 47, 0.92);
+    -fx-border-color: transparent transparent rgba(150, 174, 213, 0.13) transparent;
+}
+.app-root .window-traffic-light { -fx-stroke: rgba(0, 0, 0, 0.14); -fx-stroke-width: 0.7px; }
+.app-root .window-close-dot { -fx-fill: #ff6058; }
+.app-root .window-minimize-dot { -fx-fill: #ffbd2e; }
+.app-root .window-maximize-dot { -fx-fill: #28c840; }
+.app-root .window-title { -fx-text-fill: #536177; -fx-font-size: 11px; -fx-font-weight: 600; }
+.app-root .window-title FontIcon, .app-root .window-title .ikonli-font-icon { -fx-icon-color: #4b82c3; -fx-fill: #4b82c3; }
+.app-root .window-title-secondary { -fx-text-fill: #8894a6; -fx-font-weight: 400; }
+.app-root.dark .window-title { -fx-text-fill: #c3cee1; }
+.app-root.dark .window-title-secondary { -fx-text-fill: #8190a9; }
+
+/* Search and status tools in the app toolbar. */
+.app-root .desktop-window .topbar {
+    -fx-padding: 9px 18px;
+    -fx-background-color: rgba(244, 247, 252, 0.66);
+    -fx-border-color: transparent transparent rgba(135, 153, 180, 0.16) transparent;
+    -fx-border-width: 0 0 1px 0;
+}
+.app-root.dark .desktop-window .topbar {
+    -fx-background-color: rgba(16, 23, 39, 0.74);
+    -fx-border-color: transparent transparent rgba(150, 174, 213, 0.1) transparent;
+}
+.app-root .desktop-window .top-search-box {
+    -fx-pref-width: 430px;
+    -fx-background-color: rgba(255, 255, 255, 0.72);
+    -fx-border-color: rgba(122, 144, 177, 0.22);
+    -fx-padding: 7px 12px;
+    -fx-background-radius: 11px;
+    -fx-border-radius: 11px;
+}
+.app-root.dark .desktop-window .top-search-box {
+    -fx-background-color: rgba(255, 255, 255, 0.055);
+    -fx-border-color: rgba(155, 180, 222, 0.13);
+}
+.app-root.dark .desktop-window .top-search-input { -fx-text-fill: #e3eaf5; }
+.app-root.dark .desktop-window .top-search-input .prompt-text { -fx-fill: #8998b0; }
+
+/* Page area and dashboard surfaces inherit the translucent desktop material. */
+.app-root .desktop-page-stack { -fx-background-color: transparent; }
+.app-root .desktop-page-stack > .scroll-pane,
+.app-root .desktop-page-stack > .scroll-pane > .viewport { -fx-background-color: transparent; }
+.app-root.dark .desktop-window .page-header-title,
+.app-root.dark .desktop-window .panel-title,
+.app-root.dark .desktop-window .wd-section-title,
+.app-root.dark .desktop-window .hero-title { -fx-text-fill: #edf3ff; }
+.app-root.dark .desktop-window .page-header-subtitle,
+.app-root.dark .desktop-window .breakdown-sub,
+.app-root.dark .desktop-window .metric-label { -fx-text-fill: #97a6bf; }
+.app-root .desktop-window .stitch-card,
+.app-root .desktop-window .wd-card,
+.app-root .desktop-window .wd-risk,
+.app-root .desktop-window .analysis-panel,
+.app-root .desktop-window .result-panel,
+.app-root .desktop-window .file-shield-workspace,
+.app-root .desktop-window .file-shield-results {
+    -fx-background-radius: 15px;
+    -fx-border-radius: 15px;
+    -fx-border-width: 1px;
+    -fx-effect: dropshadow(gaussian, rgba(32, 48, 75, 0.08), 14, 0.08, 0, 5);
+}
+.app-root .desktop-window .stitch-card,
+.app-root .desktop-window .wd-card,
+.app-root .desktop-window .wd-risk,
+.app-root .desktop-window .analysis-panel,
+.app-root .desktop-window .result-panel,
+.app-root .desktop-window .file-shield-workspace,
+.app-root .desktop-window .file-shield-results {
+    -fx-background-color: rgba(250, 252, 255, 0.82);
+    -fx-border-color: rgba(142, 160, 188, 0.19);
+}
+.app-root.dark .desktop-window .stitch-card,
+.app-root.dark .desktop-window .wd-card,
+.app-root.dark .desktop-window .wd-risk,
+.app-root.dark .desktop-window .analysis-panel,
+.app-root.dark .desktop-window .result-panel,
+.app-root.dark .desktop-window .file-shield-workspace,
+.app-root.dark .desktop-window .file-shield-results {
+    -fx-background-color: rgba(20, 29, 48, 0.84);
+    -fx-border-color: rgba(150, 176, 220, 0.13);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 16, 0.08, 0, 5);
+}
+.app-root.dark .desktop-window .metric-value,
+.app-root.dark .desktop-window .wd-nm,
+.app-root.dark .desktop-window .wd-lb,
+.app-root.dark .desktop-window .feature-key,
+.app-root.dark .desktop-window .wd-step-title { -fx-text-fill: #dfe8f7; }
+.app-root.dark .desktop-window .text-field,
+.app-root.dark .desktop-window .combo-box,
+.app-root.dark .desktop-window .text-area {
+    -fx-background-color: rgba(255, 255, 255, 0.055);
+    -fx-text-fill: #e4ebf6;
+    -fx-prompt-text-fill: #8291aa;
+    -fx-border-color: rgba(155, 180, 222, 0.16);
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+}
+.app-root.dark .desktop-window .table-view,
+.app-root.dark .desktop-window .list-view { -fx-background-color: rgba(10, 15, 27, 0.42); }
+
+/* The dock duplicates existing page shortcuts and calls the original handlers. */
+.app-root .desktop-dock {
+    -fx-padding: 9px 11px;
+    -fx-background-color: rgba(246, 249, 255, 0.78);
+    -fx-background-radius: 19px;
+    -fx-border-color: rgba(255, 255, 255, 0.65);
+    -fx-border-radius: 19px;
+    -fx-border-width: 1px;
+    -fx-effect: dropshadow(gaussian, rgba(14, 26, 46, 0.23), 24, 0.16, 0, 9);
+}
+.app-root.dark .desktop-dock {
+    -fx-background-color: rgba(13, 20, 35, 0.86);
+    -fx-border-color: rgba(170, 192, 232, 0.18);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.42), 24, 0.18, 0, 10);
+}
+.app-root .dock-app-button {
+    -fx-min-width: 46px;
+    -fx-pref-width: 46px;
+    -fx-max-width: 46px;
+    -fx-min-height: 46px;
+    -fx-pref-height: 46px;
+    -fx-max-height: 46px;
+    -fx-padding: 0;
+    -fx-background-color: rgba(255, 255, 255, 0.78);
+    -fx-background-radius: 14px;
+    -fx-border-color: rgba(133, 153, 184, 0.16);
+    -fx-border-radius: 14px;
+    -fx-content-display: graphic-only;
+    -fx-alignment: center;
+    -fx-cursor: hand;
+}
+.app-root .desktop-dock .dock-app-button { -fx-padding: 0; }
+.app-root .desktop-dock .dock-app-button.nav-btn-active {
+    -fx-background-color: rgba(222, 235, 252, 0.98);
+    -fx-border-color: rgba(86, 133, 195, 0.28);
+}
+.app-root.dark .desktop-dock .dock-app-button.nav-btn-active {
+    -fx-background-color: rgba(54, 79, 119, 0.98);
+    -fx-border-color: rgba(132, 180, 245, 0.3);
+}
+.app-root .dock-app-button FontIcon,
+.app-root .dock-app-button .ikonli-font-icon { -fx-icon-color: #5277aa; -fx-fill: #5277aa; }
+.app-root .dock-app-button:hover {
+    -fx-background-color: rgba(222, 235, 252, 0.98);
+}
+.app-root.dark .dock-app-button {
+    -fx-background-color: rgba(36, 48, 72, 0.92);
+    -fx-border-color: rgba(165, 190, 234, 0.12);
+}
+.app-root.dark .dock-app-button FontIcon,
+.app-root.dark .dock-app-button .ikonli-font-icon { -fx-icon-color: #aecbfa; -fx-fill: #aecbfa; }
+.app-root.dark .dock-app-button:hover { -fx-background-color: rgba(56, 78, 115, 0.98); }
+
+/* Keep the startup wallpapers distinct from the desktop wallpapers. */
+.app-root .welcome-page-new {
+    -fx-background-color: #e8edf4;
+    -fx-background-image: url("../assets/splash_screen/light.png");
+    -fx-background-size: cover;
+    -fx-background-position: center center;
+}
+.app-root.dark .welcome-page-new {
+    -fx-background-color: #111723;
+    -fx-background-image: url("../assets/splash_screen/dark.png");
+}
+.app-root.dark .welcome-title-new {
+    -fx-text-fill: #edf4ff;
+    -fx-effect: dropshadow(gaussian, rgba(3, 10, 22, 0.62), 12, 0.22, 0, 2);
+}
+.app-root.dark .welcome-subtitle-new { -fx-text-fill: #80baff; }
+
+/* System menu bar and functional macOS-style window controls. */
+.app-root { -fx-font-family: "SF Pro Text", "SF Pro Display", "Helvetica Neue", "Segoe UI", Arial, sans-serif; }
+.app-root .desktop-shell { -fx-padding: 8px 16px 14px 16px; }
+.app-root .desktop-menubar {
+    -fx-min-height: 42px;
+    -fx-pref-height: 42px;
+    -fx-padding: 0 17px;
+    -fx-background-color: rgba(246, 249, 255, 0.72);
+    -fx-background-radius: 14px;
+    -fx-border-color: rgba(255, 255, 255, 0.62);
+    -fx-border-radius: 14px;
+    -fx-border-width: 1px;
+    -fx-effect: dropshadow(gaussian, rgba(22, 36, 59, 0.12), 16, 0.1, 0, 5);
+}
+.app-root.dark .desktop-menubar {
+    -fx-background-color: rgba(12, 19, 33, 0.74);
+    -fx-border-color: rgba(174, 195, 231, 0.14);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.25), 18, 0.12, 0, 5);
+}
+.app-root .menubar-brand FontIcon,
+.app-root .menubar-brand .ikonli-font-icon { -fx-icon-color: #4b82c3; -fx-fill: #4b82c3; }
+.app-root .menubar-app-name { -fx-font-size: 12px; -fx-font-weight: 700; -fx-text-fill: #26364b; }
+.app-root .menubar-item { -fx-font-size: 11px; -fx-text-fill: #53647b; }
+.app-root.dark .menubar-app-name { -fx-text-fill: #eef3fc; }
+.app-root.dark .menubar-item { -fx-text-fill: #b5c2d7; }
+.app-root .menubar-status { -fx-padding: 5px 10px; -fx-background-color: rgba(255, 255, 255, 0.42); -fx-background-radius: 10px; }
+.app-root.dark .menubar-status { -fx-background-color: rgba(255, 255, 255, 0.055); }
+.app-root .menubar-status-dot { -fx-fill: #52bd83; }
+.app-root .menubar-status-title { -fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #34475c; }
+.app-root .menubar-status-description { -fx-font-size: 9px; -fx-text-fill: #728198; }
+.app-root.dark .menubar-status-title { -fx-text-fill: #d9e5f5; }
+.app-root.dark .menubar-status-description { -fx-text-fill: #8e9fb8; }
+
+.app-root .window-traffic-button {
+    -fx-min-width: 14px;
+    -fx-pref-width: 14px;
+    -fx-max-width: 14px;
+    -fx-min-height: 14px;
+    -fx-pref-height: 14px;
+    -fx-max-height: 14px;
+    -fx-padding: 0;
+    -fx-background-color: transparent;
+    -fx-background-radius: 50%;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+}
+.app-root .window-traffic-button:focused { -fx-background-color: transparent; -fx-border-color: transparent; }
+.app-root .window-traffic-light { -fx-stroke: rgba(0, 0, 0, 0.16); -fx-stroke-width: 0.7px; }
+.app-root .window-traffic-glyph {
+    -fx-opacity: 0;
+    -fx-font-size: 9px;
+    -fx-font-weight: 900;
+    -fx-text-fill: rgba(67, 36, 36, 0.9);
+    -fx-padding: 0 0 1px 0;
+}
+.app-root .window-traffic-button:hover .window-traffic-glyph { -fx-opacity: 1; }
+.app-root .window-close-button:hover .window-close-dot { -fx-fill: #ff5148; }
+.app-root .window-minimize-button:hover .window-minimize-dot { -fx-fill: #ffb91f; }
+.app-root .window-maximize-button:hover .window-maximize-dot { -fx-fill: #20bd37; }
+
+/* Keep navigation icons compact, give each app its own icon tile, and mark the open page. */
+.app-root .desktop-dock .dock-app-button {
+    -fx-background-color: linear-gradient(to bottom right, #7b9ac6, #536f9d);
+    -fx-border-color: rgba(255, 255, 255, 0.55);
+    -fx-effect: dropshadow(gaussian, rgba(27, 43, 68, 0.18), 7, 0.1, 0, 2);
+    -fx-scale-x: 1.0;
+    -fx-scale-y: 1.0;
+}
+.app-root .desktop-dock .dock-dashboard { -fx-background-color: linear-gradient(to bottom right, #4fa1ef, #3174ce); }
+.app-root .desktop-dock .dock-scanner { -fx-background-color: linear-gradient(to bottom right, #55c4d8, #2897bd); }
+.app-root .desktop-dock .dock-file-shield { -fx-background-color: linear-gradient(to bottom right, #8197b8, #556d95); }
+.app-root .desktop-dock .dock-access { -fx-background-color: linear-gradient(to bottom right, #42c3a2, #218e7c); }
+.app-root .desktop-dock .dock-threats { -fx-background-color: linear-gradient(to bottom right, #f29a72, #d46d56); }
+.app-root .desktop-dock .dock-activity { -fx-background-color: linear-gradient(to bottom right, #ac91ed, #7a66c5); }
+.app-root .desktop-dock .dock-insights { -fx-background-color: linear-gradient(to bottom right, #68a5ef, #4c76c8); }
+.app-root .desktop-dock .dock-settings { -fx-background-color: linear-gradient(to bottom right, #8b9aaf, #5e6c80); }
+.app-root .desktop-dock .dock-app-button FontIcon,
+.app-root .desktop-dock .dock-app-button .ikonli-font-icon { -fx-icon-color: #ffffff; -fx-fill: #ffffff; }
+.app-root .desktop-dock .dock-active-dot { -fx-fill: #ffffff; -fx-opacity: 0; }
+.app-root .desktop-dock .dock-app-button.nav-btn-active .dock-active-dot { -fx-opacity: 1; }
+.app-root.dark .desktop-dock .dock-app-button { -fx-border-color: rgba(240, 245, 255, 0.66); }
+.app-root.dark .desktop-dock .dock-app-button:hover { -fx-effect: dropshadow(gaussian, rgba(138, 181, 255, 0.38), 12, 0.22, 0, 4); }
+
+/* Keep secondary actions on dark glass surfaces instead of inheriting the
+   light stylesheet's white button fill. */
+.app-root.dark .desktop-window .button.stitch-btn-secondary,
+.app-root.dark .desktop-window .button.wd-secondary,
+.app-root.dark .desktop-window .button.wd-btn--secondary,
+.app-root.dark .desktop-window .button.wd-tonal,
+.app-root.dark .desktop-window .button.wd-btn--tonal,
+.app-root.dark .desktop-window .button.settings-subnav-btn:not(.settings-subnav-btn-active) {
+    -fx-background-color: #263345;
+    -fx-border-color: #3a4b61;
+    -fx-text-fill: #dce6f4;
+    -fx-effect: null;
+}
+.app-root.dark .desktop-window .button.stitch-btn-secondary:hover,
+.app-root.dark .desktop-window .button.wd-secondary:hover,
+.app-root.dark .desktop-window .button.wd-btn--secondary:hover,
+.app-root.dark .desktop-window .button.wd-tonal:hover,
+.app-root.dark .desktop-window .button.wd-btn--tonal:hover,
+.app-root.dark .desktop-window .button.settings-subnav-btn:not(.settings-subnav-btn-active):hover {
+    -fx-background-color: #34465e;
+    -fx-border-color: #536a87;
+    -fx-text-fill: #f3f7fd;
+}
+.app-root.dark .desktop-window .button.stitch-btn-secondary:pressed,
+.app-root.dark .desktop-window .button.wd-secondary:pressed,
+.app-root.dark .desktop-window .button.wd-btn--secondary:pressed,
+.app-root.dark .desktop-window .button.wd-tonal:pressed,
+.app-root.dark .desktop-window .button.wd-btn--tonal:pressed {
+    -fx-background-color: #1b2736;
+    -fx-border-color: #455a74;
+}
+.app-root.dark .desktop-window .button.stitch-btn-secondary:disabled,
+.app-root.dark .desktop-window .button.wd-secondary:disabled,
+.app-root.dark .desktop-window .button.wd-btn--secondary:disabled,
+.app-root.dark .desktop-window .button.wd-tonal:disabled,
+.app-root.dark .desktop-window .button.wd-btn--tonal:disabled {
+    -fx-background-color: #202b39;
+    -fx-border-color: #303d4e;
+    -fx-text-fill: #8795a9;
+}
+.app-root.dark .desktop-window .button.stitch-btn-secondary FontIcon,
+.app-root.dark .desktop-window .button.stitch-btn-secondary .ikonli-font-icon,
+.app-root.dark .desktop-window .button.wd-secondary FontIcon,
+.app-root.dark .desktop-window .button.wd-secondary .ikonli-font-icon,
+.app-root.dark .desktop-window .button.wd-tonal FontIcon,
+.app-root.dark .desktop-window .button.wd-tonal .ikonli-font-icon {
+    -fx-icon-color: #c7d7ec;
+    -fx-fill: #c7d7ec;
+}
+
+.app-root .menubar-menu {
+    -fx-background-color: transparent;
+    -fx-background-radius: 7px;
+    -fx-padding: 5px 8px;
+    -fx-font-size: 11px;
+    -fx-text-fill: #46566c;
+}
+.app-root .menubar-menu:hover,
+.app-root .menubar-menu:showing { -fx-background-color: rgba(87, 116, 157, 0.12); }
+.app-root.dark .menubar-menu { -fx-text-fill: #d5dfef; }
+.app-root.dark .menubar-menu:hover,
+.app-root.dark .menubar-menu:showing { -fx-background-color: rgba(150, 178, 222, 0.13); }
+.app-root .menubar-menu .label { -fx-text-fill: #46566c; }
+.app-root.dark .menubar-menu .label { -fx-text-fill: #d5dfef; }
+.app-root .context-menu {
+    -fx-background-color: rgba(250, 252, 255, 0.98);
+    -fx-background-radius: 10px;
+    -fx-border-color: rgba(116, 139, 174, 0.22);
+    -fx-border-radius: 10px;
+    -fx-padding: 5px;
+    -fx-effect: dropshadow(gaussian, rgba(18, 31, 54, 0.22), 18, 0.12, 0, 7);
+}
+.app-root.dark .context-menu {
+    -fx-background-color: rgba(25, 34, 53, 0.98);
+    -fx-border-color: rgba(161, 184, 224, 0.2);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.42), 18, 0.12, 0, 7);
+}
+.app-root .context-menu .menu-item .label { -fx-text-fill: #2d3b50; -fx-font-size: 11px; }
+.app-root.dark .context-menu .menu-item .label { -fx-text-fill: #e2e9f4; }
+.app-root .context-menu .menu-item:focused { -fx-background-color: #e4edfa; -fx-background-radius: 6px; }
+.app-root.dark .context-menu .menu-item:focused { -fx-background-color: #31435f; -fx-background-radius: 6px; }
+
+/* In-app security notification feed */
+.app-root .notification-badge {
+    -fx-background-color: #e5484d; -fx-text-fill: white; -fx-font-size: 9px; -fx-font-weight: 700;
+    -fx-padding: 1px 4px; -fx-background-radius: 8px; -fx-min-width: 15px; -fx-min-height: 15px;
+    -fx-alignment: center; -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.28), 5, 0.15, 0, 1);
+}
+.app-root .notification-panel {
+    -fx-background-color: rgba(248, 250, 253, 0.98); -fx-border-color: #d7deea;
+    -fx-border-radius: 16px; -fx-background-radius: 16px;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.22), 24, 0.16, 0, 8); -fx-padding: 0;
+}
+.app-root .notification-panel-header { -fx-padding: 16px 16px 13px 16px; -fx-border-color: transparent transparent #e4e9f1 transparent; }
+.app-root .notification-panel-title { -fx-text-fill: #182235; -fx-font-size: 15px; -fx-font-weight: 700; }
+.app-root .notification-panel-subtitle { -fx-text-fill: #718096; -fx-font-size: 10px; }
+.app-root .notification-scroll-pane { -fx-background-color: transparent; -fx-background: transparent; -fx-padding: 8px 10px; }
+.app-root .notification-scroll-pane > .viewport { -fx-background-color: transparent; }
+.app-root .notification-list { -fx-padding: 0 2px; }
+.app-root .notification-row { -fx-background-color: #f4f7fb; -fx-background-radius: 11px; -fx-padding: 11px 10px; -fx-cursor: hand; }
+.app-root .notification-row:hover { -fx-background-color: #eaf0f8; }
+.app-root .notification-row-title { -fx-text-fill: #263347; -fx-font-size: 11px; -fx-font-weight: 600; }
+.app-root .notification-row-detail { -fx-text-fill: #718096; -fx-font-size: 10px; }
+.app-root .notification-icon-block, .app-root .notification-icon-warn { -fx-min-width: 32px; -fx-min-height: 32px; -fx-background-radius: 10px; }
+.app-root .notification-icon-block { -fx-background-color: rgba(229, 72, 77, 0.12); }
+.app-root .notification-icon-warn { -fx-background-color: rgba(217, 144, 0, 0.13); }
+.app-root .notification-empty-state { -fx-text-fill: #718096; -fx-font-size: 11px; -fx-padding: 22px 13px; -fx-alignment: center; -fx-text-alignment: center; }
+.app-root .notification-panel-footer { -fx-padding: 10px 14px 13px 14px; -fx-border-color: #e4e9f1 transparent transparent transparent; }
+.app-root .notification-panel .notification-action-button,
+.app-root .notification-panel .notification-close-button,
+.app-root .notification-panel .notification-view-all {
+    -fx-background-color: transparent; -fx-text-fill: #496987; -fx-font-size: 10px; -fx-padding: 5px 8px; -fx-background-radius: 7px;
+}
+.app-root .notification-panel .notification-action-button:hover,
+.app-root .notification-panel .notification-close-button:hover,
+.app-root .notification-panel .notification-view-all:hover { -fx-background-color: rgba(80, 120, 170, 0.11); }
+.app-root .notification-panel .notification-close-button { -fx-font-size: 15px; -fx-padding: 0 7px; }
+.app-root.dark .notification-panel { -fx-background-color: rgba(20, 29, 44, 0.98); -fx-border-color: #344258; }
+.app-root.dark .notification-panel-header { -fx-border-color: transparent transparent #303c50 transparent; }
+.app-root.dark .notification-panel-title { -fx-text-fill: #e9eff8; }
+.app-root.dark .notification-panel-subtitle, .app-root.dark .notification-row-detail, .app-root.dark .notification-empty-state { -fx-text-fill: #9baac0; }
+.app-root.dark .notification-row { -fx-background-color: #202b3d; }
+.app-root.dark .notification-row:hover { -fx-background-color: #29384e; }
+.app-root.dark .notification-row-title { -fx-text-fill: #e0e8f4; }
+.app-root.dark .notification-panel-footer { -fx-border-color: #303c50 transparent transparent transparent; }
+.app-root.dark .notification-panel .notification-action-button,
+.app-root.dark .notification-panel .notification-close-button,
+.app-root.dark .notification-panel .notification-view-all { -fx-text-fill: #b8cbe2; }

@@ -845,3 +845,55 @@
     -fx-background-radius: 10px;
     -fx-border-radius: 10px;
 }
+
+/* Settings sub-navigation uses chip classes; keep its dark styling in this
+   stylesheet so it takes precedence over the light chip backgrounds above. */
+.app-root.dark .button.settings-subnav-btn.wd-chip,
+.app-root.dark .button.settings-subnav-btn.wd-btn--chip {
+    -fx-background-color: #202c3d;
+    -fx-border-color: #34465d;
+    -fx-text-fill: #c5d0df;
+    -fx-background-radius: 12px;
+    -fx-border-radius: 12px;
+    -fx-effect: null;
+}
+.app-root.dark .button.settings-subnav-btn.wd-chip:hover,
+.app-root.dark .button.settings-subnav-btn.wd-btn--chip:hover {
+    -fx-background-color: #2a3b51;
+    -fx-border-color: #506985;
+    -fx-text-fill: #edf4ff;
+}
+.app-root.dark .button.settings-subnav-btn.wd-chip:pressed,
+.app-root.dark .button.settings-subnav-btn.wd-btn--chip:pressed {
+    -fx-background-color: #192536;
+    -fx-border-color: #425873;
+}
+.app-root.dark .button.settings-subnav-btn.wd-chip.settings-subnav-btn-active,
+.app-root.dark .button.settings-subnav-btn.wd-btn--chip.settings-subnav-btn-active {
+    -fx-background-color: #2d4666;
+    -fx-border-color: #5c91ca;
+    -fx-text-fill: #f3f7ff;
+    -fx-font-weight: 600;
+    -fx-effect: dropshadow(gaussian, rgba(76, 139, 211, 0.24), 10, 0.12, 0, 2);
+}
+.app-root.dark .button.settings-subnav-btn.wd-chip.settings-subnav-btn-active:hover,
+.app-root.dark .button.settings-subnav-btn.wd-btn--chip.settings-subnav-btn-active:hover {
+    -fx-background-color: #385579;
+    -fx-border-color: #78a9dd;
+}
+.app-root.dark .button.settings-subnav-btn .text {
+    -fx-fill: #c5d0df;
+}
+.app-root.dark .button.settings-subnav-btn.settings-subnav-btn-active .text {
+    -fx-fill: #f3f7ff;
+}
+.app-root.dark .button.settings-subnav-btn FontIcon,
+.app-root.dark .button.settings-subnav-btn .ikonli-font-icon {
+    -fx-icon-color: #c5d0df;
+    -fx-fill: #c5d0df;
+}
+.app-root.dark .button.settings-subnav-btn.settings-subnav-btn-active FontIcon,
+.app-root.dark .button.settings-subnav-btn.settings-subnav-btn-active .ikonli-font-icon {
+    -fx-icon-color: #f3f7ff;
+    -fx-fill: #f3f7ff;
+}

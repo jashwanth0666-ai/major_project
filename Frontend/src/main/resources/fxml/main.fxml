@@ -37,89 +37,80 @@
   <!-- ================================================================== -->
   <!-- MAIN APPLICATION SHELL                                             -->
   <!-- ================================================================== -->
-  <BorderPane fx:id="appShell" styleClass="shell" visible="false" managed="false">
-    <!-- ================================================================== -->
-    <!-- LEFT SIDEBAR                                                       -->
-    <!-- ================================================================== -->
-    <left>
-      <VBox fx:id="sidebar" styleClass="sidebar" spacing="12">
-        <!-- Logo & Branding -->
-        <HBox fx:id="brandContainer" alignment="CENTER_LEFT" spacing="12" styleClass="brand-container">
-          <ImageView fitWidth="52" fitHeight="52" preserveRatio="true" smooth="true">
-            <image>
-              <Image url="@../images/watchdog-logo.png" requestedWidth="104" requestedHeight="104" preserveRatio="true" smooth="true"/>
-            </image>
-          </ImageView>
+  <BorderPane fx:id="appShell" styleClass="shell, desktop-shell" visible="false" managed="false">
+    <top>
+      <HBox alignment="CENTER_LEFT" spacing="20" styleClass="desktop-menubar">
+        <MenuButton text="AI WatchDog" styleClass="menubar-menu, menubar-app-menu">
+          <graphic><FontIcon iconLiteral="fth-shield" iconSize="15"/></graphic>
+          <items>
+            <MenuItem text="Dashboard" onAction="#navigateDashboard"/>
+            <MenuItem text="Settings" onAction="#navigateSettings"/>
+            <SeparatorMenuItem/>
+            <MenuItem text="Quit AI WatchDog" onAction="#quitApplication"/>
+          </items>
+        </MenuButton>
+        <MenuButton text="Monitor" styleClass="menubar-menu">
+          <items>
+            <MenuItem text="Activity" onAction="#navigateActivity"/>
+            <MenuItem text="AI Insights" onAction="#navigateInsights"/>
+          </items>
+        </MenuButton>
+        <MenuButton text="Actions" styleClass="menubar-menu">
+          <items>
+            <MenuItem text="Scan a URL" onAction="#navigateScanner"/>
+            <MenuItem text="File Shield" onAction="#navigateFileShield"/>
+            <MenuItem text="Secure Access" onAction="#navigateSecureAccess"/>
+            <MenuItem text="Threat Center" onAction="#navigateThreatCenter"/>
+          </items>
+        </MenuButton>
+        <MenuButton text="Window" styleClass="menubar-menu">
+          <items>
+            <MenuItem text="Minimize" onAction="#minimizeWindow"/>
+            <MenuItem text="Zoom" onAction="#toggleMaximizeWindow"/>
+          </items>
+        </MenuButton>
+        <Region HBox.hgrow="ALWAYS"/>
+        <HBox alignment="CENTER_LEFT" spacing="8" styleClass="menubar-status">
+          <Circle fx:id="protectionStatusDot" radius="4" styleClass="menubar-status-dot"/>
           <VBox spacing="1">
-            <Label text="AI WatchDog" styleClass="brand-title"/>
-            <Label text="Phishing Detection Platform" styleClass="brand-subtitle"/>
+            <Label fx:id="sidebarProtectionTitle" text="Checking services…" styleClass="menubar-status-title"/>
+            <Label fx:id="sidebarProtectionDescription" text="Waiting for backend health and monitor state" styleClass="menubar-status-description"/>
           </VBox>
         </HBox>
-
-        <!-- Navigation Menu -->
-        <ScrollPane fx:id="sidebarNavScroll" fitToWidth="true" vbarPolicy="AS_NEEDED" hbarPolicy="NEVER" VBox.vgrow="ALWAYS" styleClass="wd-sidebar-scroll, wd-scroll">
-          <VBox fx:id="navMenuBox" spacing="4" styleClass="nav-menu">
-            <Button fx:id="navDashboardBtn" text="Dashboard" onAction="#navigateDashboard" styleClass="nav-btn, nav-btn-active, wd-nav, wd-on, wd-dbtn">
-              <graphic><FontIcon iconLiteral="fth-grid" iconSize="17"/></graphic>
-            </Button>
-            <Button fx:id="navScannerBtn" text="URL Scanner" onAction="#navigateScanner" styleClass="nav-btn, wd-nav, wd-dbtn">
-              <graphic><FontIcon iconLiteral="fth-search" iconSize="17"/></graphic>
-            </Button>
-            <Button fx:id="navFileShieldBtn" text="File Shield Scanner" onAction="#navigateFileShield" styleClass="nav-btn, wd-nav, wd-dbtn">
-              <graphic><FontIcon iconLiteral="fth-hard-drive" iconSize="17"/></graphic>
-            </Button>
-            <Button fx:id="navSecureAccessBtn" text="Secure Access" onAction="#navigateSecureAccess" styleClass="nav-btn, wd-nav, wd-dbtn">
-              <graphic><FontIcon iconLiteral="fth-shield" iconSize="17"/></graphic>
-            </Button>
-            <Button fx:id="navThreatCenterBtn" text="Threat Center" onAction="#navigateThreatCenter" styleClass="nav-btn, wd-nav, wd-dbtn">
-              <graphic><FontIcon iconLiteral="fth-alert-triangle" iconSize="17"/></graphic>
-            </Button>
-            <Button fx:id="navActivityBtn" text="Activity" onAction="#navigateActivity" styleClass="nav-btn, wd-nav, wd-dbtn">
-              <graphic><FontIcon iconLiteral="fth-user" iconSize="17"/></graphic>
-            </Button>
-            <Button fx:id="navInsightsBtn" text="AI Insights" onAction="#navigateInsights" styleClass="nav-btn, wd-nav, wd-dbtn">
-              <graphic><FontIcon iconLiteral="fth-zap" iconSize="17"/></graphic>
-            </Button>
-            <Button fx:id="navSettingsBtn" text="Settings" onAction="#navigateSettings" styleClass="nav-btn, wd-nav, wd-dbtn">
-              <graphic><FontIcon iconLiteral="fth-settings" iconSize="17"/></graphic>
-            </Button>
-          </VBox>
-        </ScrollPane>
-
-        <!-- Bottom Protection Active Status (Exact Stitch layout) -->
-        <VBox fx:id="sidebarBottomBox" spacing="6" alignment="CENTER">
-          <HBox alignment="CENTER_LEFT" spacing="10" styleClass="protection-status-card" maxWidth="Infinity">
-            <StackPane prefWidth="26" prefHeight="26" minWidth="26" minHeight="26" style="-fx-background-color: #10B981; -fx-background-radius: 50%; -fx-alignment: center;">
-              <FontIcon iconLiteral="fth-check" iconSize="13" iconColor="#FFFFFF"/>
-            </StackPane>
-            <VBox spacing="1" HBox.hgrow="ALWAYS">
-              <Label fx:id="sidebarProtectionTitle" text="Checking services…" styleClass="protection-status-title"/>
-              <Label fx:id="sidebarProtectionDescription" text="Waiting for backend health and monitor state" styleClass="protection-status-desc" wrapText="true"/>
-            </VBox>
-          </HBox>
-          <Label text="v1.0.0" styleClass="version-label" style="-fx-font-size: 10px; -fx-alignment: center;"/>
-        </VBox>
-      </VBox>
-    </left>
-
+      </HBox>
+    </top>
     <!-- ================================================================== -->
     <!-- MAIN CONTENT AREA                                                  -->
     <!-- ================================================================== -->
     <center>
-      <VBox spacing="0">
+      <VBox fx:id="desktopWindow" spacing="0" styleClass="desktop-window">
+        <!-- In-app title strip controls manage this floating workspace window. -->
+        <HBox alignment="CENTER_LEFT" spacing="10" styleClass="window-titlebar">
+          <HBox alignment="CENTER_LEFT" spacing="7" styleClass="window-traffic-lights">
+            <Button onAction="#closeWindow" accessibleText="Close window" styleClass="window-traffic-button, window-close-button">
+              <tooltip><Tooltip text="Close window"/></tooltip>
+              <graphic><StackPane prefWidth="12" prefHeight="12"><Circle radius="6" styleClass="window-traffic-light, window-close-dot"/><Label text="×" styleClass="window-traffic-glyph"/></StackPane></graphic>
+            </Button>
+            <Button onAction="#minimizeWindow" accessibleText="Minimize window" styleClass="window-traffic-button, window-minimize-button">
+              <tooltip><Tooltip text="Minimize window"/></tooltip>
+              <graphic><StackPane prefWidth="12" prefHeight="12"><Circle radius="6" styleClass="window-traffic-light, window-minimize-dot"/><Label text="−" styleClass="window-traffic-glyph"/></StackPane></graphic>
+            </Button>
+            <Button onAction="#toggleMaximizeWindow" accessibleText="Toggle maximize" styleClass="window-traffic-button, window-maximize-button">
+              <tooltip><Tooltip text="Maximize or restore window"/></tooltip>
+              <graphic><StackPane prefWidth="12" prefHeight="12"><Circle radius="6" styleClass="window-traffic-light, window-maximize-dot"/><Label text="+" styleClass="window-traffic-glyph"/></StackPane></graphic>
+            </Button>
+          </HBox>
+          <Region HBox.hgrow="ALWAYS"/>
+          <HBox alignment="CENTER" spacing="7" styleClass="window-title">
+            <FontIcon iconLiteral="fth-shield" iconSize="14"/>
+            <Label text="AI WatchDog"/>
+            <Label text="· Security Workspace" styleClass="window-title-secondary"/>
+          </HBox>
+          <Region HBox.hgrow="ALWAYS"/>
+          <Region prefWidth="44" minWidth="44"/>
+        </HBox>
         <!-- Top Bar -->
         <HBox alignment="CENTER_LEFT" spacing="16" styleClass="topbar">
-          <!-- Hamburger Toggle Button -->
-          <Button fx:id="hamburgerBtn" onAction="#toggleSidebar" styleClass="wd-burger, wd-btn, wd-btn--icon, wd-icon, wd-btn--static, wd-dbtn" minWidth="38" minHeight="38" prefWidth="38" prefHeight="38" maxWidth="38" maxHeight="38">
-            <graphic>
-              <StackPane alignment="CENTER" prefWidth="18" prefHeight="14" maxWidth="18" maxHeight="14">
-                <Region fx:id="hamburgerBarTop" styleClass="wd-burger-bar" translateY="-5" prefWidth="18" prefHeight="2" maxWidth="18" maxHeight="2"/>
-                <Region fx:id="hamburgerBarMid" styleClass="wd-burger-bar" prefWidth="18" prefHeight="2" maxWidth="18" maxHeight="2"/>
-                <Region fx:id="hamburgerBarBot" styleClass="wd-burger-bar" translateY="5" prefWidth="18" prefHeight="2" maxWidth="18" maxHeight="2"/>
-              </StackPane>
-            </graphic>
-          </Button>
-
           <!-- Search Field -->
           <HBox alignment="CENTER_LEFT" spacing="10" styleClass="top-search-box">
             <FontIcon iconLiteral="fth-search" iconSize="15" iconColor="#94A3B8"/>
@@ -129,14 +120,19 @@
           <Region HBox.hgrow="ALWAYS"/>
 
           <!-- Notification Bell -->
-          <StackPane styleClass="icon-btn-round, wd-btn--icon, wd-icon, wd-btn--round, wd-btn--bell, wd-btn--static, wd-dbtn, wd-dbtn--round">
-            <FontIcon iconLiteral="fth-bell" iconSize="16" iconColor="#64748B"/>
-            <Circle radius="4" fill="#EF4444" translateX="6" translateY="-6"/>
-          </StackPane>
+          <Button fx:id="notificationBellButton" onAction="#toggleNotifications" accessibleText="Open security notifications" styleClass="icon-btn-round, wd-btn--icon, wd-icon, wd-btn--round, wd-btn--bell, wd-btn--static, wd-dbtn, wd-dbtn--round">
+            <graphic>
+              <StackPane prefWidth="20" prefHeight="20">
+                <FontIcon iconLiteral="fth-bell" iconSize="16" iconColor="#64748B"/>
+                <Label fx:id="notificationBadge" text="0" visible="false" managed="false" styleClass="notification-badge" StackPane.alignment="TOP_RIGHT"/>
+              </StackPane>
+            </graphic>
+            <tooltip><Tooltip text="Security notifications"/></tooltip>
+          </Button>
         </HBox>
 
         <!-- Page Stack -->
-        <StackPane fx:id="pageStack" VBox.vgrow="ALWAYS">
+        <StackPane fx:id="pageStack" VBox.vgrow="ALWAYS" styleClass="desktop-page-stack">
 
           <!-- ============================================================ -->
           <!-- 1. DASHBOARD / SECURITY OVERVIEW (STITCH SCREEN 1)           -->
@@ -222,32 +218,6 @@
                   <Region fx:id="dashAllowedLine" styleClass="wd-ln, wd-ln-green"/>
                 </VBox>
               </GridPane>
-
-              <VBox styleClass="stitch-card" spacing="10">
-                <HBox alignment="CENTER_LEFT" spacing="10">
-                  <Label text="Unified Assessment Overview" styleClass="panel-title"/>
-                  <Region HBox.hgrow="ALWAYS"/>
-                  <ProgressIndicator fx:id="dashAssessmentLoading" prefWidth="18" prefHeight="18" maxWidth="18" maxHeight="18"/>
-                  <Label fx:id="dashAssessmentState" text="Loading assessment metrics…" styleClass="breakdown-sub"/>
-                </HBox>
-                <HBox spacing="24" alignment="CENTER_LEFT">
-                  <VBox spacing="3"><Label fx:id="dashAssessmentTotal" text="N/A" styleClass="metric-value"/><Label text="Recorded assessments" styleClass="metric-label"/></VBox>
-                  <VBox spacing="3"><Label fx:id="dashAssessmentUrls" text="N/A" styleClass="metric-value"/><Label text="URL assessments" styleClass="metric-label"/></VBox>
-                  <VBox spacing="3"><Label fx:id="dashAssessmentFiles" text="N/A" styleClass="metric-value"/><Label text="File assessments" styleClass="metric-label"/></VBox>
-                  <VBox spacing="3"><Label fx:id="dashAssessmentPartial" text="N/A" styleClass="metric-value"/><Label text="Partial results" styleClass="metric-label"/></VBox>
-                  <VBox spacing="3"><Label fx:id="dashKnownMalicious" text="N/A" styleClass="metric-value"/><Label text="Known malicious reputation" styleClass="metric-label"/></VBox>
-                  <VBox spacing="3"><Label fx:id="dashUnknownReputation" text="N/A" styleClass="metric-value"/><Label text="Unknown reputation" styleClass="metric-label"/></VBox>
-                  <VBox spacing="3"><Label fx:id="dashKnownClean" text="N/A" styleClass="metric-value"/><Label text="Known clean reputation" styleClass="metric-label"/></VBox>
-                  <VBox spacing="3"><Label fx:id="dashLookupError" text="N/A" styleClass="metric-value"/><Label text="Reputation lookup errors" styleClass="metric-label"/></VBox>
-                </HBox>
-                <HBox spacing="24" alignment="CENTER_LEFT">
-                  <Label text="Assessment policy verdicts:" styleClass="metric-label"/>
-                  <Label text="ALLOW" styleClass="breakdown-sub"/><Label fx:id="dashAssessmentAllow" text="N/A" styleClass="metric-value"/>
-                  <Label text="REVIEW" styleClass="breakdown-sub"/><Label fx:id="dashAssessmentReview" text="N/A" styleClass="metric-value"/>
-                  <Label text="WARN" styleClass="breakdown-sub"/><Label fx:id="dashAssessmentWarn" text="N/A" styleClass="metric-value"/>
-                  <Label text="BLOCK" styleClass="breakdown-sub"/><Label fx:id="dashAssessmentBlock" text="N/A" styleClass="metric-value"/>
-                </HBox>
-              </VBox>
 
               <!-- Current Risk Status Large Card (Target Lock Radar & Breakdown) -->
               <VBox styleClass="wd-risk" spacing="18">
@@ -1356,10 +1326,74 @@
             </VBox>
           </ScrollPane>
 
+
+
         </StackPane>
       </VBox>
+      <BorderPane.margin><Insets top="14" left="16" right="16"/></BorderPane.margin>
     </center>
+
+    <!-- Existing navigation controls are presented as the macOS-style dock. -->
+    <bottom>
+      <StackPane alignment="CENTER" styleClass="dock-region">
+      <HBox fx:id="desktopDock" alignment="CENTER" spacing="8" prefWidth="448" maxWidth="448" styleClass="desktop-dock">
+        <Button fx:id="navDashboardBtn" text="Dashboard" onAction="#navigateDashboard" styleClass="nav-btn, nav-btn-active, wd-nav, wd-on, wd-dbtn, dock-app-button, dock-dashboard" accessibleText="Dashboard">
+          <tooltip><Tooltip text="Dashboard"/></tooltip>
+          <graphic><StackPane prefWidth="22" prefHeight="26"><FontIcon iconLiteral="fth-grid" iconSize="19"/><Circle radius="2" styleClass="dock-active-dot" StackPane.alignment="BOTTOM_CENTER"/></StackPane></graphic>
+        </Button>
+        <Button fx:id="navScannerBtn" text="URL Scanner" onAction="#navigateScanner" styleClass="nav-btn, wd-nav, wd-dbtn, dock-app-button, dock-scanner" accessibleText="URL Scanner">
+          <tooltip><Tooltip text="URL Scanner"/></tooltip>
+          <graphic><StackPane prefWidth="22" prefHeight="26"><FontIcon iconLiteral="fth-search" iconSize="19"/><Circle radius="2" styleClass="dock-active-dot" StackPane.alignment="BOTTOM_CENTER"/></StackPane></graphic>
+        </Button>
+        <Button fx:id="navFileShieldBtn" text="File Shield Scanner" onAction="#navigateFileShield" styleClass="nav-btn, wd-nav, wd-dbtn, dock-app-button, dock-file-shield" accessibleText="File Shield Scanner">
+          <tooltip><Tooltip text="File Shield Scanner"/></tooltip>
+          <graphic><StackPane prefWidth="22" prefHeight="26"><FontIcon iconLiteral="fth-hard-drive" iconSize="19"/><Circle radius="2" styleClass="dock-active-dot" StackPane.alignment="BOTTOM_CENTER"/></StackPane></graphic>
+        </Button>
+        <Button fx:id="navSecureAccessBtn" text="Secure Access" onAction="#navigateSecureAccess" styleClass="nav-btn, wd-nav, wd-dbtn, dock-app-button, dock-access" accessibleText="Secure Access">
+          <tooltip><Tooltip text="Secure Access"/></tooltip>
+          <graphic><StackPane prefWidth="22" prefHeight="26"><FontIcon iconLiteral="fth-shield" iconSize="19"/><Circle radius="2" styleClass="dock-active-dot" StackPane.alignment="BOTTOM_CENTER"/></StackPane></graphic>
+        </Button>
+        <Button fx:id="navThreatCenterBtn" text="Threat Center" onAction="#navigateThreatCenter" styleClass="nav-btn, wd-nav, wd-dbtn, dock-app-button, dock-threats" accessibleText="Threat Center">
+          <tooltip><Tooltip text="Threat Center"/></tooltip>
+          <graphic><StackPane prefWidth="22" prefHeight="26"><FontIcon iconLiteral="fth-alert-triangle" iconSize="19"/><Circle radius="2" styleClass="dock-active-dot" StackPane.alignment="BOTTOM_CENTER"/></StackPane></graphic>
+        </Button>
+        <Button fx:id="navActivityBtn" text="Activity" onAction="#navigateActivity" styleClass="nav-btn, wd-nav, wd-dbtn, dock-app-button, dock-activity" accessibleText="Activity">
+          <tooltip><Tooltip text="Activity"/></tooltip>
+          <graphic><StackPane prefWidth="22" prefHeight="26"><FontIcon iconLiteral="fth-activity" iconSize="19"/><Circle radius="2" styleClass="dock-active-dot" StackPane.alignment="BOTTOM_CENTER"/></StackPane></graphic>
+        </Button>
+        <Button fx:id="navInsightsBtn" text="AI Insights" onAction="#navigateInsights" styleClass="nav-btn, wd-nav, wd-dbtn, dock-app-button, dock-insights" accessibleText="AI Insights">
+          <tooltip><Tooltip text="AI Insights"/></tooltip>
+          <graphic><StackPane prefWidth="22" prefHeight="26"><FontIcon iconLiteral="fth-bar-chart-2" iconSize="19"/><Circle radius="2" styleClass="dock-active-dot" StackPane.alignment="BOTTOM_CENTER"/></StackPane></graphic>
+        </Button>
+        <Button fx:id="navSettingsBtn" text="Settings" onAction="#navigateSettings" styleClass="nav-btn, wd-nav, wd-dbtn, dock-app-button, dock-settings" accessibleText="Settings">
+          <tooltip><Tooltip text="Settings"/></tooltip>
+          <graphic><StackPane prefWidth="22" prefHeight="26"><FontIcon iconLiteral="fth-settings" iconSize="19"/><Circle radius="2" styleClass="dock-active-dot" StackPane.alignment="BOTTOM_CENTER"/></StackPane></graphic>
+        </Button>
+      </HBox>
+      </StackPane>
+      <BorderPane.margin><Insets top="14"/></BorderPane.margin>
+    </bottom>
   </BorderPane>
+
+  <!-- Security notifications are read from the persisted Spring event history. -->
+  <VBox fx:id="notificationPanel" visible="false" managed="false" maxWidth="360" prefWidth="360" maxHeight="470" spacing="0" styleClass="notification-panel" StackPane.alignment="TOP_RIGHT">
+    <StackPane.margin><Insets top="104" right="22"/></StackPane.margin>
+    <HBox alignment="CENTER_LEFT" spacing="10" styleClass="notification-panel-header">
+      <VBox spacing="3" HBox.hgrow="ALWAYS">
+        <Label text="Notifications" styleClass="notification-panel-title"/>
+        <Label fx:id="notificationPanelStatus" text="Loading recent security findings…" styleClass="notification-panel-subtitle"/>
+      </VBox>
+      <Button fx:id="notificationClearButton" text="Clear" onAction="#clearNotifications" disable="true" styleClass="notification-action-button, wd-btn, wd-secondary, wd-btn--secondary"/>
+      <Button text="Refresh" onAction="#refreshNotifications" styleClass="notification-action-button, wd-btn, wd-secondary, wd-btn--secondary"/>
+      <Button text="×" onAction="#closeNotifications" accessibleText="Close notifications" styleClass="notification-close-button, wd-btn, wd-secondary, wd-btn--secondary"/>
+    </HBox>
+    <ScrollPane fitToWidth="true" hbarPolicy="NEVER" maxHeight="365" styleClass="notification-scroll-pane">
+      <content><VBox fx:id="notificationList" spacing="7" styleClass="notification-list"/></content>
+    </ScrollPane>
+    <HBox alignment="CENTER_RIGHT" styleClass="notification-panel-footer">
+      <Button text="View activity" onAction="#viewNotificationActivity" styleClass="notification-view-all, wd-btn, wd-secondary, wd-btn--secondary"/>
+    </HBox>
+  </VBox>
 
   <!-- Global Toast -->
   <Label fx:id="toast" text="Notification" visible="false" styleClass="toast-badge" StackPane.alignment="BOTTOM_CENTER">

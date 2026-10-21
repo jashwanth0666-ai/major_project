@@ -41,6 +41,7 @@ public class MainApp extends Application {
                 stage.hide();
             }
         });
+        stage.setMaximized(true);
         stage.show();
     }
 

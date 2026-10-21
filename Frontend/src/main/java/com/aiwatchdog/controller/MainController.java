@@ -20,6 +20,7 @@ import com.aiwatchdog.util.SystemTraySupport;
 import com.aiwatchdog.ui.scanner.ScanRadarView;
 import javafx.animation.*;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.concurrent.Task;
@@ -28,11 +29,16 @@ import javafx.scene.effect.BlurType;
 import javafx.scene.effect.DropShadow;
 import java.util.concurrent.atomic.AtomicReference;
 import javafx.fxml.FXML;
+import javafx.geometry.Bounds;
+import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -40,6 +46,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.scene.shape.Arc;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 import org.kordamp.ikonli.javafx.FontIcon;
 
@@ -50,6 +57,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -57,6 +65,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.prefs.Preferences;
 
 public class MainController {
 
@@ -65,6 +74,8 @@ public class MainController {
     // =========================================================================
     @FXML private StackPane root, pageStack;
     @FXML private VBox welcomePage;
+    @FXML private VBox desktopWindow;
+    @FXML private HBox desktopDock;
     @FXML private BorderPane appShell;
     @FXML private Button getStartedBtn;
     @FXML private ImageView logoImage;
@@ -96,6 +107,25 @@ public class MainController {
     @FXML private Region hamburgerBarMid;
     @FXML private Region hamburgerBarBot;
     @FXML private TextField topSearchInput;
+    @FXML private Button notificationBellButton;
+    @FXML private Button notificationClearButton;
+    @FXML private Label notificationBadge, notificationPanelStatus;
+    @FXML private VBox notificationPanel, notificationList;
+    private boolean notificationHistoryLoaded;
+    private boolean notificationUrlHistoryAvailable;
+    private boolean notificationMonitorHistoryAvailable;
+    private Instant notificationsClearedThrough = readNotificationClearTime();
+
+    private static final String NOTIFICATION_CLEAR_TIME_KEY = "notifications.cleared-through-epoch-ms";
+
+    private static Instant readNotificationClearTime() {
+        try {
+            return Instant.ofEpochMilli(Preferences.userNodeForPackage(MainController.class)
+                    .getLong(NOTIFICATION_CLEAR_TIME_KEY, 0L));
+        } catch (RuntimeException ignored) {
+            return Instant.EPOCH;
+        }
+    }
 
     // Sidebar Internal Layout
     @FXML private HBox brandContainer;
@@ -152,6 +182,7 @@ public class MainController {
     @FXML private Label dashMonitorStatus;
     @FXML private Label sidebarProtectionTitle;
     @FXML private Label sidebarProtectionDescription;
+    @FXML private Circle protectionStatusDot;
 
     // Upgraded Dashboard Node Hooks (wd-)
     @FXML private VBox dashCardScanned, dashCardBlocked, dashCardReview, dashCardAllowed;
@@ -335,6 +366,19 @@ public class MainController {
     private FadeTransition operationalBadgePulse;
     private ScaleTransition liveShieldPulse;
     private Timeline breakdownTimeline;
+    private final List<Timeline> breakdownBarTimelines = new ArrayList<>();
+    private Animation pageTransition;
+    private Animation desktopWindowTransition;
+    private Insets normalDesktopWindowMargin;
+    private boolean desktopWindowMaximized;
+    private boolean desktopWindowHiding;
+    private boolean maximizeAfterWindowOpens;
+    private final Map<ScrollPane, AnimationTimer> scrollMotionTimers = new IdentityHashMap<>();
+    private final Map<ScrollPane, Double> pendingScrollTargets = new IdentityHashMap<>();
+    private AnimationTimer dockMotionTimer;
+    private double dockPointerX;
+    private boolean dockPointerInside;
+    private long lastDockFrame;
 
     // Splash / Starting Page Animations
     private Timeline splashMasterTimeline;
@@ -367,7 +411,23 @@ public class MainController {
         }) {
             if (btn != null) navItems.add(btn);
         }
-        setActiveNav(navDashboardBtn);
+        clearActiveNav();
+        if (notificationPanel != null) {
+            notificationPanel.setVisible(false);
+            notificationPanel.setManaged(false);
+        }
+        if (notificationBadge != null) {
+            notificationBadge.setVisible(false);
+            notificationBadge.setManaged(false);
+        }
+        setupDockMotion();
+        setupSmoothScrolling();
+        if (desktopWindow != null) {
+            Insets margin = BorderPane.getMargin(desktopWindow);
+            normalDesktopWindowMargin = margin == null ? new Insets(14, 16, 0, 16) : margin;
+            desktopWindow.setVisible(false);
+            desktopWindow.setManaged(false);
+        }
 
         // Setup Dashboard Upgrades (Target Lock Radar, Stat Cards & Helpers)
         setupDashboardUpgrades();
@@ -378,8 +438,6 @@ public class MainController {
         setupSidebarCollapsible();
         if (settingsViewController != null) settingsViewController.setLocalMonitoringApplyHandler(this::applyLocalMonitorSettings);
         updateRiskGauge(0, "UNKNOWN", false);
-        startDashboardTelemetryAnimations();
-        animateThreatBreakdown();
 
         // Smoothly synchronize currentScanProgress with scanProgressBar and scanPercentLabel
         currentScanProgress.addListener((obs, oldVal, newVal) -> {
@@ -444,7 +502,10 @@ public class MainController {
             appShell.setManaged(false);
             Platform.runLater(this::startSplashSequence);
         } else {
-            navigateDashboard();
+            if (appShell != null) {
+                appShell.setVisible(true);
+                appShell.setManaged(true);
+            }
         }
     }
 
@@ -609,11 +670,13 @@ public class MainController {
                                                WindowsTelemetryHealth windowsTelemetry) {
         if (sidebarProtectionTitle == null || sidebarProtectionDescription == null) return;
         if (health == null || !health.isBackendAvailable()) {
+            setProtectionStatusDot("#ef6a68");
             sidebarProtectionTitle.setText("Backend unavailable");
             sidebarProtectionDescription.setText("Collector and analysis status could not be confirmed");
             return;
         }
         if (!health.isMlAvailable()) {
+            setProtectionStatusDot("#e6aa44");
             sidebarProtectionTitle.setText("Service degraded");
             sidebarProtectionDescription.setText("Spring Boot online · URL analysis unavailable");
             return;
@@ -638,6 +701,7 @@ public class MainController {
                     || processHealth.uploadFailures() > 0);
             sidebarProtectionTitle.setText(windowsDegraded || fileDegraded || processDegraded
                     ? "Monitoring degraded" : "Monitoring active");
+            setProtectionStatusDot(windowsDegraded || fileDegraded || processDegraded ? "#e6aa44" : "#52bd83");
             String active = describeActiveMonitors(desktopMonitoring, backendMonitoring);
             if (fileHealth != null) active += " · " + fileMonitorSummary(fileHealth);
             if (processHealth != null) active += " · " + processMonitorSummary(processHealth);
@@ -645,21 +709,29 @@ public class MainController {
             active += " · " + windowsTelemetrySummary(windowsTelemetry);
             sidebarProtectionDescription.setText(active);
         } else if (windowsMonitoring) {
+            setProtectionStatusDot("#52bd83");
             sidebarProtectionTitle.setText("Monitoring active");
             sidebarProtectionDescription.setText(windowsTelemetrySummary(windowsTelemetry));
         } else if (windowsDegraded) {
+            setProtectionStatusDot("#e6aa44");
             sidebarProtectionTitle.setText("Monitoring degraded");
             sidebarProtectionDescription.setText(windowsTelemetrySummary(windowsTelemetry));
         } else if (backendSettings == null) {
+            setProtectionStatusDot("#e6aa44");
             sidebarProtectionTitle.setText("Monitor status unavailable");
             String cause = valueOr(latestFileShieldSettingsError,
                     "File Shield settings were not returned by Spring Boot");
             sidebarProtectionDescription.setText("Spring Boot and URL analysis online · File Shield watcher state unavailable: "
                     + cause + " · " + windowsTelemetrySummary(windowsTelemetry));
         } else {
+            setProtectionStatusDot("#52bd83");
             sidebarProtectionTitle.setText("Services online");
             sidebarProtectionDescription.setText("URL analysis is online · " + windowsTelemetrySummary(windowsTelemetry));
         }
+    }
+
+    private void setProtectionStatusDot(String color) {
+        if (protectionStatusDot != null) protectionStatusDot.setFill(Color.web(color));
     }
 
     private String windowsTelemetrySummary(WindowsTelemetryHealth health) {
@@ -916,6 +988,8 @@ public class MainController {
         activityLog.clear();
         // Each backend source is capped at 100 rows, so this combined in-memory page remains bounded.
         activityLog.addAll(recent.stream().sorted(Comparator.comparing(ActivityItem::instant).reversed()).toList());
+        notificationHistoryLoaded = urlEvents != null || monitorEvents != null;
+        renderNotifications(urlEvents != null, monitorEvents != null);
         threatLog.clear();
         threatLog.addAll(threats.stream().sorted(Comparator.comparing(ThreatItem::instant).reversed()).limit(100).toList());
         renderActivityTable(activitySearchInput == null ? "" : activitySearchInput.getText());
@@ -926,6 +1000,106 @@ public class MainController {
         if (activityPaginationLabel != null && (!statsAvailable || !urlHistoryAvailable
                 || !monitorHistoryAvailable || !assessmentsAvailable || !assessmentStatsAvailable || !feedbackAvailable)) {
             activityPaginationLabel.setText("Partial data: one or more history or aggregate requests failed. Assessment and feedback history are limited to the latest 100 records.");
+        }
+    }
+
+    @FXML private void toggleNotifications() {
+        if (notificationPanel == null) return;
+        boolean open = !notificationPanel.isVisible();
+        notificationPanel.setManaged(open);
+        notificationPanel.setVisible(open);
+        if (open) {
+            if (notificationPanelStatus != null) notificationPanelStatus.setText(
+                    notificationHistoryLoaded ? "Recent findings from Spring Boot" : "Loading recent findings from Spring Boot…");
+            refreshBackendSnapshotAsync();
+        }
+    }
+
+    @FXML private void closeNotifications() {
+        if (notificationPanel == null) return;
+        notificationPanel.setVisible(false);
+        notificationPanel.setManaged(false);
+    }
+
+    @FXML private void refreshNotifications() {
+        if (notificationPanelStatus != null) notificationPanelStatus.setText("Refreshing security findings…");
+        refreshBackendSnapshotAsync();
+    }
+
+    @FXML private void clearNotifications() {
+        notificationsClearedThrough = Instant.now();
+        try {
+            Preferences.userNodeForPackage(MainController.class)
+                    .putLong(NOTIFICATION_CLEAR_TIME_KEY, notificationsClearedThrough.toEpochMilli());
+        } catch (RuntimeException ignored) {
+            // Keep the current UI state clear even when local preferences are unavailable.
+        }
+        renderNotifications(notificationUrlHistoryAvailable, notificationMonitorHistoryAvailable);
+    }
+
+    @FXML private void viewNotificationActivity() {
+        closeNotifications();
+        navigateActivity();
+    }
+
+    private void renderNotifications(boolean urlHistoryAvailable, boolean monitorHistoryAvailable) {
+        if (notificationList == null) return;
+        notificationUrlHistoryAvailable = urlHistoryAvailable;
+        notificationMonitorHistoryAvailable = monitorHistoryAvailable;
+        List<ActivityItem> alerts = activityLog.stream()
+                .filter(item -> isAlertDecision(item.decision()))
+                .filter(item -> item.instant() != null && item.instant().isAfter(notificationsClearedThrough))
+                .sorted(Comparator.comparing(ActivityItem::instant).reversed())
+                .limit(20)
+                .toList();
+        if (notificationBadge != null) {
+            int count = alerts.size();
+            notificationBadge.setText(count > 99 ? "99+" : Integer.toString(count));
+            notificationBadge.setManaged(count > 0);
+            notificationBadge.setVisible(count > 0);
+        }
+        if (notificationClearButton != null) notificationClearButton.setDisable(alerts.isEmpty());
+        if (notificationPanelStatus != null) {
+            if (!urlHistoryAvailable && !monitorHistoryAvailable) {
+                notificationPanelStatus.setText("Spring Boot event history is unavailable");
+            } else if (!urlHistoryAvailable || !monitorHistoryAvailable) {
+                notificationPanelStatus.setText("Partial event history from Spring Boot");
+            } else if (alerts.isEmpty() && !notificationsClearedThrough.equals(Instant.EPOCH)) {
+                notificationPanelStatus.setText("No new findings since notifications were cleared");
+            } else {
+                notificationPanelStatus.setText(alerts.size() + " recent security finding" + (alerts.size() == 1 ? "" : "s"));
+            }
+        }
+        notificationList.getChildren().clear();
+        if (alerts.isEmpty()) {
+            Label empty = new Label(notificationHistoryLoaded
+                    ? "No WARN or BLOCK findings in recent backend history."
+                    : "Waiting for recent findings from Spring Boot…");
+            empty.setWrapText(true);
+            empty.getStyleClass().add("notification-empty-state");
+            notificationList.getChildren().add(empty);
+            return;
+        }
+        for (ActivityItem item : alerts) {
+            boolean blocked = "BLOCK".equalsIgnoreCase(item.decision());
+            FontIcon icon = new FontIcon("fth-" + (blocked ? "alert-octagon" : "alert-triangle"));
+            icon.setIconSize(16);
+            icon.setIconColor(Color.web(blocked ? "#fb7185" : "#fbbf24"));
+            StackPane iconBox = new StackPane(icon);
+            iconBox.getStyleClass().add(blocked ? "notification-icon-block" : "notification-icon-warn");
+            Label title = new Label(valueOr(item.event(), "Security finding") + " · " + item.decision());
+            title.getStyleClass().add("notification-row-title");
+            Label detail = new Label(valueOr(item.riskLevel(), "Risk unknown") + " risk · " + item.time());
+            detail.getStyleClass().add("notification-row-detail");
+            VBox text = new VBox(4, title, detail);
+            text.setMinWidth(0);
+            HBox.setHgrow(text, Priority.ALWAYS);
+            HBox row = new HBox(11, iconBox, text);
+            row.setAlignment(Pos.CENTER_LEFT);
+            row.getStyleClass().add("notification-row");
+            row.setMaxWidth(Double.MAX_VALUE);
+            row.setOnMouseClicked(event -> viewNotificationActivity());
+            notificationList.getChildren().add(row);
         }
     }
 
@@ -1058,7 +1232,10 @@ public class MainController {
     // =========================================================================
     private void startSplashSequence() {
         if (welcomePage == null) {
-            navigateDashboard();
+            if (appShell != null) {
+                appShell.setVisible(true);
+                appShell.setManaged(true);
+            }
             return;
         }
 
@@ -1214,7 +1391,6 @@ public class MainController {
             appShell.setOpacity(0.0);
             appShell.setVisible(true);
             appShell.setManaged(true);
-            navigateDashboard();
 
             FadeTransition appFadeIn = new FadeTransition(Duration.millis(550), appShell);
             appFadeIn.setFromValue(0.0);
@@ -1256,7 +1432,6 @@ public class MainController {
             appShell.setOpacity(1.0);
         }
 
-        navigateDashboard();
         notifyUser("Protection is active");
     }
 
@@ -1282,6 +1457,62 @@ public class MainController {
 
     public boolean isWelcomePageVisible() {
         return welcomePage != null && welcomePage.isVisible();
+    }
+
+    @FXML
+    public void closeWindow(ActionEvent event) {
+        hideDesktopWindow(false);
+    }
+
+    @FXML
+    public void minimizeWindow(ActionEvent event) {
+        hideDesktopWindow(true);
+    }
+
+    @FXML
+    public void toggleMaximizeWindow(ActionEvent event) {
+        if (desktopWindow == null) return;
+        if (!desktopWindow.isVisible()) {
+            maximizeAfterWindowOpens = true;
+            showDesktopWindow();
+            return;
+        }
+        if (desktopWindowTransition != null) desktopWindowTransition.stop();
+        resetDesktopWindowTransforms();
+        Bounds oldBounds = desktopWindow.getBoundsInParent();
+        desktopWindowMaximized = !desktopWindowMaximized;
+        if (desktopWindowMaximized) {
+            BorderPane.setMargin(desktopWindow, Insets.EMPTY);
+            if (!desktopWindow.getStyleClass().contains("in-app-maximized")) {
+                desktopWindow.getStyleClass().add("in-app-maximized");
+            }
+        } else {
+            BorderPane.setMargin(desktopWindow, normalDesktopWindowMargin);
+            desktopWindow.getStyleClass().remove("in-app-maximized");
+        }
+        if (appShell != null) {
+            appShell.applyCss();
+            appShell.layout();
+        }
+        prepareDesktopWindowAnimation();
+        animateDesktopWindowBounds(oldBounds);
+    }
+
+    @FXML
+    public void quitApplication(ActionEvent event) {
+        Stage stage = currentStage(event);
+        if (stage != null) {
+            stage.fireEvent(new javafx.stage.WindowEvent(stage, javafx.stage.WindowEvent.WINDOW_CLOSE_REQUEST));
+        }
+    }
+
+    private Stage currentStage(ActionEvent event) {
+        if (event != null && event.getSource() instanceof Node source
+                && source.getScene() != null && source.getScene().getWindow() instanceof Stage stage) {
+            return stage;
+        }
+        if (root == null || root.getScene() == null) return null;
+        return root.getScene().getWindow() instanceof Stage stage ? stage : null;
     }
 
     // =========================================================================
@@ -1614,13 +1845,306 @@ public class MainController {
         }
     }
 
+    private void clearActiveNav() {
+        currentActiveNav = null;
+        for (ButtonBase item : navItems) {
+            item.getStyleClass().removeIf(c -> "nav-btn-active".equals(c) || "wd-on".equals(c));
+            if (item instanceof ToggleButton toggle) toggle.setSelected(false);
+        }
+    }
+
     private void selectNav(Button activeBtn, ScrollPane targetPage) {
         setActiveNav(activeBtn);
+        if (targetPage != dashboardPage) stopDashboardTelemetryAnimations();
+        showDesktopWindow();
+        showPageAnimated(targetPage);
+    }
 
-        if (pageStack != null && targetPage != null) {
-            pageStack.getChildren().forEach(child -> child.setVisible(child == targetPage));
-            targetPage.toFront();
+    private void showDesktopWindow() {
+        if (desktopWindow == null) return;
+        if (desktopWindowTransition != null) desktopWindowTransition.stop();
+        boolean wasHidden = !desktopWindow.isVisible() || desktopWindowHiding;
+        desktopWindowHiding = false;
+        if (wasHidden) resetDesktopWindowTransforms();
+        desktopWindow.setManaged(true);
+        desktopWindow.setVisible(true);
+        if (wasHidden) {
+            if (appShell != null) {
+                appShell.applyCss();
+                appShell.layout();
+            }
+            Bounds windowBounds = desktopWindow.getBoundsInParent();
+            Button dockButton = activeDockButton();
+            Bounds iconBounds = dockButton.localToScene(dockButton.getBoundsInLocal());
+            Point2D iconCenter = desktopWindow.getParent().sceneToLocal(
+                    iconBounds.getMinX() + iconBounds.getWidth() / 2,
+                    iconBounds.getMinY() + iconBounds.getHeight() / 2);
+            double windowCenterX = (windowBounds.getMinX() + windowBounds.getMaxX()) / 2;
+            double windowCenterY = (windowBounds.getMinY() + windowBounds.getMaxY()) / 2;
+            desktopWindow.setOpacity(0);
+            desktopWindow.setScaleX(Math.max(0.035, iconBounds.getWidth() / Math.max(1, windowBounds.getWidth())));
+            desktopWindow.setScaleY(Math.max(0.05, iconBounds.getHeight() / Math.max(1, windowBounds.getHeight())));
+            desktopWindow.setTranslateX(iconCenter.getX() - windowCenterX);
+            desktopWindow.setTranslateY(iconCenter.getY() - windowCenterY);
+            prepareDesktopWindowAnimation();
+            FadeTransition fade = new FadeTransition(Duration.millis(300), desktopWindow);
+            fade.setFromValue(0);
+            fade.setToValue(1);
+            ScaleTransition scale = new ScaleTransition(Duration.millis(360), desktopWindow);
+            scale.setToX(1);
+            scale.setToY(1);
+            TranslateTransition lift = new TranslateTransition(Duration.millis(360), desktopWindow);
+            lift.setToX(0);
+            lift.setToY(0);
+            Interpolator easeOut = Interpolator.SPLINE(0.18, 0.75, 0.24, 1.0);
+            fade.setInterpolator(easeOut);
+            scale.setInterpolator(easeOut);
+            lift.setInterpolator(easeOut);
+            desktopWindowTransition = new ParallelTransition(fade, scale, lift);
+            desktopWindowTransition.setOnFinished(done -> {
+                resetDesktopWindowTransforms();
+                if (maximizeAfterWindowOpens) {
+                    maximizeAfterWindowOpens = false;
+                    toggleMaximizeWindow(null);
+                }
+            });
+            desktopWindowTransition.playFromStart();
         }
+    }
+
+    private void hideDesktopWindow(boolean minimize) {
+        if (desktopWindow == null || !desktopWindow.isVisible()) return;
+        stopDashboardTelemetryAnimations();
+        if (desktopWindowTransition != null) desktopWindowTransition.stop();
+        desktopWindowHiding = true;
+        prepareDesktopWindowAnimation();
+        int duration = minimize ? 360 : 190;
+        FadeTransition fade = new FadeTransition(Duration.millis(duration), desktopWindow);
+        fade.setToValue(minimize ? 0.24 : 0);
+        ScaleTransition scale = new ScaleTransition(Duration.millis(duration), desktopWindow);
+        TranslateTransition travel = new TranslateTransition(Duration.millis(duration), desktopWindow);
+        if (minimize) {
+            Bounds windowBounds = desktopWindow.getBoundsInParent();
+            Button dockButton = activeDockButton();
+            Bounds iconBounds = dockButton.localToScene(dockButton.getBoundsInLocal());
+            Point2D iconCenter = desktopWindow.getParent().sceneToLocal(
+                    iconBounds.getMinX() + iconBounds.getWidth() / 2,
+                    iconBounds.getMinY() + iconBounds.getHeight() / 2);
+            double windowCenterX = (windowBounds.getMinX() + windowBounds.getMaxX()) / 2;
+            double windowCenterY = (windowBounds.getMinY() + windowBounds.getMaxY()) / 2;
+            scale.setToX(Math.max(0.035, iconBounds.getWidth() / Math.max(1, windowBounds.getWidth())));
+            scale.setToY(Math.max(0.05, iconBounds.getHeight() / Math.max(1, windowBounds.getHeight())));
+            travel.setToX(iconCenter.getX() - windowCenterX);
+            travel.setToY(iconCenter.getY() - windowCenterY);
+        } else {
+            scale.setToX(0.96);
+            scale.setToY(0.96);
+            travel.setToY(5);
+        }
+        Interpolator easeIn = Interpolator.SPLINE(0.4, 0.0, 0.8, 0.2);
+        fade.setInterpolator(easeIn);
+        scale.setInterpolator(easeIn);
+        travel.setInterpolator(easeIn);
+        desktopWindowTransition = new ParallelTransition(fade, scale, travel);
+        desktopWindowTransition.setOnFinished(done -> {
+            desktopWindow.setVisible(false);
+            desktopWindow.setManaged(false);
+            desktopWindowHiding = false;
+            resetDesktopWindowTransforms();
+        });
+        desktopWindowTransition.playFromStart();
+    }
+
+    private Button activeDockButton() {
+        return currentActiveNav instanceof Button button ? button
+                : navDashboardBtn != null ? navDashboardBtn : navItems.stream()
+                .filter(Button.class::isInstance).map(Button.class::cast).findFirst().orElse(null);
+    }
+
+    private void animateDesktopWindowBounds(Bounds oldBounds) {
+        if (desktopWindow == null || oldBounds == null) return;
+        Bounds newBounds = desktopWindow.getBoundsInParent();
+        if (newBounds.getWidth() <= 0 || newBounds.getHeight() <= 0) return;
+        prepareDesktopWindowAnimation();
+        double scaleX = oldBounds.getWidth() / newBounds.getWidth();
+        double scaleY = oldBounds.getHeight() / newBounds.getHeight();
+        double translateX = (oldBounds.getMinX() + oldBounds.getMaxX() - newBounds.getMinX() - newBounds.getMaxX()) / 2;
+        double translateY = (oldBounds.getMinY() + oldBounds.getMaxY() - newBounds.getMinY() - newBounds.getMaxY()) / 2;
+        desktopWindow.setScaleX(scaleX);
+        desktopWindow.setScaleY(scaleY);
+        desktopWindow.setTranslateX(translateX);
+        desktopWindow.setTranslateY(translateY);
+        ScaleTransition scale = new ScaleTransition(Duration.millis(300), desktopWindow);
+        scale.setToX(1);
+        scale.setToY(1);
+        TranslateTransition translate = new TranslateTransition(Duration.millis(300), desktopWindow);
+        translate.setToX(0);
+        translate.setToY(0);
+        Interpolator ease = Interpolator.SPLINE(0.18, 0.75, 0.24, 1.0);
+        scale.setInterpolator(ease);
+        translate.setInterpolator(ease);
+        desktopWindowTransition = new ParallelTransition(scale, translate);
+        desktopWindowTransition.setOnFinished(done -> resetDesktopWindowTransforms());
+        desktopWindowTransition.playFromStart();
+    }
+
+    private void resetDesktopWindowTransforms() {
+        if (desktopWindow == null) return;
+        desktopWindow.setOpacity(1);
+        desktopWindow.setScaleX(1);
+        desktopWindow.setScaleY(1);
+        desktopWindow.setTranslateX(0);
+        desktopWindow.setTranslateY(0);
+        desktopWindow.setCache(false);
+    }
+
+    private void prepareDesktopWindowAnimation() {
+        if (desktopWindow == null) return;
+        desktopWindow.setCacheHint(javafx.scene.CacheHint.SCALE);
+        desktopWindow.setCache(true);
+    }
+
+    private void showPageAnimated(ScrollPane targetPage) {
+        if (pageStack != null && targetPage != null) {
+            if (pageTransition != null) pageTransition.stop();
+            pageStack.getChildren().forEach(child -> {
+                boolean selected = child == targetPage;
+                child.setVisible(selected);
+            });
+            targetPage.toFront();
+            Node pageContent = targetPage.getContent();
+            final Node reveal = pageContent instanceof Parent content && !content.getChildrenUnmodifiable().isEmpty()
+                    ? content.getChildrenUnmodifiable().get(0) : pageContent;
+            if (reveal == null) return;
+            reveal.setOpacity(0);
+            reveal.setTranslateY(5);
+            FadeTransition fade = new FadeTransition(Duration.millis(130), reveal);
+            fade.setFromValue(0);
+            fade.setToValue(1);
+            TranslateTransition lift = new TranslateTransition(Duration.millis(170), reveal);
+            lift.setFromY(5);
+            lift.setToY(0);
+            Interpolator ease = Interpolator.SPLINE(0.2, 0.7, 0.25, 1.0);
+            fade.setInterpolator(ease);
+            lift.setInterpolator(ease);
+            pageTransition = new ParallelTransition(fade, lift);
+            pageTransition.setOnFinished(done -> {
+                reveal.setOpacity(1);
+                reveal.setTranslateY(0);
+            });
+            pageTransition.play();
+        }
+    }
+
+    private void setupSmoothScrolling() {
+        if (root != null) installSmoothScrollHandlers(root);
+    }
+
+    private void installSmoothScrollHandlers(Node node) {
+        if (node instanceof ScrollPane scrollPane) {
+            scrollPane.addEventFilter(ScrollEvent.SCROLL, event -> {
+                Node target = event.getTarget() instanceof Node targetNode ? targetNode : null;
+                while (target != null && target != scrollPane) {
+                    if (target instanceof ScrollPane) return;
+                    target = target.getParent();
+                }
+                if (event.getDeltaY() == 0 || scrollPane.getContent() == null) return;
+                double contentHeight = scrollPane.getContent().getBoundsInLocal().getHeight();
+                double viewportHeight = scrollPane.getViewportBounds().getHeight();
+                double scrollDistance = contentHeight - viewportHeight;
+                if (scrollDistance <= 1) return;
+
+                double range = scrollPane.getVmax() - scrollPane.getVmin();
+                double currentTarget = pendingScrollTargets.getOrDefault(scrollPane, scrollPane.getVvalue());
+                double nextTarget = clamp(currentTarget - event.getDeltaY() / scrollDistance * range,
+                        scrollPane.getVmin(), scrollPane.getVmax());
+                if (Math.abs(nextTarget - scrollPane.getVvalue()) < 0.0001) return;
+
+                pendingScrollTargets.put(scrollPane, nextTarget);
+                if (!scrollMotionTimers.containsKey(scrollPane)) {
+                    long[] previousFrame = {0};
+                    AnimationTimer movement = new AnimationTimer() {
+                        @Override public void handle(long now) {
+                            double target = pendingScrollTargets.getOrDefault(scrollPane, scrollPane.getVvalue());
+                            long elapsed = previousFrame[0] == 0 ? 16_000_000L : Math.min(50_000_000L, now - previousFrame[0]);
+                            previousFrame[0] = now;
+                            double blend = 1 - Math.exp(-elapsed / 65_000_000.0);
+                            double current = scrollPane.getVvalue();
+                            if (Math.abs(target - current) < 0.0005) {
+                                scrollPane.setVvalue(target);
+                                stop();
+                                scrollMotionTimers.remove(scrollPane);
+                                pendingScrollTargets.remove(scrollPane);
+                            } else {
+                                scrollPane.setVvalue(current + (target - current) * blend);
+                            }
+                        }
+                    };
+                    scrollMotionTimers.put(scrollPane, movement);
+                    movement.start();
+                }
+                event.consume();
+            });
+        }
+        if (node instanceof Parent parent) {
+            for (Node child : parent.getChildrenUnmodifiable()) installSmoothScrollHandlers(child);
+        }
+    }
+
+    private void setupDockMotion() {
+        if (desktopDock == null) return;
+        desktopDock.setOnMouseMoved(event -> updateDockMagnification(event.getSceneX(), event.getSceneY()));
+        desktopDock.setOnMouseExited(event -> {
+            Point2D pointer = desktopDock.sceneToLocal(event.getSceneX(), event.getSceneY());
+            if (!desktopDock.contains(pointer)) resetDockMagnification();
+        });
+        dockMotionTimer = new AnimationTimer() {
+            @Override public void handle(long now) {
+                long elapsed = lastDockFrame == 0 ? 16_000_000L : Math.min(50_000_000L, now - lastDockFrame);
+                lastDockFrame = now;
+                double blend = 1 - Math.exp(-elapsed / 52_000_000.0);
+                boolean settled = true;
+                for (ButtonBase item : navItems) {
+                    if (!(item instanceof Button button)) continue;
+                    double targetScale = 1;
+                    double targetY = 0;
+                    if (dockPointerInside) {
+                        double centerX = button.getLayoutX() + button.getWidth() / 2;
+                        double distance = (dockPointerX - centerX) / 54.0;
+                        targetScale = 1 + 0.28 * Math.exp(-0.5 * distance * distance);
+                        targetY = -(targetScale - 1) * 28;
+                    }
+                    double scale = button.getScaleX() + (targetScale - button.getScaleX()) * blend;
+                    double translateY = button.getTranslateY() + (targetY - button.getTranslateY()) * blend;
+                    button.setScaleX(scale);
+                    button.setScaleY(scale);
+                    button.setTranslateY(translateY);
+                    if (Math.abs(targetScale - scale) > 0.002 || Math.abs(targetY - translateY) > 0.05) settled = false;
+                }
+                if (settled) {
+                    lastDockFrame = 0;
+                    stop();
+                }
+            }
+        };
+    }
+
+    private void updateDockMagnification(double pointerSceneX, double pointerSceneY) {
+        Point2D pointer = desktopDock.sceneToLocal(pointerSceneX, pointerSceneY);
+        dockPointerX = pointer.getX();
+        dockPointerInside = true;
+        lastDockFrame = 0;
+        dockMotionTimer.start();
+    }
+
+    private void resetDockMagnification() {
+        dockPointerInside = false;
+        lastDockFrame = 0;
+        dockMotionTimer.start();
+    }
+
+    private static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     // =========================================================================
@@ -1781,8 +2305,7 @@ public class MainController {
 
         // Display Analyzing Website page (Stitch Screen 2)
         if (analyzingPage != null) {
-            pageStack.getChildren().forEach(child -> child.setVisible(child == analyzingPage));
-            analyzingPage.toFront();
+            showPageAnimated(analyzingPage);
         }
         setActiveNav(navScannerBtn);
 
@@ -1816,8 +2339,7 @@ public class MainController {
                     "Unable to connect to the Spring Boot analysis API."));
             stopScanningAnimation();
             if (pageStack != null && scanErrorPage != null) {
-                pageStack.getChildren().forEach(child -> child.setVisible(child == scanErrorPage));
-                scanErrorPage.toFront();
+                showPageAnimated(scanErrorPage);
             }
             setActiveNav(navScannerBtn);
         });
@@ -2104,8 +2626,7 @@ public class MainController {
     private void showResult(AnalyzeResponse result) {
         currentAnalyzeResult = result;
         if (resultPage != null) {
-            pageStack.getChildren().forEach(child -> child.setVisible(child == resultPage));
-            resultPage.toFront();
+            showPageAnimated(resultPage);
         }
         setActiveNav(navScannerBtn);
 
@@ -2691,6 +3212,8 @@ public class MainController {
     public void animateThreatBreakdown() {
         if (dashSafeProgress == null) return;
         if (breakdownTimeline != null) breakdownTimeline.stop();
+        breakdownBarTimelines.forEach(Timeline::stop);
+        breakdownBarTimelines.clear();
 
         double safeTarget = 0.70;
         double suspTarget = 0.20;
@@ -2731,6 +3254,16 @@ public class MainController {
             ));
         }
         tl.play();
+        breakdownBarTimelines.add(tl);
+    }
+
+    private void stopDashboardTelemetryAnimations() {
+        if (gaugeTimeline != null) gaugeTimeline.stop();
+        if (breakdownTimeline != null) breakdownTimeline.stop();
+        breakdownBarTimelines.forEach(Timeline::stop);
+        breakdownBarTimelines.clear();
+        if (operationalBadgePulse != null) operationalBadgePulse.stop();
+        if (liveShieldPulse != null) liveShieldPulse.stop();
     }
 
     public void displayResult(AnalyzeResponse result) {
@@ -3047,12 +3580,15 @@ public class MainController {
         backendRefresh.shutdownNow();
         stopScanningAnimation();
         if (splashMasterTimeline != null) splashMasterTimeline.stop();
-        if (gaugeTimeline != null) gaugeTimeline.stop();
-        if (breakdownTimeline != null) breakdownTimeline.stop();
+        stopDashboardTelemetryAnimations();
+        scrollMotionTimers.values().forEach(AnimationTimer::stop);
+        scrollMotionTimers.clear();
+        pendingScrollTargets.clear();
+        if (dockMotionTimer != null) dockMotionTimer.stop();
+        if (desktopWindowTransition != null) desktopWindowTransition.stop();
+        if (pageTransition != null) pageTransition.stop();
         if (cardsHelper != null) cardsHelper.stopAllAnimations();
         if (riskRadarView != null) riskRadarView.stopTimer();
-        if (operationalBadgePulse != null) operationalBadgePulse.stop();
-        if (liveShieldPulse != null) liveShieldPulse.stop();
         FileSystemMonitorService file = fileMonitor;
         ProcessMonitorService process = processMonitor;
         if (file != null) file.close();
