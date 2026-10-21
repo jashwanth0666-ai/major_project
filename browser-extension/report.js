@@ -1,6 +1,7 @@
 const query = new URLSearchParams(location.search);
 const tabId = Number(query.get("tabId"));
 const ruleId = Number(query.get("ruleId"));
+let currentItem = null;
 function safeHost(raw) { try { return new URL(raw).hostname; } catch { return "No website assessment available"; } }
 function displayUrl(raw) { try { const url = new URL(raw); url.username = ""; url.password = ""; url.search = ""; url.hash = ""; return url.href; } catch { return ""; } }
 function rating(item) {
@@ -17,21 +18,31 @@ function rating(item) {
 }
 function enforcementSummary(item) {
   if (item?.domainDenied && item?.decision === "BLOCK") {
-    if (item.enforcement === "RULE_APPLIED") return "Browser enforcement: a host-wide redirect rule was installed for this exact hostname. The first visit may begin loading before assessment completes.";
-    if (item.enforcement === "DISABLED") return "Browser enforcement: protection was paused and its dynamic warning rules were removed.";
-    return "Browser enforcement: the local domain deny rule returned BLOCK, but a browser warning rule could not be installed.";
+    if (item.enforcement === "RULE_APPLIED") return "A host-wide redirect rule was installed for this exact hostname. The first visit may begin loading before assessment completes.";
+    if (item.enforcement === "DISABLED") return "Protection was paused and its dynamic warning rules were removed.";
+    return "The local domain deny rule returned BLOCK, but a browser warning rule could not be installed.";
   }
-  if (item?.decision === "BLOCK" && item.enforcement === "RULE_APPLIED") return "Browser enforcement: a dynamic navigation redirect rule was installed for the assessed URL. The first visit may begin loading before assessment completes.";
-  if (item?.decision === "BLOCK" && item.enforcement === "DISABLED") return "Browser enforcement: protection was paused and its dynamic navigation rules were removed.";
-  if (item?.decision === "BLOCK") return "Browser enforcement: the policy returned BLOCK, but a navigation rule could not be installed for this URL.";
-  return "Browser enforcement: no navigation block is active for this result.";
+  if (item?.decision === "BLOCK" && item.enforcement === "RULE_APPLIED") return "A dynamic navigation redirect rule was installed for the assessed URL. The first visit may begin loading before assessment completes.";
+  if (item?.decision === "BLOCK" && item.enforcement === "DISABLED") return "Protection was paused and its dynamic navigation rules were removed.";
+  if (item?.decision === "BLOCK") return "The policy returned BLOCK, but a navigation rule could not be installed for this URL.";
+  return "No navigation block is active for this result.";
 }
 async function render() {
-  const [item, health] = await Promise.all([
+  let [item, health] = await Promise.all([
     chrome.runtime.sendMessage({ type: "GET_CURRENT_ASSESSMENT", tabId: Number.isInteger(tabId) ? tabId : undefined, ruleId: Number.isInteger(ruleId) && ruleId > 0 ? ruleId : undefined }),
     chrome.runtime.sendMessage({ type: "GET_HEALTH" })
   ]);
+  if (item?.state === "ASSESSED" && typeof item.assessmentId === "string") {
+    const storedAssessment = await chrome.runtime.sendMessage({
+      type: "GET_BACKEND_ASSESSMENT",
+      tabId: Number.isInteger(tabId) ? tabId : undefined,
+      ruleId: Number.isInteger(ruleId) && ruleId > 0 ? ruleId : undefined,
+      assessmentId: item.assessmentId
+    }).catch(() => null);
+    if (storedAssessment?.state === "ASSESSED") item = storedAssessment;
+  }
   document.getElementById("host").textContent = safeHost(item?.url);
+  currentItem = item;
   document.getElementById("url").textContent = displayUrl(item?.url);
   const [color, label] = rating(item || { state: "UNKNOWN" });
   const pill = document.getElementById("rating"); pill.className = `status ${color}`; pill.textContent = label;
@@ -44,16 +55,16 @@ async function render() {
   document.getElementById("ml").textContent = ml;
   const reputation = item?.evidence?.urlReputation;
   document.getElementById("intel").textContent = reputation
-    ? `Threat intelligence: ${reputation.status || "unknown"} · provider ${reputation.provider || "unknown"}`
-    : "Threat intelligence: unavailable.";
+    ? `${reputation.status || "Unknown"} · Provider ${reputation.provider || "unknown"}`
+    : "Unavailable.";
   const pageSignals = item?.evidence?.browserPageSignals;
   document.getElementById("page-signals").textContent = pageSignals
-    ? `Local page structure: ${pageSignals.passwordFormCount} password forms · ${pageSignals.crossOriginPasswordFormCount} cross-site password forms · ${pageSignals.insecurePasswordFormCount} insecure password forms · ${pageSignals.hiddenFrameCount} hidden frames · ${pageSignals.crossOriginFrameCount} cross-site frames. No form values or page text were sent.`
-    : "Local page structure: no page signal payload was available.";
+    ? `${pageSignals.passwordFormCount} password forms · ${pageSignals.crossOriginPasswordFormCount} cross-site password forms · ${pageSignals.insecurePasswordFormCount} insecure password forms · ${pageSignals.hiddenFrameCount} hidden frames · ${pageSignals.crossOriginFrameCount} cross-site frames. No form values or page text were sent.`
+    : "No page signal payload was available.";
   const redirectHosts = Array.isArray(pageSignals?.redirectHosts) ? pageSignals.redirectHosts.slice(0, 6) : [];
   document.getElementById("redirect-chain").textContent = redirectHosts.length > 1
-    ? `Observed redirect hostnames: ${redirectHosts.join(" → ")}. Paths, queries, and fragments were not sent.`
-    : "Observed redirect hostnames: no cross-host redirect was observed.";
+    ? `${redirectHosts.join(" → ")}. Paths, queries, and fragments were not sent.`
+    : "No cross-host redirect was observed.";
   document.getElementById("backend").textContent = health?.spring_boot ? `Backend: Spring Boot ${health.spring_boot} · ML service ${health.ml_service || "status unavailable"}` : `Backend unavailable (${health?.state || "connection error"}).`;
   document.getElementById("enforcement").textContent = enforcementSummary(item);
   const list = document.getElementById("reasons"); list.replaceChildren();
@@ -64,20 +75,72 @@ async function render() {
   const feedbackReady = item?.state === "ASSESSED" && typeof item.assessmentId === "string";
   for (const button of feedbackButtons) {
     button.disabled = !feedbackReady;
-    button.addEventListener("click", async () => {
+    button.onclick = async () => {
       feedbackButtons.forEach((entry) => { entry.disabled = true; });
-      const result = await chrome.runtime.sendMessage({
-        type: "SUBMIT_FEEDBACK",
-        tabId,
-        ruleId: Number.isInteger(ruleId) && ruleId > 0 ? ruleId : undefined,
-        assessmentId: item.assessmentId,
-        label: button.dataset.feedback
-      });
-      document.getElementById("feedback-status").textContent = result?.ok
+      button.classList.add("is-loading");
+      button.setAttribute("aria-busy", "true");
+      const feedbackStatus = document.getElementById("feedback-status");
+      feedbackStatus.dataset.state = "pending";
+      feedbackStatus.textContent = "Submitting feedback…";
+      let feedbackSaved = false;
+      try {
+        const result = await chrome.runtime.sendMessage({
+          type: "SUBMIT_FEEDBACK",
+          tabId,
+          ruleId: Number.isInteger(ruleId) && ruleId > 0 ? ruleId : undefined,
+          assessmentId: item.assessmentId,
+          label: button.dataset.feedback
+        });
+        feedbackSaved = Boolean(result?.ok);
+      } catch { /* Show the same local-backend message for connection failures. */ }
+      feedbackStatus.dataset.state = feedbackSaved ? "success" : "error";
+      feedbackStatus.textContent = feedbackSaved
         ? "Feedback saved locally for later review. It does not retrain the model."
         : "Feedback could not be saved. Check that the local backend is available.";
-      if (!result?.ok) feedbackButtons.forEach((entry) => { entry.disabled = false; });
-    }, { once: true });
+      button.classList.remove("is-loading");
+      button.removeAttribute("aria-busy");
+      if (!feedbackSaved) feedbackButtons.forEach((entry) => { entry.disabled = false; });
+    };
   }
 }
-void render();
+async function renderUntilAssessmentArrives() {
+  await render();
+  if (currentItem?.state !== "UNKNOWN") return;
+  // Navigation analysis completes asynchronously after the page finishes loading.
+  // Keep the report connected to that result when it opens during inference.
+  const deadline = Date.now() + 15_000;
+  while (Date.now() < deadline && currentItem?.state === "UNKNOWN") {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const item = await chrome.runtime.sendMessage({
+      type: "GET_CURRENT_ASSESSMENT",
+      tabId: Number.isInteger(tabId) ? tabId : undefined,
+      ruleId: Number.isInteger(ruleId) && ruleId > 0 ? ruleId : undefined
+    });
+    if (item?.state !== "UNKNOWN") {
+      await render();
+      break;
+    }
+  }
+}
+const refreshButton = document.getElementById("refresh-assessment");
+refreshButton.hidden = !Number.isInteger(tabId) || tabId <= 0 || (Number.isInteger(ruleId) && ruleId > 0);
+refreshButton.addEventListener("click", async () => {
+  const label = refreshButton.textContent;
+  refreshButton.disabled = true;
+  refreshButton.classList.add("is-loading");
+  refreshButton.setAttribute("aria-busy", "true");
+  refreshButton.textContent = "Checking";
+  try {
+    const result = await chrome.runtime.sendMessage({ type: "RECHECK_CURRENT", tabId });
+    if (result?.ok) await render();
+    else document.getElementById("backend").textContent = "Could not request a fresh assessment for this tab.";
+  } catch {
+    document.getElementById("backend").textContent = "Could not reach the extension service worker. Reopen the report and try again.";
+  } finally {
+    refreshButton.disabled = false;
+    refreshButton.classList.remove("is-loading");
+    refreshButton.removeAttribute("aria-busy");
+    refreshButton.textContent = label;
+  }
+});
+void renderUntilAssessmentArrives();

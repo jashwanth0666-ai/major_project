@@ -116,6 +116,26 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }).then(sendResponse);
     return true;
   }
+  if (message.type === "GET_BACKEND_ASSESSMENT") {
+    if (!extensionPage) { sendResponse(null); return false; }
+    const assessmentId = typeof message.assessmentId === "string" ? message.assessmentId : "";
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(assessmentId)) {
+      sendResponse(null);
+      return false;
+    }
+    void (async () => {
+      const cached = Number.isInteger(message.ruleId) && message.ruleId > 0
+        ? await getBlockedAssessment(message.ruleId)
+        : await getCurrentAssessment(message.tabId);
+      const response = await callApi(`/api/v1/threat-assessments/${encodeURIComponent(assessmentId)}`);
+      if (response?.subjectType !== "URL") return null;
+      const assessment = normalizeAssessment(response, cached?.url || response.subjectId, "ASSESSED");
+      assessment.timestamp = cached?.timestamp || Date.parse(response.timestamp) || Date.now();
+      assessment.enforcement = cached?.enforcement || "NOT_APPLICABLE";
+      return assessment;
+    })().then(sendResponse).catch(() => sendResponse(null));
+    return true;
+  }
   if (message.type === "RECHECK_CURRENT") {
     if (!extensionPage) { sendResponse({ ok: false }); return false; }
     chrome.tabs.get(message.tabId, (tab) => {

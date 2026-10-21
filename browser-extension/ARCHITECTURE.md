@@ -6,7 +6,8 @@ Active HTTP(S) navigation
   -> POST /api/v1/threat-assessments/url
   -> Spring validation -> existing FastAPI URL model -> existing Spring PolicyEngine; intermediate redirect hosts receive local deception checks
   -> local domain rules + hostname heuristics + optional hostname reputation -> audit logger -> unified assessment response
-  -> popup/report; HIGH_RISK + BLOCK may install a dynamic browser navigation redirect rule
+  -> extension session cache -> popup/report
+  -> report retrieves the persisted redacted assessment by assessment ID; HIGH_RISK + BLOCK may install a dynamic browser navigation redirect rule
 
 Supported search results page
   -> content script reads a bounded set of result hrefs only

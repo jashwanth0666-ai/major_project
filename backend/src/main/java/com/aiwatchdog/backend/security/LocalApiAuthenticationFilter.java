@@ -54,12 +54,18 @@ public final class LocalApiAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         if ("extension".equals(role)
-                && !EXTENSION_PERMISSIONS.contains(request.getMethod() + " " + request.getRequestURI())) {
+                && !extensionPermissionAllowed(request.getMethod(), request.getRequestURI())) {
             reject(response, HttpServletResponse.SC_FORBIDDEN, "INSUFFICIENT_SCOPE",
-                    "This browser-extension credential is limited to URL checks, domain-exception reads, and feedback. Use the desktop app for other actions.");
+                    "This browser-extension credential is limited to URL checks and report reads, domain-exception reads, and feedback. Use the desktop app for other actions.");
             return;
         }
         chain.doFilter(request, response);
+    }
+
+    private boolean extensionPermissionAllowed(String method, String requestUri) {
+        if (EXTENSION_PERMISSIONS.contains(method + " " + requestUri)) return true;
+        return "GET".equals(method)
+                && requestUri.matches("/api/v1/threat-assessments/[0-9a-fA-F-]{36}");
     }
 
     private String matchingClient(String supplied) {

@@ -48,6 +48,7 @@ Only Chrome and Chromium-based Edge are targeted. The project does not install t
 ## Backend API
 
 - `POST /api/v1/threat-assessments/url` — unified assessment evidence for an actual navigation; persists an audit event.
+- `GET /api/v1/threat-assessments/{assessmentId}` — retrieves the stored, redacted URL assessment shown in the site report.
 - `POST /api/v1/threat-assessments/url/preview` — same evidence and decision path without writing an event; intended for unvisited search destinations.
 - `POST /api/v1/analyze` and `/api/v1/analyze/preview` — legacy model/policy response routes remain available to other local clients.
 - `GET /api/v1/health` — reports Spring and FastAPI availability. A degraded response can still report Spring `UP` while ML is `DOWN`.

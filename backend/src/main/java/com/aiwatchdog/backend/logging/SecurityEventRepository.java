@@ -22,6 +22,9 @@ public interface SecurityEventRepository {
     /** Returns structured threat-assessment audit events, newest first. */
     List<SecurityEvent> findRecentAssessments(int limit);
 
+    /** Looks up one persisted unified assessment by its public assessment ID. */
+    Optional<SecurityEvent> findAssessmentById(String assessmentId);
+
     /** Human labels linked to URL assessments, newest first. */
     default List<SecurityEvent> findRecentFeedback(int limit) { return List.of(); }
 

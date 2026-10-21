@@ -105,6 +105,20 @@ public class SqliteSecurityEventRepository implements SecurityEventRepository {
     }
 
     @Override
+    public Optional<SecurityEvent> findAssessmentById(String assessmentId) {
+        String sql = "SELECT id, timestamp, url, phishing_probability, risk_score, risk_level, prediction, decision,"
+                + " event_type, subject_type, subject_id, correlation_id, details_json FROM security_events"
+                + " WHERE event_type='THREAT_ASSESSMENT'"
+                + " AND json_extract(details_json, '$.assessmentId')=? LIMIT 1";
+        try (Connection conn = connect(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, assessmentId);
+            return collectResults(ps).stream().findFirst();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to retrieve threat assessment", e);
+        }
+    }
+
+    @Override
     public List<SecurityEvent> findRecentFeedback(int limit) {
         String sql = "SELECT id,timestamp,url,phishing_probability,risk_score,risk_level,prediction,decision,"
                 + "event_type,subject_type,subject_id,correlation_id,details_json FROM security_events "

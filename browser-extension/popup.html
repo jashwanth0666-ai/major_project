@@ -1,13 +1,43 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="extension.css"><title>AI WatchDog</title></head>
-<body>
-  <div class="brand">AI WatchDog</div><h1>Website protection</h1>
-  <section class="panel"><div id="hostname" class="muted">Checking current tab...</div><p><span id="rating" class="status gray">Unknown</span></p><div id="summary" class="muted">No assessment available for this tab.</div><div id="timestamp" class="muted"></div>
-  <ul id="reasons"></ul><div id="search-note" class="notice" hidden>Search result destinations are checked separately. Search terms are not sent for analysis.</div></section>
-  <section class="panel"><div class="row"><div><strong>Protection</strong><div id="protection-description" class="muted">Checking state...</div></div><input id="protection" class="switch" type="checkbox" aria-label="Enable browser protection"></div>
-    <p id="backend" class="muted">Checking local backend...</p><div class="actions"><button id="report" class="secondary">Site report</button><button id="recheck">Check again</button></div><button id="configure" class="secondary wide">Configure local API access</button></section>
-  <p class="notice">Ratings use the AI WatchDog model and policy with available hostname evidence. Reputation lookup is optional and browser download scanning is not available.</p>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="extension.css">
+  <title>AI WatchDog</title>
+</head>
+<body class="popup-page">
+  <main class="popup-shell">
+    <header class="popup-header">
+      <div class="brand">AI WatchDog</div>
+      <span class="popup-caption">Browser protection</span>
+    </header>
+    <section class="popup-assessment" aria-labelledby="popup-title">
+      <div id="hostname" class="popup-host muted">Checking current tab…</div>
+      <h1 id="popup-title">Website assessment</h1>
+      <p class="popup-rating"><span id="rating" class="status gray">Unknown</span></p>
+      <div id="summary" class="popup-summary muted">No assessment available for this tab.</div>
+      <div id="timestamp" class="popup-timestamp muted"></div>
+      <ul id="reasons" class="popup-reasons"></ul>
+      <div id="search-note" class="notice popup-search-note" hidden>Search result destinations are checked separately. Search terms are not sent for analysis.</div>
+    </section>
+    <section class="popup-controls" aria-label="Protection controls">
+      <div class="popup-protection">
+        <div>
+          <strong>Protection</strong>
+          <div id="protection-description" class="muted">Checking state…</div>
+        </div>
+        <input id="protection" class="switch" type="checkbox" aria-label="Enable browser protection">
+      </div>
+      <p id="backend" class="popup-backend muted">Checking local backend…</p>
+      <div class="actions popup-actions">
+        <button id="report" class="secondary">Site report</button>
+        <button id="recheck">Check again</button>
+      </div>
+      <button id="configure" class="secondary wide popup-configure">Configure local API access</button>
+    </section>
+    <p class="notice popup-note">Ratings use the AI WatchDog model and policy with available hostname evidence. Reputation lookup is optional and browser download scanning is not available.</p>
+  </main>
   <script src="popup.js"></script>
 </body>
 </html>

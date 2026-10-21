@@ -58,7 +58,11 @@ document.getElementById("report").addEventListener("click", () => { if (activeTa
 document.getElementById("configure").addEventListener("click", () => chrome.runtime.openOptionsPage());
 document.getElementById("recheck").addEventListener("click", async (event) => {
   const button = event.currentTarget;
+  const label = button.textContent;
   button.disabled = true;
+  button.classList.add("is-loading");
+  button.setAttribute("aria-busy", "true");
+  button.textContent = "Checking";
   try {
     await send({ type: "RECHECK_CURRENT", tabId: activeTab?.id });
     await refresh();
@@ -66,6 +70,9 @@ document.getElementById("recheck").addEventListener("click", async (event) => {
     document.getElementById("backend").textContent = "Could not refresh the assessment. Check that the extension service worker and local backend are available.";
   } finally {
     button.disabled = false;
+    button.classList.remove("is-loading");
+    button.removeAttribute("aria-busy");
+    button.textContent = label;
   }
 });
 void refresh();
