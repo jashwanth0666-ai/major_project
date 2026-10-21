@@ -363,6 +363,16 @@
 .app-root.dark .dock-app-button FontIcon,
 .app-root.dark .dock-app-button .ikonli-font-icon { -fx-icon-color: #aecbfa; -fx-fill: #aecbfa; }
 .app-root.dark .dock-app-button:hover { -fx-background-color: rgba(56, 78, 115, 0.98); }
+.tooltip.dock-name-tooltip {
+    -fx-background-color: rgba(24, 31, 44, 0.94);
+    -fx-background-radius: 8px;
+    -fx-border-color: rgba(255, 255, 255, 0.14);
+    -fx-border-radius: 8px;
+    -fx-padding: 6px 10px;
+    -fx-font-size: 11px;
+    -fx-text-fill: #f4f7fc;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.25), 10, 0.14, 0, 3);
+}
 
 /* Keep the startup wallpapers distinct from the desktop wallpapers. */
 .app-root .welcome-page-new {

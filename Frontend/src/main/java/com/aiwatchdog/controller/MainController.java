@@ -409,7 +409,18 @@ public class MainController {
                 navDashboardBtn, navScannerBtn, navFileShieldBtn, navSecureAccessBtn,
                 navThreatCenterBtn, navActivityBtn, navInsightsBtn, navSettingsBtn
         }) {
-            if (btn != null) navItems.add(btn);
+            if (btn != null) {
+                navItems.add(btn);
+                if (btn.getTooltip() != null) {
+                    Tooltip tooltip = btn.getTooltip();
+                    tooltip.setShowDelay(Duration.millis(180));
+                    tooltip.setHideDelay(Duration.millis(100));
+                    tooltip.setShowDuration(Duration.seconds(8));
+                    if (!tooltip.getStyleClass().contains("dock-name-tooltip")) {
+                        tooltip.getStyleClass().add("dock-name-tooltip");
+                    }
+                }
+            }
         }
         clearActiveNav();
         if (notificationPanel != null) {
